@@ -1,0 +1,423 @@
+{
+ "updatedAt": "2026-11-09T09:06:41.427Z",
+ "items": [
+  {
+   "source": "local",
+   "status": "open",
+   "participants": 0,
+   "themes": [
+    "AI",
+    "자유 주제"
+   ],
+   "title": "제주 AI 부트캠프 해커톤",
+   "url": "https://jeju-ai-bootcamp-579712386214.asia-northeast3.run.app/",
+   "prize": "",
+   "dates": "2026년 11월 13일 발표",
+   "location": "제주대학교"
+  },
+  {
+   "source": "devpost",
+   "title": "PayPal AI Hackathon",
+   "url": "https://paypalaihackathon.devpost.com/",
+   "prize": "$67,500",
+   "dates": "Oct 01 - Nov 12, 2026",
+   "location": "Online",
+   "participants": 31839,
+   "themes": [
+    "Low/No Code",
+    "Machine Learning/AI",
+    "Web"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "Kiroween 2026",
+   "url": "https://kiroween.devpost.com/",
+   "prize": "$100,000",
+   "dates": "Oct 30 - Dec 04, 2026",
+   "location": "Online",
+   "participants": 10692,
+   "themes": [
+    "Beginner Friendly",
+    "Machine Learning/AI",
+    "Open Ended"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "Meta VR Start Developer Competition 2026",
+   "url": "https://start-developer-competition-26.devpost.com/",
+   "prize": "$1,000,000",
+   "dates": "Sep 24 - Nov 18, 2026",
+   "location": "Online",
+   "participants": 5523,
+   "themes": [
+    "AR/VR",
+    "Machine Learning/AI",
+    "Web"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "Codegeist 2026: Build with context. Ship with confidence.",
+   "url": "https://codegeist2026.devpost.com/",
+   "prize": "$120,000",
+   "dates": "Oct 27 - Dec 22, 2026",
+   "location": "Online",
+   "participants": 2370,
+   "themes": [
+    "Machine Learning/AI",
+    "Enterprise",
+    "Productivity"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "UGREEN Hackathon 2026 on AI NAS",
+   "url": "https://ugreenhackathon.devpost.com/",
+   "prize": "$46,000",
+   "dates": "Oct 22 - Nov 16, 2026",
+   "location": "Online",
+   "participants": 1803,
+   "themes": [
+    "Lifehacks",
+    "Machine Learning/AI",
+    "Productivity"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "Learn AR with SPECS",
+   "url": "https://learn-specs.devpost.com/",
+   "prize": "$2,500",
+   "dates": "Oct 15 - Nov 09, 2026",
+   "location": "Online",
+   "participants": 1226,
+   "themes": [
+    "AR/VR",
+    "Machine Learning/AI",
+    "Design"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "Arbiter Hacks V1",
+   "url": "https://arbiter-hacks-v1.devpost.com/",
+   "prize": "$7,800",
+   "dates": "Oct 20 - Dec 21, 2026",
+   "location": "Online",
+   "participants": 964,
+   "themes": [
+    "Beginner Friendly",
+    "Machine Learning/AI",
+    "Open Ended"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "QNX Global Hackathon",
+   "url": "https://qnx.devpost.com/",
+   "prize": "$50,000",
+   "dates": "Nov 02 - Dec 15, 2026",
+   "location": "Online",
+   "participants": 903,
+   "themes": [
+    "IoT",
+    "Machine Learning/AI",
+    "Open Ended"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "IceHacks",
+   "url": "https://icehacks.devpost.com/",
+   "prize": "$17,150",
+   "dates": "Nov 08 - 15, 2026",
+   "location": "Online",
+   "participants": 371,
+   "themes": [
+    "Beginner Friendly",
+    "Low/No Code",
+    "Open Ended"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "AI Agents for Founders Challenge — HETIC 2026",
+   "url": "https://ai-agents-founders-hetic-26.devpost.com/",
+   "prize": "€1,000",
+   "dates": "Nov 04 - Dec 18, 2026",
+   "location": "Online",
+   "participants": 261,
+   "themes": [
+    "Low/No Code",
+    "Machine Learning/AI",
+    "Productivity"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "Herhack",
+   "url": "https://herhack.devpost.com/",
+   "prize": "₹ 200,000",
+   "dates": "Oct 17 - Nov 10, 2026",
+   "location": "Online",
+   "participants": 250,
+   "themes": [
+    "Beginner Friendly",
+    "Blockchain",
+    "Open Ended"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "Agentic Hackathon",
+   "url": "https://agentic-hackathon.devpost.com/",
+   "prize": "$480",
+   "dates": "Nov 01 - 10, 2026",
+   "location": "Online",
+   "participants": 232,
+   "themes": [
+    "Machine Learning/AI",
+    "Open Ended",
+    "Web"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "AWS MSP AI Hackathon",
+   "url": "https://aws-agentic-msp.devpost.com/",
+   "prize": "$64,000",
+   "dates": "Nov 02 - Dec 11, 2026",
+   "location": "Online",
+   "participants": 222,
+   "themes": [
+    "Machine Learning/AI",
+    "Productivity",
+    "Web"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "GenHacks",
+   "url": "https://genhacks-open.devpost.com/",
+   "prize": "$CAD 1,050",
+   "dates": "Nov 01 - Dec 26, 2026",
+   "location": "Online",
+   "participants": 205,
+   "themes": [
+    "Beginner Friendly",
+    "IoT",
+    "Machine Learning/AI"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "Dakar Bitcoin Hack by BTrust",
+   "url": "https://dakar-bitcoin-hack-2026.devpost.com/",
+   "prize": "$900",
+   "dates": "Oct 26 - Nov 20, 2026",
+   "location": "Online",
+   "participants": 197,
+   "themes": [
+    "Blockchain",
+    "Fintech",
+    "Machine Learning/AI"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "HackTheFashion Global'26",
+   "url": "https://hackthefashion-global26.devpost.com/",
+   "prize": "$45,000",
+   "dates": "Nov 06 - 25, 2026",
+   "location": "Online",
+   "participants": 178,
+   "themes": [
+    "AR/VR",
+    "Beginner Friendly",
+    "Machine Learning/AI"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "Ctrl+V Hackathon",
+   "url": "https://ctrl-v-hackathon-31831.devpost.com/",
+   "prize": "$28,000",
+   "dates": "Nov 06 - 10, 2026",
+   "location": "Online",
+   "participants": 162,
+   "themes": [
+    "Beginner Friendly",
+    "Machine Learning/AI",
+    "Social Good"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "HackWithAditya",
+   "url": "https://hackwithaditya.devpost.com/",
+   "prize": "₹ 500,000",
+   "dates": "Oct 16 - Nov 25, 2026",
+   "location": "Online",
+   "participants": 157,
+   "themes": [
+    "Education",
+    "Health",
+    "Machine Learning/AI"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "DATANOVA 2026 GLOBAL DATA-THON",
+   "url": "https://datanova-2026-global-data-thon.devpost.com/",
+   "prize": "$1,750",
+   "dates": "Oct 26 - Nov 10, 2026",
+   "location": "Online",
+   "participants": 138,
+   "themes": [
+    "E-commerce/Retail",
+    "Fintech",
+    "Health"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "SLAY HACKS",
+   "url": "https://slayy-hacks.devpost.com/",
+   "prize": "$4,500",
+   "dates": "Nov 07 - Dec 07, 2026",
+   "location": "Online",
+   "participants": 90,
+   "themes": [
+    "Beginner Friendly",
+    "Open Ended",
+    "Machine Learning/AI"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "Scope-AI-Thon 2026 - AI for Detection of Acute Patient Deterioration",
+   "url": "https://scope-ai-thon-2026.devpost.com/",
+   "prize": "$CAD 1,400",
+   "dates": "Nov 01 - 14, 2026",
+   "location": "Online",
+   "participants": 60,
+   "themes": [
+    "Design",
+    "Health",
+    "Machine Learning/AI"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "Health Hackathon 3.0",
+   "url": "https://health-hack-3.devpost.com/",
+   "prize": "$200,000",
+   "dates": "Nov 04 - 11, 2026",
+   "location": "VIT Bhopal University",
+   "participants": 45,
+   "themes": [
+    "Health",
+    "Lifehacks",
+    "Machine Learning/AI"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "Build, Demo, and Take Home a Working AI Support Bot",
+   "url": "https://build-a-working-ai-support-bot.devpost.com/",
+   "prize": "$750",
+   "dates": "Nov 06 - 12, 2026",
+   "location": "eGain Corp.",
+   "participants": 38,
+   "themes": [
+    "Beginner Friendly",
+    "Machine Learning/AI",
+    "Productivity"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "HackOut! 2027",
+   "url": "https://hackout-branchout.devpost.com/",
+   "prize": "$3,000",
+   "dates": "Nov 03, 2026 - Feb 01, 2027",
+   "location": "Online",
+   "participants": 20,
+   "themes": [
+    "Quantum",
+    "Beginner Friendly",
+    "Social Good"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "Blockchain Innovation Challenge powered by Stellar",
+   "url": "https://blockchain-stellar-ic.devpost.com/",
+   "prize": "$CAD 15,000",
+   "dates": "Nov 06 - 13, 2026",
+   "location": "Velocity, Innovation Arena",
+   "participants": 16,
+   "themes": [
+    "Blockchain",
+    "Fintech"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "Inceptrix 3.0",
+   "url": "https://inceptrix-hackathon.devpost.com/",
+   "prize": "₹ 250,000",
+   "dates": "Nov 05 - Dec 24, 2026",
+   "location": "Online",
+   "participants": 16,
+   "themes": [
+    "Beginner Friendly",
+    "Education",
+    "Web"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "Silicon Valley Buildathon",
+   "url": "https://silicon-valley-buildathon.devpost.com/",
+   "prize": "$500",
+   "dates": "Nov 08 - Dec 15, 2026",
+   "location": "Online",
+   "participants": 9,
+   "themes": [
+    "Open Ended",
+    "Beginner Friendly",
+    "Low/No Code"
+   ],
+   "status": "open"
+  }
+ ]
+}

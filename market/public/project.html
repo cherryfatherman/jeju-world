@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>프로젝트 · 바톤</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="logo" href="./"><span class="mark">🏃</span>바톤</a>
+  <nav><a href="./#projects" class="on">프로젝트</a><a href="./#hackathons">해커톤 일정</a><a href="./sell.html">판매 등록</a></nav>
+</div></header>
+
+<main class="wrap">
+  <div class="detail" id="detail" hidden>
+    <div class="main">
+      <div class="meta" id="meta" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+      <h1 id="name"></h1>
+      <p class="tag" id="tagline"></p>
+      <div class="desc" id="desc"></div>
+      <div class="panel" style="margin-top:18px" id="nextPanel" hidden><b>다음 주인이 할 만한 일</b><ul class="nexts" id="nexts"></ul></div>
+    </div>
+    <aside class="side">
+      <div class="panel">
+        <span class="price" id="price"></span>
+        <span class="note" id="dealNote"></span>
+        <dl>
+          <dt>단계</dt><dd id="stage"></dd>
+          <dt>출처</dt><dd id="origin"></dd>
+          <dt>판매자</dt><dd id="seller"></dd>
+          <dt>관심</dt><dd id="interest"></dd>
+          <dt>서비스</dt><dd><a id="url" target="_blank" rel="noopener" style="color:var(--accent2)">열어보기 ↗</a></dd>
+        </dl>
+      </div>
+      <button class="btn primary big" id="inquiryBtn">💬 판매자에게 문의하기</button>
+      <button class="btn big" id="interestBtn">♥ 관심 있어요</button>
+      <p class="note">바톤 1차 버전은 판매자와 직접 연결만 해드려요. 결제와 안전거래는 준비 중이에요. 금전 거래 전에 서비스 상태와 매출을 꼭 직접 확인하세요.</p>
+    </aside>
+  </div>
+  <div class="empty" id="notfound" hidden>프로젝트를 찾을 수 없어요. <a href="./" style="color:var(--accent2)">목록으로</a></div>
+</main>
+
+<div class="modal" id="inqModal"><form class="form" id="inqForm">
+  <h3 style="margin:0">판매자에게 문의</h3>
+  <p class="note" style="margin:0">보내면 판매자 연락처를 바로 알려드려요.</p>
+  <label>이름 또는 닉네임<input name="name" placeholder="홍길동"></label>
+  <label>내 연락처<input name="contact" required placeholder="이메일 또는 오픈채팅 링크"></label>
+  <label>내용<textarea name="message" required style="min-height:100px" placeholder="예: 사용자 수와 월 비용이 궁금해요. 인수 후 운영 계획은…"></textarea></label>
+  <div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" class="btn" data-close>닫기</button><button class="btn primary">보내기</button></div>
+</form></div>
+<div class="modal" id="doneModal"><div class="form">
+  <h3 style="margin:0">문의를 남겼어요 🙌</h3>
+  <p class="note" style="margin:0">판매자 연락처예요. 직접 연락해 보세요.</p>
+  <div class="ai-box" id="sellerContact" style="user-select:all"></div>
+  <div style="display:flex;justify-content:flex-end"><button class="btn primary" data-close>확인</button></div>
+</div></div>
+<div id="toast"></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const won = (n) => n ? n.toLocaleString('ko-KR') + '원' : '';
+const STAGE = { idea: '아이디어', demo: '데모', users: '사용자 있음', revenue: '매출 있음' };
+const id = new URLSearchParams(location.search).get('id');
+function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2500); }
+let p;
+async function load() {
+  const r = await fetch(`/api/projects/${encodeURIComponent(id)}`);
+  if (!r.ok) { $('#notfound').hidden = false; return; }
+  p = await r.json();
+  fetch(`/api/projects/${id}/view`, { method: 'POST' });
+  document.title = `${p.name} · 바톤`;
+  $('#detail').hidden = false;
+  $('#meta').innerHTML = `<span class="badge stage-${p.stage}">${STAGE[p.stage] || ''}</span><span class="badge">${p.category}</span>${p.sample ? '<span class="badge sample">예시 · 시연용 가상 프로젝트</span>' : ''}${(p.tags || []).map((t) => `<span class="badge">#${t.replace(/[<>]/g, '')}</span>`).join('')}`;
+  $('#name').textContent = p.name; $('#tagline').textContent = p.tagline; $('#desc').textContent = p.description;
+  $('#stage').textContent = STAGE[p.stage] || '-'; $('#origin').textContent = p.origin || '-'; $('#seller').textContent = p.seller || '익명'; $('#interest').textContent = `♥ ${p.interest || 0} · 조회 ${p.views || 0}`;
+  $('#url').href = p.url;
+  if (p.dealType === 'cofounder') { $('#price').textContent = '공동창업자 구함'; $('#dealNote').textContent = '판매가 아니라 함께 운영할 사람을 찾아요.'; }
+  else if (p.dealType === 'open') { $('#price').textContent = '오픈소스 · 후원'; $('#dealNote').textContent = '코드를 공개하고 후원이나 인수 제안을 받아요.'; }
+  else { $('#price').textContent = p.priceMax ? `${won(p.priceMin)} ~ ${won(p.priceMax)}` : '가격 협의'; $('#dealNote').textContent = p.priceReason || '판매자 희망 가격대예요. 협의 가능해요.'; }
+  if (p.nextSteps?.length) { $('#nextPanel').hidden = false; $('#nexts').replaceChildren(...p.nextSteps.map((s) => { const li = document.createElement('li'); li.textContent = s; return li; })); }
+}
+$('#interestBtn').onclick = async () => {
+  if (localStorage.getItem('int-' + id)) return toast('이미 관심을 눌렀어요 ♥');
+  const r = await fetch(`/api/projects/${id}/interest`, { method: 'POST' });
+  const d = await r.json(); localStorage.setItem('int-' + id, '1');
+  $('#interest').textContent = `♥ ${d.interest} · 조회 ${p.views + 1}`; toast('관심 등록! 판매자에게 힘이 돼요 ♥');
+};
+$('#inquiryBtn').onclick = () => $('#inqModal').classList.add('show');
+document.querySelectorAll('[data-close]').forEach((b) => b.onclick = () => document.querySelectorAll('.modal').forEach((m) => m.classList.remove('show')));
+$('#inqForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const r = await fetch(`/api/projects/${id}/inquiry`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.fromEntries(new FormData(e.target))) });
+  const d = await r.json();
+  if (!r.ok) return toast(d.error || '다시 시도해 주세요');
+  $('#inqModal').classList.remove('show'); e.target.reset();
+  $('#sellerContact').textContent = d.sellerContact; $('#doneModal').classList.add('show');
+};
+load();
+</script>
+</body>
+</html>

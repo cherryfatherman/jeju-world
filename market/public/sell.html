@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>판매 등록 · 바톤</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="logo" href="./"><span class="mark">🏃</span>바톤</a>
+  <nav><a href="./#projects">프로젝트</a><a href="./#hackathons">해커톤 일정</a><a href="./sell.html" class="on">판매 등록</a></nav>
+</div></header>
+
+<main class="wrap" style="max-width:720px">
+  <div class="hero" style="padding-bottom:10px">
+    <h1 style="font-size:30px">주소 하나면 <em>30초</em>면 돼요</h1>
+    <p>서비스 주소를 넣으면 AI가 페이지를 읽고 소개글, 분류, 태그, 가격대까지 써 드려요. 확인하고 고치기만 하면 끝이에요.</p>
+  </div>
+  <div class="steps"><span class="on" id="st1">1 주소 입력</span><span id="st2">2 AI 초안 확인</span><span id="st3">3 게시</span></div>
+
+  <!-- 1단계 -->
+  <form class="form" id="step1">
+    <label>서비스 주소 (배포된 사이트, 데모, GitHub 등)<input name="url" type="url" required placeholder="https://..." autofocus></label>
+    <label>판매자 메모 (선택) — AI에게 알려줄 것<textarea name="hint" style="min-height:90px" placeholder="예: 2026 가을 교내 해커톤 우수상. 가입자 140명. 졸업해서 운영이 어려워요."></textarea></label>
+    <button class="btn primary big" id="genBtn">✨ AI로 소개글 만들기</button>
+    <p class="note">페이지를 읽지 못해도 메모를 바탕으로 초안을 만들어요. 실제 서비스가 아닌 주소는 올리지 마세요.</p>
+  </form>
+
+  <!-- 2단계 -->
+  <form class="form" id="step2" hidden>
+    <div class="ai-box" id="aiNote"></div>
+    <label>이름<input name="name" required maxlength="40"></label>
+    <label>한 줄 소개<input name="tagline" required maxlength="80"></label>
+    <label>소개글<textarea name="description" required></textarea></label>
+    <div class="row2">
+      <label>분류<select name="category" id="catSel"></select></label>
+      <label>단계<select name="stage"><option value="idea">아이디어</option><option value="demo" selected>데모</option><option value="users">사용자 있음</option><option value="revenue">매출 있음</option></select></label>
+    </div>
+    <label>태그 (쉼표로 구분)<input name="tags" placeholder="AI, 대학생, Next.js"></label>
+    <label>어떤 해커톤·계기로 만들었나요? (선택)<input name="origin" maxlength="80" placeholder="예: 제주 AI 부트캠프 해커톤"></label>
+    <div class="row2">
+      <label>넘기는 방식<select name="dealType"><option value="sell">판매</option><option value="cofounder">공동창업자 구함</option><option value="open">오픈소스 · 후원</option></select></label>
+      <label>희망 가격대 (원)<div style="display:flex;gap:6px;align-items:center"><input name="priceMin" type="number" min="0" step="10000" placeholder="최소"><span>~</span><input name="priceMax" type="number" min="0" step="10000" placeholder="최대"></div></label>
+    </div>
+    <p class="note" id="priceReason"></p>
+    <div class="row2">
+      <label>판매자 표시 이름<input name="seller" maxlength="30" placeholder="예: 졸업반 개발자"></label>
+      <label>연락처 (구매 문의가 오면 알려줘요)<input name="contact" required maxlength="200" placeholder="이메일 또는 오픈채팅 링크"></label>
+    </div>
+    <input type="hidden" name="url">
+    <div style="display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap">
+      <button type="button" class="btn" id="backBtn">← 주소 다시 입력</button>
+      <button class="btn primary big">🏃 바톤에 올리기</button>
+    </div>
+    <p class="note">올리면 바로 공개돼요. 연락처는 문의한 사람에게만 보여요. 개인정보가 담긴 서비스는 넘기기 전에 이용자 동의와 개인정보 처리를 꼭 확인하세요.</p>
+  </form>
+</main>
+<div id="toast"></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const CATS = ['생산성', '마케팅', '교육', '커뮤니티', '데이터·분석', '커머스', '헬스·웰빙', '개발도구', '지역·로컬', '기타'];
+$('#catSel').innerHTML = CATS.map((c) => `<option>${c}</option>`).join('');
+function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2500); }
+function setStep(n) { [1, 2, 3].forEach((i) => $('#st' + i).classList.toggle('on', i === n)); $('#step1').hidden = n !== 1; $('#step2').hidden = n !== 2; }
+let draftMeta = {};
+
+$('#step1').onsubmit = async (e) => {
+  e.preventDefault();
+  const fd = Object.fromEntries(new FormData(e.target));
+  const btn = $('#genBtn'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> 페이지를 읽고 소개글을 쓰는 중…';
+  try {
+    const r = await fetch('/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fd) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error);
+    const f = $('#step2');
+    f.url.value = fd.url; f.name.value = d.name; f.tagline.value = d.tagline; f.description.value = d.description;
+    f.category.value = d.category; f.tags.value = (d.tags || []).join(', ');
+    f.priceMin.value = d.priceMin || ''; f.priceMax.value = d.priceMax || '';
+    $('#priceReason').textContent = d.priceReason ? `AI 가격 근거: ${d.priceReason}` : '';
+    draftMeta = { priceReason: d.priceReason, nextSteps: d.nextSteps };
+    $('#aiNote').textContent = d.ai ? '✨ AI가 쓴 초안이에요. 틀린 부분은 고쳐 주세요. 과장된 표현은 거래 신뢰를 떨어뜨려요.' : `ℹ️ ${d.note || '기본 초안이에요. 내용을 채워 주세요.'}`;
+    setStep(2); window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (err) { toast(err.message || '다시 시도해 주세요'); }
+  btn.disabled = false; btn.textContent = '✨ AI로 소개글 만들기';
+};
+$('#backBtn').onclick = () => setStep(1);
+$('#step2').onsubmit = async (e) => {
+  e.preventDefault();
+  const fd = Object.fromEntries(new FormData(e.target));
+  fd.tags = fd.tags.split(',').map((s) => s.trim()).filter(Boolean);
+  Object.assign(fd, draftMeta);
+  const btn = e.target.querySelector('.primary'); btn.disabled = true;
+  const r = await fetch('/api/projects', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fd) });
+  const d = await r.json();
+  if (!r.ok) { btn.disabled = false; return toast(d.error || '다시 시도해 주세요'); }
+  setStep(3); location.href = `./project.html?id=${d.id}`;
+};
+</script>
+</body>
+</html>
