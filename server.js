@@ -6,19 +6,23 @@ const { WebSocketServer } = require('ws');
 
 const PORT = process.env.PORT || 3000;
 const CHAT_RADIUS = 30; // 이 거리 안에 있는 사람에게만 채팅이 보임
-const BOUND = 70; // 맵 이동 범위
-const COLORS = [0xff8a65, 0xffd54f, 0x81c784, 0x4fc3f7, 0xba68c8, 0xf06292, 0x90a4ae, 0xa1887f];
+const BOUND = 62; // 이동 가능 반경
+const MAX_PHOTO = 300_000; // 사진 데이터 최대 크기(문자 수)
+const COLORS = ['#ff8a65', '#ffd54f', '#81c784', '#4fc3f7', '#ba68c8', '#f06292', '#4db6ac', '#a1887f'];
 
 const app = express();
 app.use(express.static(path.join(__dirname, 'public')));
 const server = http.createServer(app);
-const wss = new WebSocketServer({ server });
+const wss = new WebSocketServer({ server, maxPayload: 512 * 1024 });
 
 let nextId = 1;
-const players = new Map(); // id -> { id, name, color, x, z, ry, ws }
+const players = new Map(); // id -> { id, name, bio, color, photo, x, z, ry, ws }
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const cleanText = (s, max) => String(s ?? '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, max);
+const validColor = (c) => (typeof c === 'string' && /^#[0-9a-f]{6}$/i.test(c) ? c : null);
+const validPhoto = (p) =>
+  typeof p === 'string' && p.length <= MAX_PHOTO && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(p) ? p : null;
 
 function send(ws, msg) {
   if (ws.readyState === 1) ws.send(JSON.stringify(msg));
@@ -26,16 +30,19 @@ function send(ws, msg) {
 function broadcast(msg, except) {
   for (const p of players.values()) if (p.ws !== except) send(p.ws, msg);
 }
-const publicInfo = (p) => ({ id: p.id, name: p.name, color: p.color, x: p.x, z: p.z, ry: p.ry });
+// 사진 원본은 빼고, 사진이 있는지만 알려줌 (클릭할 때 따로 받음)
+const publicInfo = (p) => ({ id: p.id, name: p.name, bio: p.bio, color: p.color, hasPhoto: !!p.photo, x: p.x, z: p.z, ry: p.ry });
 
 wss.on('connection', (ws) => {
   const id = nextId++;
   const me = {
     id,
-    name: `제주여행자${id}`,
+    name: `여행자${id}`,
+    bio: '',
     color: COLORS[id % COLORS.length],
-    x: (Math.random() - 0.5) * 10,
-    z: 8 + Math.random() * 4,
+    photo: null,
+    x: (Math.random() - 0.5) * 8,
+    z: 10 + Math.random() * 4,
     ry: 0,
     ws,
   };
@@ -47,14 +54,23 @@ wss.on('connection', (ws) => {
   ws.on('message', (raw) => {
     let m;
     try { m = JSON.parse(raw); } catch { return; }
-    if (m.t === 'name') {
+
+    if (m.t === 'profile') {
       me.name = cleanText(m.name, 12) || me.name;
-      broadcast({ t: 'rename', id, name: me.name });
-      send(ws, { t: 'rename', id, name: me.name });
+      me.bio = cleanText(m.bio, 60);
+      me.color = validColor(m.color) || me.color;
+      if (m.photo === null) me.photo = null;
+      else if (m.photo !== undefined) me.photo = validPhoto(m.photo) || me.photo;
+      broadcast({ t: 'profile', player: publicInfo(me) });
+    } else if (m.t === 'getPhoto') {
+      const p = players.get(Number(m.id));
+      send(ws, { t: 'photo', id: Number(m.id), photo: p?.photo || null });
     } else if (m.t === 'move') {
       if (Number.isFinite(m.x) && Number.isFinite(m.z)) {
-        me.x = clamp(m.x, -BOUND, BOUND);
-        me.z = clamp(m.z, -BOUND, BOUND);
+        const d = Math.hypot(m.x, m.z);
+        const k = d > BOUND ? BOUND / d : 1;
+        me.x = m.x * k;
+        me.z = m.z * k;
         me.ry = Number.isFinite(m.ry) ? m.ry : me.ry;
       }
     } else if (m.t === 'chat') {
@@ -77,7 +93,8 @@ wss.on('connection', (ws) => {
 setInterval(() => {
   if (!players.size) return;
   const state = [...players.values()].map((p) => [p.id, +p.x.toFixed(2), +p.z.toFixed(2), +p.ry.toFixed(2)]);
-  for (const p of players.values()) send(p.ws, { t: 'state', s: state });
+  const msg = JSON.stringify({ t: 'state', s: state });
+  for (const p of players.values()) if (p.ws.readyState === 1) p.ws.send(msg);
 }, 100);
 
 server.listen(PORT, () => console.log(`제주 월드 실행 중: http://localhost:${PORT}`));

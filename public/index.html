@@ -4,27 +4,57 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>제주 월드 - 성산일출봉 광장</title>
-<style>
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #87ceeb; font-family: -apple-system, "Noto Sans KR", sans-serif; }
-  canvas { display: block; touch-action: none; }
-  #hud { position: fixed; top: 10px; left: 10px; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.6); font-size: 14px; pointer-events: none; }
-  #hud b { font-size: 16px; }
-  #chatlog { position: fixed; left: 10px; bottom: 64px; width: min(420px, calc(100vw - 20px)); max-height: 30vh; overflow: hidden;
-    display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; pointer-events: none; }
-  .msg { background: rgba(0,0,0,.45); color: #fff; padding: 4px 10px; border-radius: 10px; font-size: 14px; width: fit-content; max-width: 100%; word-break: break-all; }
-  .msg .n { color: #ffd54f; margin-right: 6px; font-weight: 600; }
-  .msg.sys { background: rgba(30,90,160,.55); }
-  #bar { position: fixed; left: 10px; bottom: 10px; width: min(420px, calc(100vw - 20px)); display: flex; gap: 6px; }
-  #bar input { flex: 1; min-width: 0; padding: 10px 12px; border-radius: 10px; border: 0; font-size: 16px; }
-  #bar button { padding: 10px 14px; border-radius: 10px; border: 0; background: #ff7043; color: #fff; font-size: 15px; font-weight: 700; }
-  #nameBtn { position: fixed; top: 10px; right: 10px; padding: 8px 12px; border-radius: 10px; border: 0; background: rgba(0,0,0,.45); color: #fff; font-size: 13px; }
-</style>
+<link rel="stylesheet" href="./style.css">
 </head>
 <body>
-<div id="hud"><b>🌋 제주 월드 · 성산일출봉 광장</b><br><span id="count">접속 중…</span><br>이동: WASD/방향키 또는 바닥 터치·클릭</div>
-<button id="nameBtn">이름 바꾸기</button>
+<!-- 상단 정보 -->
+<div id="hud">
+  <div class="title">🌋 제주 월드 <span>성산일출봉 광장</span></div>
+  <div id="count">연결 중…</div>
+</div>
+<div id="topRight">
+  <button id="myProfileBtn">내 프로필</button>
+</div>
+<div id="help">이동: 바닥 터치 · WASD/방향키 &nbsp;|&nbsp; 사람을 누르면 프로필</div>
+
+<!-- 채팅 -->
 <div id="chatlog"></div>
-<form id="bar"><input id="chatInput" maxlength="120" placeholder="근처 사람들에게 말하기…" autocomplete="off"><button>보내기</button></form>
+<form id="bar"><input id="chatInput" maxlength="120" placeholder="근처 사람들에게 말하기…" autocomplete="off" enterkeyhint="send"><button>보내기</button></form>
+<div id="toast"></div>
+
+<!-- 입장 / 내 프로필 편집 -->
+<div id="joinModal" class="modal show">
+  <div class="card">
+    <div class="hero">🌅</div>
+    <h1>제주 월드에 오신 걸 환영해요</h1>
+    <p class="sub">설치 없이 바로, 성산일출봉 광장에서 사람들을 만나보세요.</p>
+    <label class="photoPick">
+      <input id="photoInput" type="file" accept="image/*" hidden>
+      <div id="photoPreview"><span>📷<br>사진 추가<br><small>(선택)</small></span></div>
+    </label>
+    <p class="note">사진은 다른 사람이 나를 눌렀을 때 보여요. 얼굴 대신 캐릭터 그림이나 풍경 사진도 좋아요.</p>
+    <button id="photoRemove" type="button" class="link" hidden>사진 빼기</button>
+    <input id="nameInput" maxlength="12" placeholder="닉네임 (최대 12자)">
+    <input id="bioInput" maxlength="60" placeholder="한 줄 소개 (예: 서울에서 온 한달살기 3일차!)">
+    <div id="colors"></div>
+    <button id="joinBtn" class="primary">광장 입장하기</button>
+  </div>
+</div>
+
+<!-- 다른 사람 프로필 카드 -->
+<div id="profileModal" class="modal">
+  <div class="card">
+    <button class="close" data-close>✕</button>
+    <div id="pPhoto"></div>
+    <h2 id="pName"></h2>
+    <p id="pBio"></p>
+    <div class="row">
+      <button id="waveBtn" class="primary">👋 인사하기</button>
+      <button id="walkBtn">🚶 옆으로 가기</button>
+    </div>
+  </div>
+</div>
+
 <script type="importmap">{ "imports": { "three": "./vendor/three.module.js" } }</script>
 <script type="module" src="./main.js"></script>
 </body>
