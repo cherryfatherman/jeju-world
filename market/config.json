@@ -1,18 +1,18 @@
 {
  "site": {
   "name": "바톤",
-  "slogan": "해커톤의 바통을 다음 주자에게",
+  "slogan": "올리기 귀찮은 것, AI가 30초 만에",
   "defaultTheme": "auto",
   "threads": "https://www.threads.net/",
   "openchat": "#",
   "showSamples": true
  },
  "banner": {
-  "kicker": "🍊 제주에서 시작한 프로젝트 장터",
-  "title": "해커톤이 끝나도\n프로젝트는 [끝나지 않게]",
-  "sub": "AI로 만든 서비스와 해커톤 결과물을 이어갈 [다음 주인]에게 넘기는 곳. 주소 하나면 AI가 30초 만에 판매 글을 써 드려요.",
-  "primaryLabel": "🏃 내 프로젝트 넘기기",
-  "secondaryLabel": "👀 사고 싶어요 알림"
+  "kicker": "🍊 제주 생활 장터 · 집 · 물건 · 프로젝트",
+  "title": "사진만 올리면\n글은 [AI가 써 드려요]",
+  "sub": "방을 내놓을 때, 안 쓰는 물건을 팔 때, 해커톤 프로젝트를 넘길 때. 사진·서류·주소만 올리면 바톤의 AI가 [30초 만에] 정리된 글을 만들어요.",
+  "primaryLabel": "✨ 30초 만에 올리기",
+  "secondaryLabel": "👀 새 글 알림 받기"
  },
  "ticker": {
   "enabled": true,
@@ -22,25 +22,123 @@
   "url": ""
  },
  "nav": [
-  { "label": "홈", "href": "./", "key": "home" },
-  { "label": "장터", "href": "./#projects", "key": "market" },
-  { "label": "수상작 도감", "href": "./winners.html", "key": "winners", "badge": "NEW" },
-  { "label": "해커톤 일정", "href": "./#hackathons", "key": "hackathons" },
-  { "label": "판매 등록", "href": "./sell.html", "key": "sell", "badge": "AI" }
+  {
+   "label": "홈",
+   "href": "./",
+   "key": "home"
+  },
+  {
+   "label": "장터",
+   "href": "./market.html",
+   "key": "market"
+  },
+  {
+   "label": "제주 생활",
+   "href": "./jeju.html",
+   "key": "jeju",
+   "badge": "NEW"
+  },
+  {
+   "label": "수상작 도감",
+   "href": "./winners.html",
+   "key": "winners"
+  },
+  {
+   "label": "올리기",
+   "href": "./sell.html",
+   "key": "sell",
+   "badge": "AI"
+  }
  ],
  "tools": [
-  { "icon": "🧩", "label": "프로젝트 장터", "sub": "다음 주인 찾는 중", "href": "./#projects" },
-  { "icon": "✨", "label": "AI 판매 등록", "sub": "주소 하나로 30초", "href": "./sell.html", "badge": "AI", "hot": true },
-  { "icon": "🏆", "label": "수상작 도감", "sub": "해외 해커톤 수상작", "href": "./winners.html", "badge": "NEW" },
-  { "icon": "📅", "label": "해커톤 일정", "sub": "자동 수집", "href": "./#hackathons" },
-  { "icon": "🧮", "label": "가격 계산기", "sub": "내 프로젝트 가치는?", "href": "", "badge": "곧", "soon": true },
-  { "icon": "✅", "label": "인수 체크리스트", "sub": "넘기기 전 확인", "href": "", "badge": "곧", "soon": true }
+  {
+   "icon": "🏠",
+   "label": "집 올리기",
+   "sub": "서류 사진 → 면적·층 자동",
+   "href": "./sell.html?type=home",
+   "badge": "AI",
+   "hot": true
+  },
+  {
+   "icon": "📦",
+   "label": "물건 올리기",
+   "sub": "사진 → 제목·가격 자동",
+   "href": "./sell.html?type=item",
+   "badge": "AI"
+  },
+  {
+   "icon": "🧩",
+   "label": "프로젝트 넘기기",
+   "sub": "해커톤 결과물의 다음 주인",
+   "href": "./sell.html?type=project"
+  },
+  {
+   "icon": "🗑️",
+   "label": "이거 어디 버려요?",
+   "sub": "제주 분리배출 AI",
+   "href": "./jeju.html#waste",
+   "badge": "NEW"
+  },
+  {
+   "icon": "🏆",
+   "label": "수상작 도감",
+   "sub": "해외 해커톤 수상작 289",
+   "href": "./winners.html"
+  },
+  {
+   "icon": "📅",
+   "label": "해커톤 일정",
+   "sub": "자동 수집",
+   "href": "./market.html#hackathons"
+  },
+  {
+   "icon": "🌦️",
+   "label": "오늘의 제주",
+   "sub": "날씨·공항·배출 요일 브리핑",
+   "href": "",
+   "badge": "곧",
+   "soon": true
+  }
  ],
  "colors": {
   "accent": "#ff7a1a",
   "accent2": "#f5b942"
  },
  "footer": {
-  "note": "해커톤 일정 출처: Devpost 공개 API · 수상작 도감 출처: Devpost · \"예시\" 표시 프로젝트는 시연용 가상 데이터예요"
+  "note": "해커톤 일정·수상작 도감 출처: Devpost · \"예시\" 표시 글은 시연용 가상 데이터 · AI가 쓴 글과 추출 정보는 원본을 꼭 확인하세요"
+ },
+ "jeju": {
+  "area": "제주시",
+  "waste": {
+   "verified": false,
+   "source": "제주시 클린하우스 요일별 배출제 (관리자에서 공식 안내 기준으로 확인·수정하세요)",
+   "days": {
+    "월": "플라스틱류",
+    "화": "종이류, 불연성 쓰레기(도자기·유리 파편 등)",
+    "수": "캔·고철류, 플라스틱류",
+    "목": "스티로폼, 비닐류",
+    "금": "플라스틱류",
+    "토": "병류, 종이류, 불연성 쓰레기",
+    "일": "플라스틱류, 비닐류"
+   },
+   "notes": "종량제봉투(일반·음식물)는 매일 배출 가능. 배출 시간은 보통 15시~다음 날 04시. 재활용도움센터는 요일 구분 없이 배출 가능. 대형폐기물은 읍면동 주민센터 또는 앱으로 신고 후 스티커 부착."
+  },
+  "tips": [
+   {
+    "title": "대형 폐기물 버리기",
+    "body": "읍면동 주민센터 방문 또는 '제주도 대형폐기물 신고' 앱으로 신고 → 수수료 납부 → 스티커 부착 후 지정 장소 배출.",
+    "check": true
+   },
+   {
+    "title": "재활용도움센터",
+    "body": "요일 상관없이 재활용품을 버릴 수 있는 곳. 종이팩·건전지를 가져가면 종량제봉투로 바꿔 주는 곳도 있어요.",
+    "check": true
+   },
+   {
+    "title": "한달살기 집 구하기",
+    "body": "오일장신문, 제주 한달살기 카페, 바톤 집 장터에서 찾고, 계약 전 건축물대장으로 용도·불법 여부를 꼭 확인하세요.",
+    "check": false
+   }
+  ]
  }
 }

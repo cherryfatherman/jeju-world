@@ -3,94 +3,186 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>판매 등록 · 바톤</title>
+<title>올리기 · 바톤</title>
 <link rel="stylesheet" href="./style.css">
 <script src="./app.js"></script>
 </head>
 <body>
-<main class="wrap" style="max-width:720px">
-  <div class="page-title">
-    <h1>주소 하나면 <em>30초</em>면 돼요</h1>
-    <p>서비스 주소를 넣으면 AI가 페이지를 읽고 소개글, 분류, 태그, 가격대까지 써 드려요. 확인하고 고치기만 하면 끝이에요.</p>
+<main class="wrap" style="max-width:760px">
+  <div class="page-title"><h1><em>30초</em>면 돼요</h1><p>사진·서류·주소만 올리면 AI가 글을 써 드려요. 확인하고 고치기만 하면 끝.</p></div>
+  <div class="typetabs" id="typetabs">
+    <button data-t="home">🏠 집</button><button data-t="item">📦 물건</button><button data-t="project">🧩 프로젝트</button>
   </div>
-  <div class="steps"><span class="on" id="st1">1 주소 입력</span><span id="st2">2 AI 초안 확인</span><span id="st3">3 게시</span></div>
+  <div class="steps"><span class="on" id="st1">1 올리기</span><span id="st2">2 AI 초안 확인</span><span id="st3">3 게시</span></div>
 
   <!-- 1단계 -->
   <form class="form" id="step1">
-    <label>서비스 주소 (배포된 사이트, 데모, GitHub 등)<input name="url" type="url" required placeholder="https://..." autofocus></label>
-    <label>판매자 메모 (선택) — AI에게 알려줄 것<textarea name="hint" style="min-height:90px" placeholder="예: 2026 가을 교내 해커톤 우수상. 가입자 140명. 졸업해서 운영이 어려워요."></textarea></label>
-    <button class="btn primary big" id="genBtn">✨ AI로 소개글 만들기</button>
-    <p class="note">페이지를 읽지 못해도 메모를 바탕으로 초안을 만들어요. 실제 서비스가 아닌 주소는 올리지 마세요.</p>
+    <!-- 집 -->
+    <div data-for="home">
+      <label>집 사진 (최대 6장)<input type="file" accept="image/*" multiple id="homePhotos"></label>
+      <div class="thumbs" id="homeThumbs"></div>
+      <label style="margin-top:10px">서류 사진 (건축물대장·등기부등본, 최대 3장) <span class="help">AI가 면적·층·용도·준공연도를 읽어요. 분석에만 쓰고 저장하지 않아요.</span><input type="file" accept="image/*" multiple id="homeDocs"></label>
+      <div class="thumbs" id="docThumbs"></div>
+      <p class="note">⚠️ 소유자 이름·주민등록번호·상세 번지는 <b>가리고</b> 올려 주세요.</p>
+    </div>
+    <!-- 물건 -->
+    <div data-for="item" hidden>
+      <label>물건 사진 (최대 6장)<input type="file" accept="image/*" multiple id="itemPhotos"></label>
+      <div class="thumbs" id="itemThumbs"></div>
+    </div>
+    <!-- 프로젝트 -->
+    <div data-for="project" hidden>
+      <label>서비스 주소 (배포된 사이트, 데모, GitHub 등)<input name="url" type="url" placeholder="https://..."></label>
+    </div>
+    <label>메모 (선택) — AI에게 알려줄 것<textarea name="hint" style="min-height:80px" id="hint"></textarea></label>
+    <button class="btn primary big" id="genBtn">✨ AI로 글 만들기</button>
+    <p class="note" id="hintNote"></p>
   </form>
 
   <!-- 2단계 -->
   <form class="form" id="step2" hidden>
     <div class="ai-box" id="aiNote"></div>
-    <label>이름<input name="name" required maxlength="40"></label>
+    <div class="thumbs" id="previewThumbs"></div>
+    <label>제목<input name="name" required maxlength="40"></label>
     <label>한 줄 소개<input name="tagline" required maxlength="80"></label>
     <label>소개글<textarea name="description" required></textarea></label>
-    <div class="row2">
-      <label>분류<select name="category" id="catSel"></select></label>
-      <label>단계<select name="stage"><option value="idea">아이디어</option><option value="demo" selected>데모</option><option value="users">사용자 있음</option><option value="revenue">매출 있음</option></select></label>
+
+    <!-- 집 전용 -->
+    <div data-for="home">
+      <p class="note" id="extractNote"></p>
+      <div class="row2">
+        <label>위치 (읍면동)<input name="dong" placeholder="제주시 아라일동"></label>
+        <label>건물 용도<input name="use" placeholder="다가구주택"></label>
+      </div>
+      <div class="row2">
+        <label>면적 (㎡) <span class="help" id="pyeong"></span><input name="areaM2" type="number" step="0.1" min="0" id="areaM2"></label>
+        <label>층<input name="floor" placeholder="2/3층"></label>
+      </div>
+      <div class="row2">
+        <label>준공연도<input name="builtYear" type="number" min="1900" max="2100"></label>
+        <label>방·욕실<input name="rooms" placeholder="2룸 1욕실"></label>
+      </div>
+      <label>옵션 (쉼표로)<input name="options" placeholder="에어컨, 세탁기, 붙박이장"></label>
+      <div class="row2">
+        <label>거래 종류<select name="homeDeal"><option>월세</option><option>전세</option><option>매매</option><option value="단기">단기(한달살기)</option><option>미정</option></select></label>
+        <label>보증금 / 월세 또는 매매가 (원)<div style="display:flex;gap:6px;align-items:center"><input name="deposit" type="number" min="0" step="100000" placeholder="보증금"><span>/</span><input name="monthly" type="number" min="0" step="10000" placeholder="월세"></div></label>
+      </div>
+      <input type="hidden" name="extractedFrom">
+      <label style="flex-direction:row;align-items:flex-start;gap:8px;font-size:14px;color:var(--ink)"><input type="checkbox" name="ownerConfirmed" style="width:auto;margin-top:4px" required><span>저는 이 집의 <b>집주인 본인</b> 또는 <b>공인중개사</b>이며, 등록 정보가 사실임을 확인합니다. (중개업 등록 없이 타인 매물을 올리면 법에 어긋나요)</span></label>
+      <label>역할<select name="ownerRole"><option value="owner">집주인 본인</option><option value="agent">공인중개사</option></select></label>
     </div>
-    <label>태그 (쉼표로 구분)<input name="tags" placeholder="AI, 대학생, Next.js"></label>
-    <label>어떤 해커톤·계기로 만들었나요? (선택)<input name="origin" maxlength="80" placeholder="예: 제주 AI 부트캠프 해커톤"></label>
-    <div class="row2">
+    <!-- 물건 전용 -->
+    <div data-for="item" hidden>
+      <div class="row2">
+        <label>분류<select name="category" id="itemCat"></select></label>
+        <label>상태<select name="condition"><option>새상품</option><option>거의 새것</option><option>사용감 있음</option><option>고장·부품용</option></select></label>
+      </div>
+    </div>
+    <!-- 프로젝트 전용 -->
+    <div data-for="project" hidden>
+      <div class="row2">
+        <label>분류<select name="category" id="projCat"></select></label>
+        <label>단계<select name="stage"><option value="idea">아이디어</option><option value="demo" selected>데모</option><option value="users">사용자 있음</option><option value="revenue">매출 있음</option></select></label>
+      </div>
+      <label>어떤 해커톤·계기로 만들었나요? (선택)<input name="origin" maxlength="80" placeholder="예: 제주 AI 부트캠프 해커톤"></label>
       <label>넘기는 방식<select name="dealType"><option value="sell">판매</option><option value="cofounder">공동창업자 구함</option><option value="open">오픈소스 · 후원</option></select></label>
-      <label>희망 가격대 (원)<div style="display:flex;gap:6px;align-items:center"><input name="priceMin" type="number" min="0" step="10000" placeholder="최소"><span>~</span><input name="priceMax" type="number" min="0" step="10000" placeholder="최대"></div></label>
     </div>
-    <p class="note" id="priceReason"></p>
+
+    <div data-for="item project">
+      <label>희망 가격대 (원)<div style="display:flex;gap:6px;align-items:center"><input name="priceMin" type="number" min="0" step="1000" placeholder="최소"><span>~</span><input name="priceMax" type="number" min="0" step="1000" placeholder="최대"></div></label>
+      <p class="note" id="priceReason"></p>
+    </div>
+    <label>태그 (쉼표로)<input name="tags" placeholder="아라동, 투룸, 단기가능"></label>
     <div class="row2">
-      <label>판매자 표시 이름<input name="seller" maxlength="30" placeholder="예: 졸업반 개발자"></label>
-      <label>연락처 (구매 문의가 오면 알려줘요)<input name="contact" required maxlength="200" placeholder="이메일 또는 오픈채팅 링크"></label>
+      <label>표시 이름<input name="seller" maxlength="30" placeholder="예: 집주인 / 과수원집 딸"></label>
+      <label>연락처 (문의가 오면 알려줘요)<input name="contact" required maxlength="200" placeholder="이메일 또는 오픈채팅 링크"></label>
     </div>
-    <input type="hidden" name="url">
-    <div class="actions" style="justify-content:space-between">
-      <button type="button" class="btn" id="backBtn">← 주소 다시 입력</button>
-      <button class="btn primary big">🏃 바톤에 올리기</button>
-    </div>
-    <p class="note">올리면 바로 공개돼요. 연락처는 문의한 사람에게만 보여요. 개인정보가 담긴 서비스는 넘기기 전에 이용자 동의와 개인정보 처리를 꼭 확인하세요.</p>
+    <input type="hidden" name="url"><input type="hidden" name="type">
+    <div class="actions" style="justify-content:space-between"><button type="button" class="btn" id="backBtn">← 다시 올리기</button><button class="btn primary big">🏃 바톤에 올리기</button></div>
+    <p class="note">올리면 바로 공개돼요. 연락처는 문의한 사람에게만 보여요. AI가 쓴 내용은 꼭 확인하고 고쳐 주세요.</p>
   </form>
 </main>
 
 <script>
-mountShell({ active: 'sell', banner: false });
-const CATS = ['생산성', '마케팅', '교육', '커뮤니티', '데이터·분석', '커머스', '헬스·웰빙', '개발도구', '지역·로컬', '기타'];
-$('#catSel').innerHTML = CATS.map((c) => `<option>${c}</option>`).join('');
-function setStep(n) { [1, 2, 3].forEach((i) => $('#st' + i).classList.toggle('on', i === n)); $('#step1').hidden = n !== 1; $('#step2').hidden = n !== 2; }
+const PROJ_CATS = ['생산성', '마케팅', '교육', '커뮤니티', '데이터·분석', '커머스', '헬스·웰빙', '개발도구', '지역·로컬', '기타'];
+const ITEM_CATS = ['가전·디지털', '가구·인테리어', '생활·주방', '농수산물', '의류·잡화', '취미·도서', '유아·반려', '차량·레저', '기타'];
+$('#projCat').innerHTML = PROJ_CATS.map((c) => `<option>${c}</option>`).join('');
+$('#itemCat').innerHTML = ITEM_CATS.map((c) => `<option>${c}</option>`).join('');
+const HINTS = { home: '예: 제주대 도보 10분, 2026년 2월까지 단기 가능. 보증금 300에 월 45.', item: '예: 어제 딴 노지 감귤 10kg. 아라동 직거래.', project: '예: 2026 가을 교내 해커톤 우수상. 가입자 140명. 졸업해서 운영이 어려워요.' };
+const NOTES = { home: '사진이 없어도 서류나 메모만으로 초안을 만들어요. 집주인 본인 또는 공인중개사만 올릴 수 있어요.', item: '사진 1장이면 충분해요. 보이는 그대로 설명해요.', project: '페이지를 읽지 못해도 메모를 바탕으로 초안을 만들어요.' };
+let type = new URLSearchParams(location.search).get('type'); if (!['home', 'item', 'project'].includes(type)) type = 'home';
+const photos = { home: [], item: [] }, docs = [];
 let draftMeta = {};
+
+function setType(t) {
+  type = t; history.replaceState(null, '', `?type=${t}`);
+  $$('#typetabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === t));
+  $$('[data-for]').forEach((el) => { el.hidden = !el.dataset.for.split(' ').includes(t); el.querySelectorAll('[required]').forEach((i) => { i.disabled = el.hidden; }); });
+  $('#hint').placeholder = HINTS[t]; $('#hintNote').textContent = NOTES[t];
+  $('#step1 [name=url]').required = t === 'project';
+}
+$$('#typetabs button').forEach((b) => b.onclick = () => setType(b.dataset.t));
+function setStep(n) { [1, 2, 3].forEach((i) => $('#st' + i).classList.toggle('on', i === n)); $('#step1').hidden = n !== 1; $('#step2').hidden = n !== 2; }
+
+// 사진 줄이기 (긴 변 1024px, JPEG) → 업로드 부담을 줄인다
+function shrink(file, max = 1024) {
+  return new Promise((res, rej) => { const img = new Image(); img.onload = () => { const k = Math.min(1, max / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(img.src); res(c.toDataURL('image/jpeg', 0.82)); }; img.onerror = rej; img.src = URL.createObjectURL(file); });
+}
+function thumbs(el, arr, removable = true) {
+  el.replaceChildren(...arr.map((src, i) => { const d = document.createElement('div'); d.className = 'thumb'; d.innerHTML = `<img src="${src}" alt="">${removable ? '<button type="button">✕</button>' : ''}`; if (removable) d.querySelector('button').onclick = () => { arr.splice(i, 1); thumbs(el, arr); }; return d; }));
+}
+async function pick(input, arr, el, max) {
+  for (const f of [...input.files].slice(0, max - arr.length)) { try { arr.push(await shrink(f, el === $('#docThumbs') ? 1600 : 1024)); } catch { toast('사진을 읽지 못했어요'); } }
+  input.value = ''; thumbs(el, arr);
+}
+$('#homePhotos').onchange = (e) => pick(e.target, photos.home, $('#homeThumbs'), 6);
+$('#homeDocs').onchange = (e) => pick(e.target, docs, $('#docThumbs'), 3);
+$('#itemPhotos').onchange = (e) => pick(e.target, photos.item, $('#itemThumbs'), 6);
+$('#areaM2').oninput = (e) => { const v = Number(e.target.value); $('#pyeong').textContent = v ? `≈ ${(v / 3.3058).toFixed(1)}평` : ''; };
 
 $('#step1').onsubmit = async (e) => {
   e.preventDefault();
-  const fd = Object.fromEntries(new FormData(e.target));
-  const btn = $('#genBtn'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> 페이지를 읽고 소개글을 쓰는 중…';
+  const hint = $('#hint').value.trim();
+  const body = { type, hint };
+  if (type === 'project') body.url = $('#step1 [name=url]').value.trim();
+  if (type === 'home') { body.photos = photos.home; body.docs = docs; if (!photos.home.length && !docs.length && !hint) return toast('사진이나 서류, 메모 중 하나는 올려 주세요'); }
+  if (type === 'item') { body.photos = photos.item; if (!photos.item.length && !hint) return toast('사진 한 장은 올려 주세요'); }
+  const btn = $('#genBtn'); btn.disabled = true; btn.innerHTML = `<span class="spinner"></span> ${type === 'home' ? '서류와 사진을 읽는 중…' : type === 'item' ? '사진을 보는 중…' : '페이지를 읽는 중…'}`;
   try {
-    const r = await fetch('/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fd) });
-    const d = await r.json();
-    if (!r.ok) throw new Error(d.error);
+    const d = await api('/api/generate', body);
     const f = $('#step2');
-    f.url.value = fd.url; f.name.value = d.name; f.tagline.value = d.tagline; f.description.value = d.description;
-    f.category.value = d.category; f.tags.value = (d.tags || []).join(', ');
-    f.priceMin.value = d.priceMin || ''; f.priceMax.value = d.priceMax || '';
-    $('#priceReason').textContent = d.priceReason ? `AI 가격 근거: ${d.priceReason}` : '';
+    f.type.value = type; f.url.value = body.url || '';
+    f.name.value = d.name || ''; f.tagline.value = d.tagline || ''; f.description.value = d.description || '';
+    f.tags.value = (d.tags || []).join(', ');
+    thumbs($('#previewThumbs'), type === 'project' ? [] : photos[type], false);
+    if (type === 'home') {
+      f.dong.value = d.dong || ''; f.use.value = d.use || ''; f.areaM2.value = d.areaM2 || ''; $('#areaM2').dispatchEvent(new Event('input'));
+      f.floor.value = d.floor || ''; f.builtYear.value = d.builtYear || ''; f.rooms.value = d.rooms || ''; f.options.value = (d.options || []).join(', ');
+      f.homeDeal.value = ['매매', '전세', '월세', '단기'].includes(d.dealType) ? d.dealType : '월세'; f.extractedFrom.value = d.extractedFrom || '';
+      $('#extractNote').textContent = d.ai ? (d.extractedFrom ? `✨ ${d.extractedFrom}에서 읽은 값이에요 (신뢰도 ${d.confidence}). 원본과 꼭 대조해 주세요.` : '✨ 서류를 읽지 못했어요. 면적·층·용도를 직접 입력해 주세요.') : '';
+    }
+    if (type === 'item') { f.category.value = d.category || '기타'; f.condition.value = d.condition || '사용감 있음'; }
+    if (type === 'project') { $('#projCat').value = d.category || '기타'; }
+    if (type !== 'home') { f.priceMin.value = d.priceMin || ''; f.priceMax.value = d.priceMax || ''; $('#priceReason').textContent = d.priceReason ? `AI 가격 근거: ${d.priceReason}` : ''; }
     draftMeta = { priceReason: d.priceReason, nextSteps: d.nextSteps };
     $('#aiNote').textContent = d.ai ? '✨ AI가 쓴 초안이에요. 틀린 부분은 고쳐 주세요. 과장된 표현은 거래 신뢰를 떨어뜨려요.' : `ℹ️ ${d.note || '기본 초안이에요. 내용을 채워 주세요.'}`;
     setStep(2); window.scrollTo({ top: 0, behavior: 'smooth' });
-  } catch (err) { toast(err.message || '다시 시도해 주세요'); }
-  btn.disabled = false; btn.textContent = '✨ AI로 소개글 만들기';
+  } catch (err) { toast(err.message); }
+  btn.disabled = false; btn.textContent = '✨ AI로 글 만들기';
 };
 $('#backBtn').onclick = () => setStep(1);
 $('#step2').onsubmit = async (e) => {
   e.preventDefault();
   const fd = Object.fromEntries(new FormData(e.target));
-  fd.tags = fd.tags.split(',').map((s) => s.trim()).filter(Boolean);
+  fd.tags = (fd.tags || '').split(',').map((s) => s.trim()).filter(Boolean);
+  fd.photos = type === 'project' ? [] : photos[type];
+  if (type === 'home') { fd.ownerConfirmed = !!e.target.ownerConfirmed.checked; fd.category = '집'; fd.stage = 'users'; fd.dealType = 'sell'; }
+  if (type === 'item') { fd.stage = 'users'; fd.dealType = 'sell'; }
   Object.assign(fd, draftMeta);
   const btn = e.target.querySelector('.primary'); btn.disabled = true;
-  const r = await fetch('/api/projects', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fd) });
-  const d = await r.json();
-  if (!r.ok) { btn.disabled = false; return toast(d.error || '다시 시도해 주세요'); }
-  setStep(3); location.href = `./project.html?id=${d.id}`;
+  try { const d = await api('/api/projects', fd); setStep(3); location.href = `./project.html?id=${d.id}`; } catch (err) { btn.disabled = false; toast(err.message); }
 };
+mountShell({ active: 'sell', banner: false }).then(() => setType(type));
 </script>
 </body>
 </html>

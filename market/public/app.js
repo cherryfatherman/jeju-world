@@ -7,6 +7,26 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 // 설정 문구의 [강조]를 색 글자로, 줄바꿈(\n)을 <br>로
 const rich = (s) => esc(s).replace(/\[([^\]]+)\]/g, '<em>$1</em>').replace(/\n/g, '<br>');
 const STAGE = { idea: '아이디어', demo: '데모', users: '사용자 있음', revenue: '매출 있음' };
+const TYPE_ICON = { home: '🏠', item: '📦', project: '🧩' };
+const TYPE_LABEL = { home: '집', item: '물건', project: '프로젝트' };
+// 장터 카드 (집·물건·프로젝트 공통)
+function listingCard(p) {
+  const a = document.createElement('a'); a.className = 'card'; a.href = `./project.html?id=${encodeURIComponent(p.id)}`;
+  const photo = (p.photos || [])[0];
+  let price = '', facts = '';
+  if (p.type === 'home' && p.home) {
+    const h = p.home;
+    price = h.deal === '매매' || h.deal === '전세' ? `${h.deal} ${h.deposit ? won(h.deposit) : '협의'}` : h.monthly ? `${h.deposit ? won(h.deposit) + ' / ' : ''}월 ${won(h.monthly)}` : '가격 협의';
+    facts = `<div class="facts-mini">${h.areaM2 ? `<span><b>${h.areaM2}㎡</b> ≈${(h.areaM2 / 3.3058).toFixed(0)}평</span>` : ''}${h.rooms ? `<span>${esc(h.rooms)}</span>` : ''}${h.floor ? `<span>${esc(h.floor)}</span>` : ''}${h.dong ? `<span>📍 ${esc(h.dong)}</span>` : ''}</div>`;
+  } else if (p.type === 'item') {
+    price = p.priceMax ? (p.priceMin && p.priceMin !== p.priceMax ? `${won(p.priceMin)} ~ ${won(p.priceMax)}` : won(p.priceMax)) : '가격 협의';
+  } else price = priceText(p);
+  a.innerHTML = `${photo ? `<img class="photo" src="${photo}" alt="">` : `<div class="nophoto">${TYPE_ICON[p.type] || '🧩'}</div>`}
+    <div class="meta"><span class="badge">${TYPE_ICON[p.type] || ''} ${TYPE_LABEL[p.type] || ''}</span>${p.type === 'project' ? `<span class="badge stage-${esc(p.stage)}">${STAGE[p.stage] || ''}</span>` : ''}${p.category && p.category !== TYPE_LABEL[p.type] ? `<span class="badge">${esc(p.category)}</span>` : ''}${p.condition ? `<span class="badge">${esc(p.condition)}</span>` : ''}${p.sample ? '<span class="badge sample">예시</span>' : ''}</div>
+    <h3>${esc(p.name)}</h3><p class="tag">${esc(p.tagline)}</p>${facts}
+    <div class="foot"><span class="price">${esc(price)}</span><span class="heart">♥ ${p.interest || 0}${p.comments ? ` · 💬 ${p.comments}` : ''}${p.origin ? ` · ${esc(p.origin)}` : ''}</span></div>`;
+  return a;
+}
 let CONFIG = null;
 
 async function api(path, body, method) {

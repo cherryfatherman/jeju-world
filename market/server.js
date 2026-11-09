@@ -3,7 +3,7 @@
 const path = require('path');
 const fs = require('fs');
 const express = require('express');
-const { generateListing, generateThreadsPosts } = require('./lib/ai');
+const { generateListing, generateHome, generateItem, answerWaste, generateThreadsPosts } = require('./lib/ai');
 const { fetchHackathons } = require('./lib/hackathons');
 
 const PORT = process.env.PORT || 4000;
@@ -13,6 +13,8 @@ const load = (n, fallback) => { try { return JSON.parse(fs.readFileSync(file(n),
 const save = (n, v) => fs.writeFileSync(file(n), JSON.stringify(v, null, 1));
 const clean = (s, max) => String(s ?? '').replace(/[\u0000-\u0008\u000b-\u001f]/g, '').trim().slice(0, max); // 줄바꿈(\n)·탭은 남긴다
 const isUrl = (s) => /^https?:\/\/[^\s]+$/i.test(s);
+const isImg = (s) => typeof s === 'string' && s.length < 2_500_000 && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(s);
+const TYPES = ['project', 'home', 'item'];
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
 const CONFIG_FILE = path.join(__dirname, 'config.json');
@@ -21,7 +23,7 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'baton1234'; // 배포할 �
 const adminOnly = (req, res, next) => (req.get('x-admin-password') === ADMIN_PASSWORD ? next() : res.status(401).json({ error: '관리자 비밀번호가 틀려요.' }));
 
 const app = express();
-app.use(express.json({ limit: '200kb' }));
+app.use(express.json({ limit: '25mb' })); // 사진 업로드(base64) 때문에 넉넉히
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ---- 사이트 설정 (관리자 화면에서 수정) ----
@@ -49,7 +51,8 @@ app.get('/api/admin/inbox', adminOnly, (req, res) => res.json({ inquiries: load(
 // ---- 프로젝트 목록 ----
 app.get('/api/projects', (req, res) => {
   const showSamples = readConfig().site.showSamples !== false;
-  const list = load('projects.json', []).filter((p) => p.status === 'live' && (showSamples || !p.sample));
+  let list = load('projects.json', []).filter((p) => p.status === 'live' && (showSamples || !p.sample));
+  if (TYPES.includes(req.query.type)) list = list.filter((p) => (p.type || 'project') === req.query.type);
   res.json(list.map(publicProject));
 });
 app.get('/api/projects/:id', (req, res) => {
@@ -59,17 +62,21 @@ app.get('/api/projects/:id', (req, res) => {
 });
 function publicProject(p) {
   const { contact, ...rest } = p; // 판매자 연락처는 공개 API에서 뺀다
-  return rest;
+  return { type: 'project', ...rest };
 }
 
 // ---- AI 소개글 생성 (판매 등록 1단계) ----
 app.post('/api/generate', async (req, res) => {
-  const url = clean(req.body.url, 300);
+  const type = TYPES.includes(req.body.type) ? req.body.type : 'project';
   const hint = clean(req.body.hint, 500);
-  if (!isUrl(url)) return res.status(400).json({ error: '주소 형식이 맞지 않아요. https:// 로 시작해야 해요.' });
+  const photos = (Array.isArray(req.body.photos) ? req.body.photos : []).filter(isImg).slice(0, 6);
+  const docs = (Array.isArray(req.body.docs) ? req.body.docs : []).filter(isImg).slice(0, 3); // 서류는 분석에만 쓰고 저장하지 않는다
   try {
-    const result = await generateListing({ url, hint });
-    res.json(result);
+    if (type === 'home') { if (!photos.length && !docs.length && !hint) return res.status(400).json({ error: '사진이나 서류, 메모 중 하나는 필요해요.' }); return res.json(await generateHome({ photos, docs, hint })); }
+    if (type === 'item') { if (!photos.length && !hint) return res.status(400).json({ error: '사진 한 장은 올려 주세요.' }); return res.json(await generateItem({ photos, hint })); }
+    const url = clean(req.body.url, 300);
+    if (!isUrl(url)) return res.status(400).json({ error: '주소 형식이 맞지 않아요. https:// 로 시작해야 해요.' });
+    res.json(await generateListing({ url, hint }));
   } catch (e) {
     console.error('generate failed', e.message);
     res.status(500).json({ error: '소개글을 만들지 못했어요. 잠시 후 다시 시도해 주세요.' });
@@ -79,15 +86,19 @@ app.post('/api/generate', async (req, res) => {
 // ---- 판매 등록 (2단계: 확인 후 게시) ----
 app.post('/api/projects', (req, res) => {
   const b = req.body || {};
+  const type = TYPES.includes(b.type) ? b.type : 'project';
   const url = clean(b.url, 300);
-  if (!isUrl(url)) return res.status(400).json({ error: '주소가 필요해요.' });
+  if (type === 'project' && !isUrl(url)) return res.status(400).json({ error: '주소가 필요해요.' });
+  if (type === 'home' && !b.ownerConfirmed) return res.status(400).json({ error: '집은 집주인 본인 또는 공인중개사만 올릴 수 있어요. 확인란에 체크해 주세요.' });
   const contact = clean(b.contact, 200);
   if (!contact) return res.status(400).json({ error: '연락처(이메일 또는 오픈채팅 링크)가 필요해요.' });
   const p = {
     id: newId(),
+    type,
     createdAt: new Date().toISOString(),
     status: 'live',
-    name: clean(b.name, 40) || '이름 없는 프로젝트',
+    photos: (Array.isArray(b.photos) ? b.photos : []).filter(isImg).slice(0, 6),
+    name: clean(b.name, 40) || (type === 'home' ? '이름 없는 집' : type === 'item' ? '이름 없는 물건' : '이름 없는 프로젝트'),
     tagline: clean(b.tagline, 80),
     description: clean(b.description, 1500),
     category: clean(b.category, 20) || '기타',
@@ -100,6 +111,14 @@ app.post('/api/projects', (req, res) => {
     dealType: ['sell', 'cofounder', 'open'].includes(b.dealType) ? b.dealType : 'sell',
     seller: clean(b.seller, 30) || '익명',
     contact,
+    // 집 전용 (AI 추출 또는 직접 입력)
+    home: type === 'home' ? {
+      dong: clean(b.dong, 40), areaM2: Number(b.areaM2) || null, floor: clean(b.floor, 20), use: clean(b.use, 30), builtYear: Number(b.builtYear) || null,
+      rooms: clean(b.rooms, 20), options: (Array.isArray(b.options) ? b.options : String(b.options || '').split(',')).map((t) => clean(t, 20)).filter(Boolean).slice(0, 8),
+      deal: ['매매', '전세', '월세', '단기', '미정'].includes(b.homeDeal) ? b.homeDeal : '미정', deposit: Number(b.deposit) || 0, monthly: Number(b.monthly) || 0,
+      extractedFrom: clean(b.extractedFrom, 40), ownerRole: ['owner', 'agent'].includes(b.ownerRole) ? b.ownerRole : 'owner',
+    } : undefined,
+    condition: type === 'item' ? clean(b.condition, 20) : undefined,
     interest: 0,
     views: 0,
     sample: false,
@@ -152,6 +171,14 @@ app.post('/api/waitlist', (req, res) => {
   res.json({ ok: true, count: all.length });
 });
 
+// ---- 제주 생활: 분리배출 ----
+app.post('/api/jeju/waste', async (req, res) => {
+  const question = clean(req.body.question, 200);
+  if (!question) return res.status(400).json({ error: '무엇을 버리려는지 적어 주세요.' });
+  const jeju = readConfig().jeju || {};
+  res.json(await answerWaste({ question, rules: jeju.waste || {}, area: jeju.area || '제주시' }));
+});
+
 // ---- 수상작 도감 ----
 const WINNERS = load('winners.json', []);
 app.get('/api/winners', (req, res) => res.json(WINNERS));
@@ -189,7 +216,9 @@ app.get('/api/stats', (req, res) => {
   const projects = load('projects.json', []).filter((p) => p.status === 'live' && (showSamples || !p.sample));
   const waitlist = load('waitlist.json', []);
   res.json({
-    projects: projects.length,
+    homes: projects.filter((p) => p.type === 'home').length,
+    items: projects.filter((p) => p.type === 'item').length,
+    projects: projects.filter((p) => (p.type || 'project') === 'project').length,
     interest: projects.reduce((s, p) => s + (p.interest || 0), 0),
     inquiries: load('inquiries.json', []).length,
     waitBuy: waitlist.filter((w) => w.role !== 'sell').length,

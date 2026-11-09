@@ -1,5 +1,107 @@
 [
  {
+  "id": "h01",
+  "type": "home",
+  "createdAt": "2026-11-09T08:00:00.000Z",
+  "status": "live",
+  "sample": true,
+  "photos": [],
+  "name": "아라동 투룸, 제주대 도보 10분 (예시)",
+  "tagline": "2층 남향, 2026년 2월까지 단기 가능",
+  "description": "[서류 기준] 다가구주택 2층, 전용 42.3㎡(약 12.8평), 2011년 준공. 2룸 1욕실.\n\n[사진 기준] 남향이라 오후 채광이 좋고, 에어컨·세탁기·붙박이장이 있습니다. 벽지 상태 양호.\n\n제주대 정문까지 도보 10분, 편의점 1분. 한달살기·학기 단기 임대 모두 가능합니다.",
+  "category": "집",
+  "tags": [
+   "아라동",
+   "투룸",
+   "단기가능",
+   "제주대"
+  ],
+  "url": "",
+  "origin": "",
+  "stage": "users",
+  "priceMin": 0,
+  "priceMax": 0,
+  "dealType": "sell",
+  "home": {
+   "dong": "제주시 아라일동",
+   "areaM2": 42.3,
+   "floor": "2/3층",
+   "use": "다가구주택",
+   "builtYear": 2011,
+   "rooms": "2룸 1욕실",
+   "options": [
+    "에어컨",
+    "세탁기",
+    "붙박이장"
+   ],
+   "deal": "월세",
+   "deposit": 3000000,
+   "monthly": 450000,
+   "extractedFrom": "건축물대장",
+   "ownerRole": "owner"
+  },
+  "seller": "집주인",
+  "contact": "example-owner@example.com",
+  "interest": 19,
+  "views": 410
+ },
+ {
+  "id": "i01",
+  "type": "item",
+  "createdAt": "2026-11-08T14:00:00.000Z",
+  "status": "live",
+  "sample": true,
+  "photos": [],
+  "name": "노지 감귤 10kg, 직접 땄어요 (예시)",
+  "tagline": "서귀포 과수원, 당일 수확 · 제주시 직거래",
+  "description": "어제 딴 노지 감귤입니다. 크기는 섞여 있고(소~중), 당도는 11~12브릭스 정도예요. 흠과는 뺐습니다.\n\n10kg 박스 기준이고, 제주시 아라동·이도동 직거래 가능. 택배는 착불.",
+  "category": "농수산물",
+  "tags": [
+   "감귤",
+   "직거래",
+   "서귀포"
+  ],
+  "url": "",
+  "origin": "",
+  "stage": "users",
+  "priceMin": 15000,
+  "priceMax": 18000,
+  "dealType": "sell",
+  "condition": "새상품",
+  "seller": "과수원집 딸",
+  "contact": "example-farm@example.com",
+  "interest": 27,
+  "views": 520
+ },
+ {
+  "id": "i02",
+  "type": "item",
+  "createdAt": "2026-11-07T10:00:00.000Z",
+  "status": "live",
+  "sample": true,
+  "photos": [],
+  "name": "한달살기 끝나서 정리해요: 전기포트+선풍기+행거 (예시)",
+  "tagline": "3개 세트, 11월 말까지 가져가실 분",
+  "description": "한달살기 마치고 서울 올라가요. 전기포트(1.7L, 2개월 사용), 선풍기(14인치), 조립식 행거 세트입니다. 모두 정상 작동.\n\n11월 30일 전에 연동에서 직접 가져가실 분. 따로따로도 가능.",
+  "category": "생활·주방",
+  "tags": [
+   "한달살기",
+   "세트",
+   "연동"
+  ],
+  "url": "",
+  "origin": "",
+  "stage": "users",
+  "priceMin": 20000,
+  "priceMax": 30000,
+  "dealType": "sell",
+  "condition": "거의 새것",
+  "seller": "한달살기 끝",
+  "contact": "example-nomad@example.com",
+  "interest": 11,
+  "views": 230
+ },
+ {
   "id": "s01",
   "createdAt": "2026-11-08T09:00:00.000Z",
   "status": "live",
@@ -23,7 +125,8 @@
   "seller": "졸업반 개발자",
   "contact": "example-seller-1@example.com",
   "interest": 23,
-  "views": 310
+  "views": 310,
+  "type": "project"
  },
  {
   "id": "s02",
@@ -49,7 +152,8 @@
   "seller": "3인 팀",
   "contact": "example-seller-2@example.com",
   "interest": 17,
-  "views": 220
+  "views": 220,
+  "type": "project"
  },
  {
   "id": "s03",
@@ -75,7 +179,8 @@
   "seller": "대학원생 2인",
   "contact": "example-seller-3@example.com",
   "interest": 31,
-  "views": 540
+  "views": 540,
+  "type": "project"
  },
  {
   "id": "s04",
@@ -101,7 +206,8 @@
   "seller": "기획자 1인",
   "contact": "example-seller-4@example.com",
   "interest": 12,
-  "views": 180
+  "views": 180,
+  "type": "project"
  },
  {
   "id": "s05",
@@ -127,7 +233,8 @@
   "seller": "백엔드 개발자",
   "contact": "example-seller-5@example.com",
   "interest": 9,
-  "views": 150
+  "views": 150,
+  "type": "project"
  },
  {
   "id": "s06",
@@ -153,6 +260,7 @@
   "seller": "디자이너+개발자",
   "contact": "example-seller-6@example.com",
   "interest": 14,
-  "views": 260
+  "views": 260,
+  "type": "project"
  }
 ]

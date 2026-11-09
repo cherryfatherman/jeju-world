@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>제주 생활 · 바톤</title>
+<meta name="description" content="제주 분리배출 요일, 이거 어디 버려요? AI, 제주 생활 꿀팁">
+<link rel="stylesheet" href="./style.css">
+<script src="./app.js"></script>
+</head>
+<body>
+<main class="wrap" style="max-width:860px">
+  <div class="page-title"><h1>🍊 제주 <em>생활</em></h1><p>매일 쓰는 제주 생활 정보. 틀린 게 있으면 알려주세요, 바로 고칠게요.</p></div>
+
+  <section id="waste">
+    <div class="sec-head"><h2>🗑️ 이거 어디 버려요?</h2><span class="more" id="area"></span></div>
+    <form class="form" id="wasteForm">
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><input name="q" required maxlength="200" placeholder="예: 깨진 유리컵, 배달 아이스팩, 스티로폼 박스" style="flex:1;min-width:200px"><button class="btn primary" id="askBtn">AI에게 묻기</button></div>
+      <div class="chips" style="margin:0"><button type="button" class="chip" data-q="아이스팩">아이스팩</button><button type="button" class="chip" data-q="깨진 유리컵">깨진 유리컵</button><button type="button" class="chip" data-q="택배 상자">택배 상자</button><button type="button" class="chip" data-q="페트병">페트병</button><button type="button" class="chip" data-q="헌 옷">헌 옷</button><button type="button" class="chip" data-q="건전지">건전지</button></div>
+      <div id="answer" hidden></div>
+    </form>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>📆 요일별 배출 (클린하우스)</h2><span class="more" id="today"></span></div>
+    <div class="days" id="days"></div>
+    <p class="note" id="wasteNote" style="margin-top:10px"></p>
+    <p class="note" id="wasteSource"></p>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>💡 생활 꿀팁</h2><span class="more">바톤이 정리 · 유저가 보탬</span></div>
+    <div class="list" id="tips"></div>
+  </section>
+</main>
+<script>
+let CFG;
+const DAYS = ['월', '화', '수', '목', '금', '토', '일'];
+function renderWaste() {
+  const J = CFG.jeju || {}, W = J.waste || {};
+  const todayIdx = (new Date().getDay() + 6) % 7;
+  $('#area').textContent = `${J.area || '제주시'} 기준`;
+  $('#today').textContent = `오늘은 ${DAYS[todayIdx]}요일`;
+  $('#days').replaceChildren(...DAYS.map((d, i) => { const el = document.createElement('div'); el.className = 'day' + (i === todayIdx ? ' today' : ''); el.innerHTML = `<b>${d}</b><span>${esc((W.days || {})[d] || '-')}</span>`; return el; }));
+  $('#wasteNote').textContent = W.notes || '';
+  $('#wasteSource').innerHTML = `${W.verified ? '✅ 공식 안내로 확인됨' : '⚠️ 확인 필요'} · 출처: ${esc(W.source || '')}`;
+  $('#tips').replaceChildren(...(J.tips || []).map((t) => { const d = document.createElement('div'); d.className = 'row'; d.innerHTML = `<span style="font-size:22px">💡</span><div class="body"><b>${esc(t.title)}</b><p>${esc(t.body)}</p></div><div class="right">${t.check ? '<span class="badge">확인됨</span>' : '<span class="badge sample">확인 필요</span>'}</div>`; return d; }));
+}
+$('#wasteForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const q = new FormData(e.target).get('q').trim(); if (!q) return;
+  const btn = $('#askBtn'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const d = await api('/api/jeju/waste', { question: q });
+    $('#answer').hidden = false;
+    $('#answer').innerHTML = `<div class="ai-box"><b>${esc(q)}</b> ${d.canToday === true ? '<span class="badge" style="color:var(--ok)">오늘 배출 가능</span>' : d.canToday === false ? `<span class="badge">오늘 ✕${d.nextDay ? ` · ${esc(d.nextDay)}요일 가능` : ''}</span>` : ''}<p style="margin:8px 0 0;white-space:pre-line">${esc(d.answer)}</p>${d.caution ? `<p class="note" style="margin-top:6px">⚠️ ${esc(d.caution)}</p>` : ''}<p class="note" style="margin-top:6px">${d.ai ? '✨ AI 답변 · 요일표를 근거로 했어요' : 'ℹ️ 기본 답변 (AI 키 없음)'} · 정확한 분류는 주민센터 안내가 우선이에요</p></div>`;
+  } catch (err) { toast(err.message); }
+  btn.disabled = false; btn.textContent = 'AI에게 묻기';
+};
+$$('[data-q]').forEach((b) => b.onclick = () => { $('#wasteForm [name=q]').value = b.dataset.q; $('#wasteForm').requestSubmit(); });
+mountShell({ active: 'jeju', banner: false }).then((c) => { CFG = c; renderWaste(); });
+</script>
+</body>
+</html>

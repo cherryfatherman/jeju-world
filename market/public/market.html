@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>장터 · 바톤</title>
+<link rel="stylesheet" href="./style.css">
+<script src="./app.js"></script>
+</head>
+<body>
+<main class="wrap">
+  <div class="page-title"><h1>🛍️ 장터</h1><p>집·물건·프로젝트. 모두 AI가 정리한 글이라 읽기 편해요.</p></div>
+  <div class="typetabs" id="typetabs">
+    <button data-t="home">🏠 집</button><button data-t="item">📦 물건</button><button data-t="project">🧩 프로젝트</button>
+  </div>
+  <div class="chips" id="chips"></div>
+  <div class="sec-head"><span class="more" id="count"></span><a class="btn primary" id="addBtn" href="./sell.html" style="margin-left:auto">✨ 올리기</a></div>
+  <div class="grid" id="grid"></div>
+
+  <section id="hackathons">
+    <div class="sec-head"><h2>📅 지금 열려 있는 해커톤</h2><span class="more" id="hackUpdated"></span></div>
+    <p class="note" style="margin-bottom:12px">바톤이 자동으로 모아요. 참가하고 나면 결과물을 프로젝트 장터에 올려 주세요.</p>
+    <div class="hack" id="hackList"></div>
+  </section>
+</main>
+<script>
+let all = [], type = new URLSearchParams(location.search).get('type') || 'home', cat = '전체';
+function render() {
+  const list = all.filter((p) => p.type === type && (cat === '전체' || p.category === cat));
+  $$('#typetabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === type));
+  $('#addBtn').href = `./sell.html?type=${type}`;
+  const cats = ['전체', ...new Set(all.filter((p) => p.type === type).map((p) => p.category))];
+  $('#chips').replaceChildren(...cats.map((c) => { const b = document.createElement('button'); b.className = 'chip' + (c === cat ? ' on' : ''); b.textContent = c; b.onclick = () => { cat = c; render(); }; return b; }));
+  $('#grid').replaceChildren(...list.map(listingCard));
+  if (!list.length) $('#grid').innerHTML = '<div class="empty">아직 올라온 글이 없어요. 첫 번째로 올려 보세요!</div>';
+  $('#count').textContent = `${list.length}개`;
+}
+$$('#typetabs button').forEach((b) => b.onclick = () => { type = b.dataset.t; cat = '전체'; history.replaceState(null, '', `?type=${type}`); render(); });
+mountShell({ active: 'market', banner: false }).then(async () => {
+  all = await api('/api/projects'); render();
+  const h = await api('/api/hackathons'); const items = h.items || [];
+  $('#hackUpdated').textContent = h.updatedAt ? `자동 수집 · ${new Date(h.updatedAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: 'numeric' })}` : '수집 중…';
+  $('#hackList').replaceChildren(...items.slice(0, 12).map((x) => { const a = document.createElement('a'); a.href = x.url; a.target = '_blank'; a.rel = 'noopener';
+    a.innerHTML = `<span class="src ${x.source}">${x.source === 'local' ? '국내 · 직접 등록' : 'Devpost'}</span><b>${esc(x.title)}</b><span class="d">${esc(x.dates || '')} · ${esc(x.location || '')}${x.participants ? ` · ${x.participants.toLocaleString()}명 참가` : ''}</span><span class="p">${x.prize ? `상금 ${esc(x.prize)}` : ''}</span>`; return a; }));
+  if (location.hash === '#hackathons') $('#hackathons').scrollIntoView();
+});
+</script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>프로젝트 · 바톤</title>
+<title>바톤</title>
 <link rel="stylesheet" href="./style.css">
 <script src="./app.js"></script>
 </head>
@@ -11,17 +11,19 @@
 <main class="wrap">
   <div class="detail" id="detail" hidden>
     <div class="main">
+      <div class="gallery" id="gallery"></div>
       <div class="meta" id="meta"></div>
       <h1 id="name"></h1>
       <p class="tagline" id="tagline"></p>
-      <div class="desc" id="desc"></div>
+      <div class="panel" id="homeFacts" hidden></div>
+      <div class="desc" id="desc" style="margin-top:14px"></div>
       <div class="panel" style="margin-top:18px" id="nextPanel" hidden><b>다음 주인이 할 만한 일</b><ul class="nexts" id="nexts"></ul></div>
       <div class="panel" style="margin-top:18px">
-        <b>💬 한 줄 추천</b> <span class="note" style="display:inline">· 써 본 사람, 아는 사람의 한마디가 거래를 만들어요</span>
+        <b>💬 한 줄 추천</b> <span class="note" style="display:inline">· 아는 사람의 한마디가 거래를 만들어요</span>
         <div class="comments" id="comments"></div>
         <form id="cmtForm" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
           <input name="name" placeholder="닉네임" style="flex:0 0 120px" maxlength="20">
-          <input name="text" placeholder="예: 저희 학교에서 실제로 써봤는데 매칭 빨라요" required maxlength="140" style="flex:1;min-width:180px">
+          <input name="text" placeholder="예: 실제로 가봤는데 사진이랑 같아요" required maxlength="140" style="flex:1;min-width:180px">
           <button class="btn primary">남기기</button>
         </form>
       </div>
@@ -30,74 +32,78 @@
       <div class="panel">
         <span class="price" id="price"></span>
         <span class="note" id="dealNote"></span>
-        <dl>
-          <dt>단계</dt><dd id="stage"></dd>
-          <dt>출처</dt><dd id="origin"></dd>
-          <dt>판매자</dt><dd id="seller"></dd>
-          <dt>추천</dt><dd id="interest"></dd>
-          <dt>서비스</dt><dd><a id="url" target="_blank" rel="noopener" style="color:var(--accent);font-weight:700">열어보기 ↗</a></dd>
-        </dl>
+        <dl id="facts"></dl>
       </div>
-      <button class="btn primary big" id="inquiryBtn">💬 판매자에게 문의하기</button>
+      <button class="btn primary big" id="inquiryBtn">💬 문의하기</button>
       <button class="btn big" id="interestBtn">♥ 추천해요</button>
-      <p class="note">바톤 1차 버전은 판매자와 직접 연결만 해드려요. 결제와 안전거래는 준비 중이에요. 금전 거래 전에 서비스 상태와 매출을 꼭 직접 확인하세요.</p>
+      <p class="note" id="safety"></p>
     </aside>
   </div>
-  <div class="empty" id="notfound" hidden>프로젝트를 찾을 수 없어요. <a href="./" style="color:var(--accent)">목록으로</a></div>
+  <div class="empty" id="notfound" hidden>글을 찾을 수 없어요. <a href="./market.html" style="color:var(--accent)">장터로</a></div>
 </main>
 
 <div class="modal" id="inqModal"><form class="form" id="inqForm">
-  <h3>판매자에게 문의</h3><p class="note">보내면 판매자 연락처를 바로 알려드려요.</p>
+  <h3>문의하기</h3><p class="note">보내면 올린 분의 연락처를 바로 알려드려요.</p>
   <label>이름 또는 닉네임<input name="name" placeholder="홍길동"></label>
   <label>내 연락처<input name="contact" required placeholder="이메일 또는 오픈채팅 링크"></label>
-  <label>내용<textarea name="message" required style="min-height:100px" placeholder="예: 사용자 수와 월 비용이 궁금해요. 인수 후 운영 계획은…"></textarea></label>
+  <label>내용<textarea name="message" required style="min-height:100px" placeholder="예: 이번 주말에 볼 수 있을까요?"></textarea></label>
   <div class="actions"><button type="button" class="btn" data-close>닫기</button><button class="btn primary">보내기</button></div>
 </form></div>
 <div class="modal" id="doneModal"><div class="form">
-  <h3>문의를 남겼어요 🙌</h3><p class="note">판매자 연락처예요. 직접 연락해 보세요.</p>
+  <h3>문의를 남겼어요 🙌</h3><p class="note">올린 분의 연락처예요. 직접 연락해 보세요.</p>
   <div class="ai-box" id="sellerContact" style="user-select:all"></div>
   <div class="actions"><button class="btn primary" data-close>확인</button></div>
 </div></div>
 
 <script>
-mountShell({ active: 'market', banner: false });
 const id = new URLSearchParams(location.search).get('id');
 let p;
+const SAFETY = { home: '바톤은 직접 연결만 해드려요. 계약 전 건축물대장·등기부등본 원본을 확인하고, 보증금은 반드시 집주인 명의 계좌로 보내세요.', item: '바톤은 직접 연결만 해드려요. 직거래는 사람 많은 곳에서, 선입금은 피하세요.', project: '바톤 1차 버전은 판매자와 직접 연결만 해드려요. 결제와 안전거래는 준비 중이에요. 금전 거래 전에 서비스 상태와 매출을 꼭 직접 확인하세요.' };
 function renderComments(list) {
   $('#comments').replaceChildren(...list.map((c) => { const d = document.createElement('div'); d.className = 'comment'; d.innerHTML = `<b>${esc(c.name || '익명')}</b>${esc(c.text)}<small>${new Date(c.createdAt).toLocaleDateString('ko-KR')}</small>`; return d; }));
   if (!list.length) $('#comments').innerHTML = '<p class="note">아직 추천이 없어요. 첫 한마디를 남겨 주세요.</p>';
 }
+const dl = (rows) => rows.filter(([, v]) => v).map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join('');
 async function load() {
   try { p = await api(`/api/projects/${encodeURIComponent(id)}`); } catch { $('#notfound').hidden = false; return; }
   fetch(`/api/projects/${id}/view`, { method: 'POST' });
   document.title = `${p.name} · 바톤`;
   $('#detail').hidden = false;
-  $('#meta').innerHTML = `<span class="badge stage-${esc(p.stage)}">${STAGE[p.stage] || ''}</span><span class="badge">${esc(p.category)}</span>${p.sample ? '<span class="badge sample">예시 · 시연용 가상 프로젝트</span>' : ''}${(p.tags || []).map((t) => `<span class="badge">#${esc(t)}</span>`).join('')}`;
+  $('#gallery').replaceChildren(...(p.photos || []).map((src) => { const i = document.createElement('img'); i.src = src; i.alt = ''; i.onclick = () => window.open(src); return i; }));
+  if (!(p.photos || []).length) $('#gallery').innerHTML = `<div class="nophoto">${TYPE_ICON[p.type] || '🧩'}</div>`;
+  $('#meta').innerHTML = `<span class="badge">${TYPE_ICON[p.type]} ${TYPE_LABEL[p.type]}</span>${p.type === 'project' ? `<span class="badge stage-${esc(p.stage)}">${STAGE[p.stage] || ''}</span>` : ''}<span class="badge">${esc(p.category)}</span>${p.condition ? `<span class="badge">${esc(p.condition)}</span>` : ''}${p.sample ? '<span class="badge sample">예시 · 시연용 가상 데이터</span>' : ''}${(p.tags || []).map((t) => `<span class="badge">#${esc(t)}</span>`).join('')}`;
   $('#name').textContent = p.name; $('#tagline').textContent = p.tagline; $('#desc').textContent = p.description;
-  $('#stage').textContent = STAGE[p.stage] || '-'; $('#origin').textContent = p.origin || '-'; $('#seller').textContent = p.seller || '익명'; $('#interest').textContent = `♥ ${p.interest || 0} · 조회 ${p.views || 0}`;
-  $('#url').href = p.url;
-  if (p.dealType === 'cofounder') { $('#price').textContent = '공동창업자 구함'; $('#dealNote').textContent = '판매가 아니라 함께 운영할 사람을 찾아요.'; }
-  else if (p.dealType === 'open') { $('#price').textContent = '오픈소스 · 후원'; $('#dealNote').textContent = '코드를 공개하고 후원이나 인수 제안을 받아요.'; }
-  else { $('#price').textContent = p.priceMax ? `${won(p.priceMin)} ~ ${won(p.priceMax)}` : '가격 협의'; $('#dealNote').textContent = p.priceReason || '판매자 희망 가격대예요. 협의 가능해요.'; }
-  if (p.nextSteps?.length) { $('#nextPanel').hidden = false; $('#nexts').replaceChildren(...p.nextSteps.map((s) => { const li = document.createElement('li'); li.textContent = s; return li; })); }
+  $('#safety').textContent = SAFETY[p.type] || SAFETY.project;
+  const common = [['올린 분', p.seller || '익명'], ['추천', `♥ ${p.interest || 0} · 조회 ${p.views || 0}`]];
+  if (p.type === 'home' && p.home) {
+    const h = p.home;
+    $('#price').textContent = h.deal === '매매' ? (h.deposit ? won(h.deposit) : '가격 협의') : h.deal === '전세' ? (h.deposit ? `전세 ${won(h.deposit)}` : '가격 협의') : h.monthly ? `${h.deposit ? won(h.deposit) + ' / ' : ''}월 ${won(h.monthly)}` : '가격 협의';
+    $('#dealNote').textContent = `${h.deal}${h.ownerRole === 'agent' ? ' · 공인중개사 등록' : ' · 집주인 직접 등록'}`;
+    $('#facts').innerHTML = dl([['위치', h.dong], ['용도', h.use], ['층', h.floor], ['준공', h.builtYear ? `${h.builtYear}년` : ''], ...common]);
+    $('#homeFacts').hidden = false;
+    $('#homeFacts').innerHTML = `<div class="factgrid">${[['면적', h.areaM2 ? `${h.areaM2}㎡ <small>≈ ${(h.areaM2 / 3.3058).toFixed(1)}평</small>` : '-'], ['방·욕실', esc(h.rooms || '-')], ['층', esc(h.floor || '-')], ['준공', h.builtYear ? `${h.builtYear}년` : '-']].map(([k, v]) => `<div><small>${k}</small><b>${v}</b></div>`).join('')}</div>${(h.options || []).length ? `<div class="meta" style="margin-top:10px">${h.options.map((o) => `<span class="badge">${esc(o)}</span>`).join('')}</div>` : ''}<p class="note" style="margin-top:8px">${h.extractedFrom ? `✨ ${esc(h.extractedFrom)}에서 AI가 읽은 값 · 원본 확인 필요` : '올린 분이 직접 입력한 값'}</p>`;
+  } else if (p.type === 'item') {
+    $('#price').textContent = p.priceMax ? (p.priceMin && p.priceMin !== p.priceMax ? `${won(p.priceMin)} ~ ${won(p.priceMax)}` : won(p.priceMax)) : '가격 협의';
+    $('#dealNote').textContent = p.priceReason || '희망 가격이에요. 협의 가능해요.';
+    $('#facts').innerHTML = dl([['상태', p.condition], ...common]);
+  } else {
+    if (p.dealType === 'cofounder') { $('#price').textContent = '공동창업자 구함'; $('#dealNote').textContent = '판매가 아니라 함께 운영할 사람을 찾아요.'; }
+    else if (p.dealType === 'open') { $('#price').textContent = '오픈소스 · 후원'; $('#dealNote').textContent = '코드를 공개하고 후원이나 인수 제안을 받아요.'; }
+    else { $('#price').textContent = p.priceMax ? `${won(p.priceMin)} ~ ${won(p.priceMax)}` : '가격 협의'; $('#dealNote').textContent = p.priceReason || '판매자 희망 가격대예요. 협의 가능해요.'; }
+    $('#facts').innerHTML = dl([['단계', STAGE[p.stage]], ['출처', p.origin], ...common]) + (p.url ? `<dt>서비스</dt><dd><a href="${esc(p.url)}" target="_blank" rel="noopener" style="color:var(--accent);font-weight:700">열어보기 ↗</a></dd>` : '');
+    if (p.nextSteps?.length) { $('#nextPanel').hidden = false; $('#nexts').replaceChildren(...p.nextSteps.map((s) => { const li = document.createElement('li'); li.textContent = s; return li; })); }
+  }
   renderComments(await api(`/api/projects/${id}/comments`));
 }
 $('#interestBtn').onclick = async () => {
   if (localStorage.getItem('int-' + id)) return toast('이미 추천했어요 ♥');
-  const d = await api(`/api/projects/${id}/interest`, {}); localStorage.setItem('int-' + id, '1');
-  $('#interest').textContent = `♥ ${d.interest} · 조회 ${(p.views || 0) + 1}`; toast('추천했어요! 판매자에게 힘이 돼요 ♥');
+  const d = await api(`/api/projects/${id}/interest`, {}); localStorage.setItem('int-' + id, '1'); toast(`추천했어요! ♥ ${d.interest}`); load();
 };
-$('#cmtForm').onsubmit = async (e) => {
-  e.preventDefault();
-  try { renderComments(await api(`/api/projects/${id}/comments`, Object.fromEntries(new FormData(e.target)))); e.target.reset(); toast('고마워요! 추천이 올라갔어요'); } catch (err) { toast(err.message); }
-};
+$('#cmtForm').onsubmit = async (e) => { e.preventDefault(); try { renderComments(await api(`/api/projects/${id}/comments`, Object.fromEntries(new FormData(e.target)))); e.target.reset(); toast('고마워요! 추천이 올라갔어요'); } catch (err) { toast(err.message); } };
 $('#inquiryBtn').onclick = () => $('#inqModal').classList.add('show');
 $$('[data-close]').forEach((b) => b.onclick = () => $$('.modal').forEach((m) => m.classList.remove('show')));
-$('#inqForm').onsubmit = async (e) => {
-  e.preventDefault();
-  try { const d = await api(`/api/projects/${id}/inquiry`, Object.fromEntries(new FormData(e.target))); $('#inqModal').classList.remove('show'); e.target.reset(); $('#sellerContact').textContent = d.sellerContact; $('#doneModal').classList.add('show'); } catch (err) { toast(err.message); }
-};
-load();
+$('#inqForm').onsubmit = async (e) => { e.preventDefault(); try { const d = await api(`/api/projects/${id}/inquiry`, Object.fromEntries(new FormData(e.target))); $('#inqModal').classList.remove('show'); e.target.reset(); $('#sellerContact').textContent = d.sellerContact; $('#doneModal').classList.add('show'); } catch (err) { toast(err.message); } };
+mountShell({ active: 'market', banner: false }).then(load);
 </script>
 </body>
 </html>
