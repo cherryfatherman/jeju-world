@@ -60,10 +60,16 @@
 - GitHub 저장소 `cherryfatherman/jeju-world` 생성 및 세션 연결 완료. 쓰기 권한 허용 후 이 문서 푸시 성공.
 - 저장소는 현재 **Public(공개)** 상태. 사업 계획이 담겨 있으니 Settings > Danger Zone > Change repository visibility > Make private 권장.
 - 채팅 내용이 자동으로 저장소에 저장되는 것은 아님. 이 문서를 업데이트해서 올릴 때만 반영됨.
-- 아직 CLAUDE.md는 없음. 추가하면 새 세션이 시작할 때 프로젝트 내용을 자동으로 읽음.
+- CLAUDE.md 추가 완료. 새 세션이 시작할 때 자동으로 읽음. 규칙: "중요한 결정을 하면 PROJECT.md를 업데이트하고 올린다".
 
 ## 8. 다음 할 일
 1. 저장소를 비공개(Private)로 전환할지 결정
-2. CLAUDE.md 추가 (프로젝트 개요 + "중요한 결정이 있을 때마다 PROJECT.md 업데이트" 규칙)
+2. (완료) CLAUDE.md 추가
 3. 성산일출봉 광장 3D 프로토타입 개발 시작 (웹 3D, 로우폴리)
 4. 해커톤 링크 내용 확인 (도메인 허용 또는 내용 붙여넣기)
+
+## 9. 결정 기록
+- 모델 사용 원칙: 설계는 Opus 5.5, 일반 구현은 Sonnet 5.5, 아주 어려운 문제·보안 점검·사업계획서 최종 점검은 Fable 5.1.
+- 저장 원칙: 모든 기록은 GitHub 저장소 안에 둔다 (바탕화면 파일 대신). CLAUDE.md는 짧은 규칙서로 유지.
+- 프로젝트가 커지면 docs/ 폴더로 나눈다 (business, roadmap, decisions, legal).
+- 개발 방식: 구조를 먼저 설명하고 작은 단계로 하나씩 확인하며 진행.
