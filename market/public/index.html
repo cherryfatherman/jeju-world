@@ -4,28 +4,30 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>바톤 · 해커톤 프로젝트의 다음 주인을 찾습니다</title>
-<meta name="description" content="AI로 만든 서비스와 해커톤 프로젝트를 다음 주인에게 넘기는 장터, 바톤">
+<meta name="description" content="AI로 만든 서비스와 해커톤 프로젝트를 다음 주인에게 넘기는 장터, 바톤. 해커톤 일정과 수상작 도감도 한곳에서.">
 <link rel="stylesheet" href="./style.css">
+<script src="./app.js"></script>
 </head>
 <body>
-<header class="top"><div class="wrap">
-  <a class="logo" href="./"><span class="mark">🏃</span>바톤</a>
-  <nav><a href="./#projects" class="on">프로젝트</a><a href="./#hackathons">해커톤 일정</a><a href="./sell.html">판매 등록</a></nav>
-</div></header>
-
 <main class="wrap">
-  <div class="hero">
-    <h1>해커톤이 끝나도<br>프로젝트는 <em>끝나지 않게</em></h1>
-    <p>발표가 끝나면 대부분의 프로젝트가 그대로 멈춥니다. 바톤은 AI로 만든 서비스와 해커톤 결과물을 <b>이어갈 다음 주인</b>에게 넘기는 장터예요. 주소 하나만 넣으면 AI가 30초 만에 판매 글을 써 드려요.</p>
-    <div class="cta">
-      <a class="btn primary big" href="./sell.html">🏃 내 프로젝트 넘기기</a>
-      <button class="btn big" id="wantBtn">👀 사고 싶어요 알림 받기</button>
+  <div id="ticker"></div>
+
+  <section>
+    <div class="sec-head"><h2>🧰 도구 상자</h2><span class="more">로그인 없이 바로 써요</span></div>
+    <div class="tools">
+      <a class="tool" href="./#projects"><span class="ic">🧩</span><span>프로젝트 장터<small>다음 주인 찾는 중</small></span></a>
+      <a class="tool" href="./sell.html"><span class="ic">✨</span><span>AI 판매 등록<small>주소 하나로 30초</small></span><i class="bd hot">AI</i></a>
+      <a class="tool" href="./winners.html"><span class="ic">🏆</span><span>수상작 도감<small>해외 해커톤 수상작</small></span><i class="bd">NEW</i></a>
+      <a class="tool" href="./#hackathons"><span class="ic">📅</span><span>해커톤 일정<small>자동 수집</small></span></a>
+      <a class="tool soon" href="#" onclick="toast('준비 중이에요. 금요일 이후 열려요!');return false"><span class="ic">🧮</span><span>가격 계산기<small>내 프로젝트 가치는?</small></span><i class="bd">곧</i></a>
+      <a class="tool soon" href="#" onclick="toast('준비 중이에요!');return false"><span class="ic">✅</span><span>인수 체크리스트<small>넘기기 전 확인</small></span><i class="bd">곧</i></a>
     </div>
-    <div class="stats" id="stats"></div>
-  </div>
+  </section>
+
+  <section><div class="stats" id="stats"></div></section>
 
   <section id="rank">
-    <div class="sec-head"><h2>🔥 이번 주 관심 순위</h2><span class="more">관심 등록 수 기준</span></div>
+    <div class="sec-head"><h2>🔥 이번 주 추천 순위</h2><span class="more">추천 ♥ 수 기준</span></div>
     <div class="rank" id="rankList"></div>
   </section>
 
@@ -36,46 +38,20 @@
   </section>
 
   <section id="hackathons">
-    <div class="sec-head"><h2>📅 열려 있는 해커톤</h2><span class="more" id="hackUpdated"></span></div>
-    <p class="note" style="margin:0 0 12px">바톤이 자동으로 모아요. 참가하고 나면 결과물을 여기 올려 주세요.</p>
+    <div class="sec-head"><h2>📅 지금 열려 있는 해커톤</h2><span class="more" id="hackUpdated"></span></div>
+    <p class="note" style="margin-bottom:12px">바톤이 자동으로 모아요. 참가하고 나면 결과물을 여기 올려 주세요.</p>
     <div class="hack" id="hackList"></div>
   </section>
 </main>
 
-<footer><div class="wrap">
-  <span>🏃 바톤 · 해커톤의 바통을 다음 주자에게</span>
-  <span>해커톤 일정 출처: Devpost 공개 API · "예시" 표시 프로젝트는 시연용 가상 데이터예요</span>
-</div></footer>
-
-<div class="modal" id="wantModal"><form class="form" id="wantForm">
-  <h3 style="margin:0">알림 받기</h3>
-  <p class="note" style="margin:0">새 프로젝트가 올라오거나 장터가 정식으로 열리면 알려드려요.</p>
-  <label>나는<select name="role"><option value="buy">사고 싶어요 (프로젝트를 이어가고 싶어요)</option><option value="sell">팔고 싶어요 (넘길 프로젝트가 있어요)</option><option value="both">둘 다요</option></select></label>
-  <label>연락처 (이메일 또는 스레드 아이디)<input name="contact" required placeholder="you@example.com 또는 @threads_id"></label>
-  <label>찾는 것 (선택)<input name="note" placeholder="예: 사용자 있는 교육 서비스, 100만 원 이하"></label>
-  <div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" class="btn" data-close>닫기</button><button class="btn primary">등록</button></div>
-</form></div>
-<div id="toast"></div>
-
 <script>
-const $ = (s) => document.querySelector(s);
-const won = (n) => n ? n.toLocaleString('ko-KR') + '원' : '';
-const STAGE = { idea: '아이디어', demo: '데모', users: '사용자 있음', revenue: '매출 있음' };
-const DEAL = { sell: '판매', cofounder: '공동창업자 구함', open: '오픈소스·후원' };
+mountShell({ active: 'home' });
 let projects = [], cat = '전체';
-
-function priceText(p) {
-  if (p.dealType === 'cofounder') return '공동창업자 구함';
-  if (p.dealType === 'open') return '오픈소스 · 후원';
-  if (!p.priceMax) return '가격 협의';
-  return p.priceMin ? `${won(p.priceMin)} ~ ${won(p.priceMax)}` : `~ ${won(p.priceMax)}`;
-}
 function card(p) {
   const a = document.createElement('a'); a.className = 'card'; a.href = `./project.html?id=${encodeURIComponent(p.id)}`;
-  a.innerHTML = `<div class="meta"><span class="badge stage-${p.stage}">${STAGE[p.stage] || ''}</span><span class="badge">${p.category}</span>${p.sample ? '<span class="badge sample">예시</span>' : ''}</div>
-    <h3></h3><p class="tag"></p>
-    <div class="foot"><span class="price">${priceText(p)}</span><span class="heart">♥ ${p.interest || 0}<span class="o"></span></span></div>`;
-  a.querySelector('h3').textContent = p.name; a.querySelector('.tag').textContent = p.tagline; a.querySelector('.o').textContent = p.origin ? ` · ${p.origin}` : '';
+  a.innerHTML = `<div class="meta"><span class="badge stage-${esc(p.stage)}">${STAGE[p.stage] || ''}</span><span class="badge">${esc(p.category)}</span>${p.sample ? '<span class="badge sample">예시</span>' : ''}</div>
+    <h3>${esc(p.name)}</h3><p class="tag">${esc(p.tagline)}</p>
+    <div class="foot"><span class="price">${esc(priceText(p))}</span><span class="heart">♥ ${p.interest || 0}${p.comments ? ` · 💬 ${p.comments}` : ''}${p.origin ? ` · ${esc(p.origin)}` : ''}</span></div>`;
   return a;
 }
 function render() {
@@ -84,32 +60,29 @@ function render() {
   if (!list.length) $('#grid').innerHTML = '<div class="empty">아직 이 분류에 올라온 프로젝트가 없어요. 첫 번째로 올려 보세요!</div>';
   $('#count').textContent = `${list.length}개`;
 }
+async function loadStats() {
+  const s = await api('/api/stats');
+  $('#stats').innerHTML = [[s.projects, '올라온 프로젝트'], [s.interest, '추천 ♥'], [s.waitBuy, '사고 싶은 사람'], [s.hackathons, '열린 해커톤'], [s.winners, '도감 수상작']].map(([n, l]) => `<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
+}
+document.addEventListener('stats:refresh', loadStats);
 async function load() {
-  projects = await (await fetch('/api/projects')).json();
+  projects = await api('/api/projects');
   const cats = ['전체', ...new Set(projects.map((p) => p.category))];
-  $('#chips').replaceChildren(...cats.map((c) => { const b = document.createElement('button'); b.className = 'chip' + (c === cat ? ' on' : ''); b.textContent = c; b.onclick = () => { cat = c; load(); }; return b; }));
+  $('#chips').replaceChildren(...cats.map((c) => { const b = document.createElement('button'); b.className = 'chip' + (c === cat ? ' on' : ''); b.textContent = c; b.onclick = () => { cat = c; $$('.chip').forEach((x) => x.classList.toggle('on', x === b)); render(); }; return b; }));
   render();
   const top = projects.slice().sort((a, b) => (b.interest || 0) - (a.interest || 0)).slice(0, 5);
   $('#rankList').replaceChildren(...top.map((p, i) => { const a = document.createElement('a'); a.href = `./project.html?id=${p.id}`;
-    a.innerHTML = `<span class="n ${i === 0 ? 'top' : ''}">${i + 1}</span><div><b></b><small></small></div><span class="right">♥ ${p.interest}</span>`;
-    a.querySelector('b').textContent = p.name; a.querySelector('small').textContent = p.tagline; return a; }));
-  const s = await (await fetch('/api/stats')).json();
-  $('#stats').innerHTML = [[s.projects, '올라온 프로젝트'], [s.interest, '관심 등록'], [s.waitBuy, '사고 싶은 사람'], [s.hackathons, '진행 중 해커톤']].map(([n, l]) => `<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
-  const h = await (await fetch('/api/hackathons')).json();
+    a.innerHTML = `<span class="n ${i === 0 ? 'top' : ''}">${i + 1}</span><div style="min-width:0"><b>${esc(p.name)}</b><small>${esc(p.tagline)}</small></div><div class="right"><span class="cmt">💬 ${p.comments || 0}</span><span class="pill">♥ 추천 ${p.interest || 0}</span></div>`; return a; }));
+  loadStats();
+  const h = await api('/api/hackathons');
+  const items = h.items || [];
   $('#hackUpdated').textContent = h.updatedAt ? `자동 수집 · ${new Date(h.updatedAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: 'numeric' })}` : '수집 중…';
-  $('#hackList').replaceChildren(...(h.items || []).slice(0, 12).map((x) => { const a = document.createElement('a'); a.href = x.url; a.target = '_blank'; a.rel = 'noopener';
-    a.innerHTML = `<span class="src ${x.source}">${x.source === 'local' ? '국내 · 직접 등록' : 'Devpost'}</span><b></b><span class="d"></span><span class="p"></span>`;
-    a.querySelector('b').textContent = x.title; a.querySelector('.d').textContent = `${x.dates || ''} · ${x.location || ''}${x.participants ? ` · ${x.participants.toLocaleString()}명 참가` : ''}`; a.querySelector('.p').textContent = x.prize ? `상금 ${x.prize}` : ''; return a; }));
+  $('#hackList').replaceChildren(...items.slice(0, 12).map((x) => { const a = document.createElement('a'); a.href = x.url; a.target = '_blank'; a.rel = 'noopener';
+    a.innerHTML = `<span class="src ${x.source}">${x.source === 'local' ? '국내 · 직접 등록' : 'Devpost'}</span><b>${esc(x.title)}</b><span class="d">${esc(x.dates || '')} · ${esc(x.location || '')}${x.participants ? ` · ${x.participants.toLocaleString()}명 참가` : ''}</span><span class="p">${x.prize ? `상금 ${esc(x.prize)}` : ''}</span>`; return a; }));
+  // 공지 띠: 국내 대회가 있으면 그것, 없으면 참가자 최다 대회
+  const t = items.find((x) => x.source === 'local') || items[0];
+  if (t) $('#ticker').innerHTML = `<div class="ticker"><span class="ic">📣</span><div><b>${esc(t.title)}</b><small>${esc(t.dates || '')}${t.location ? ` · ${esc(t.location)}` : ''}${t.prize ? ` · 상금 ${esc(t.prize)}` : ''} — 끝나면 결과물을 바톤에 올려 주세요</small></div><a href="${esc(t.url)}" target="_blank" rel="noopener">바로가기 →</a></div>`;
 }
-function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2500); }
-$('#wantBtn').onclick = () => $('#wantModal').classList.add('show');
-document.querySelectorAll('[data-close]').forEach((b) => b.onclick = () => $('#wantModal').classList.remove('show'));
-$('#wantForm').onsubmit = async (e) => {
-  e.preventDefault();
-  const fd = new FormData(e.target);
-  const r = await fetch('/api/waitlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.fromEntries(fd)) });
-  if (r.ok) { $('#wantModal').classList.remove('show'); e.target.reset(); toast('등록됐어요! 새 소식을 보내드릴게요 🙌'); load(); } else toast('다시 시도해 주세요');
-};
 load();
 </script>
 </body>

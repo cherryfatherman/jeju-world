@@ -124,6 +124,28 @@ app.post('/api/waitlist', (req, res) => {
   res.json({ ok: true, count: all.length });
 });
 
+// ---- 수상작 도감 ----
+const WINNERS = load('winners.json', []);
+app.get('/api/winners', (req, res) => res.json(WINNERS));
+
+// ---- 한 줄 추천(댓글) ----
+app.get('/api/projects/:id/comments', (req, res) => {
+  res.json(load('comments.json', []).filter((c) => c.projectId === req.params.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+});
+app.post('/api/projects/:id/comments', (req, res) => {
+  const list = load('projects.json', []);
+  const p = list.find((x) => x.id === req.params.id);
+  if (!p) return res.status(404).json({ error: 'not found' });
+  const text = clean(req.body.text, 140);
+  if (!text) return res.status(400).json({ error: '내용이 필요해요.' });
+  const all = load('comments.json', []);
+  all.push({ id: newId(), projectId: p.id, name: clean(req.body.name, 20) || '익명', text, createdAt: new Date().toISOString() });
+  save('comments.json', all);
+  p.comments = all.filter((c) => c.projectId === p.id).length;
+  save('projects.json', list);
+  res.json(all.filter((c) => c.projectId === p.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+});
+
 // ---- 해커톤 일정 ----
 app.get('/api/hackathons', (req, res) => res.json(load('hackathons.json', { updatedAt: null, items: [] })));
 async function refreshHackathons() {
@@ -144,6 +166,7 @@ app.get('/api/stats', (req, res) => {
     waitBuy: waitlist.filter((w) => w.role !== 'sell').length,
     waitSell: waitlist.filter((w) => w.role !== 'buy').length,
     hackathons: (load('hackathons.json', { items: [] }).items || []).length,
+    winners: WINNERS.length,
   });
 });
 app.get('/api/threads-drafts', async (req, res) => {

@@ -1,5 +1,5 @@
 {
- "updatedAt": "2026-11-09T09:06:41.427Z",
+ "updatedAt": "2026-11-09T09:17:23.049Z",
  "items": [
   {
    "source": "local",
@@ -22,7 +22,7 @@
    "prize": "$67,500",
    "dates": "Oct 01 - Nov 12, 2026",
    "location": "Online",
-   "participants": 31839,
+   "participants": 31842,
    "themes": [
     "Low/No Code",
     "Machine Learning/AI",
@@ -37,7 +37,7 @@
    "prize": "$100,000",
    "dates": "Oct 30 - Dec 04, 2026",
    "location": "Online",
-   "participants": 10692,
+   "participants": 10699,
    "themes": [
     "Beginner Friendly",
     "Machine Learning/AI",
@@ -67,7 +67,7 @@
    "prize": "$120,000",
    "dates": "Oct 27 - Dec 22, 2026",
    "location": "Online",
-   "participants": 2370,
+   "participants": 2372,
    "themes": [
     "Machine Learning/AI",
     "Enterprise",
@@ -127,7 +127,7 @@
    "prize": "$50,000",
    "dates": "Nov 02 - Dec 15, 2026",
    "location": "Online",
-   "participants": 903,
+   "participants": 906,
    "themes": [
     "IoT",
     "Machine Learning/AI",
@@ -142,7 +142,7 @@
    "prize": "$17,150",
    "dates": "Nov 08 - 15, 2026",
    "location": "Online",
-   "participants": 371,
+   "participants": 373,
    "themes": [
     "Beginner Friendly",
     "Low/No Code",
@@ -367,7 +367,7 @@
    "prize": "$3,000",
    "dates": "Nov 03, 2026 - Feb 01, 2027",
    "location": "Online",
-   "participants": 20,
+   "participants": 21,
    "themes": [
     "Quantum",
     "Beginner Friendly",
@@ -411,7 +411,7 @@
    "prize": "$500",
    "dates": "Nov 08 - Dec 15, 2026",
    "location": "Online",
-   "participants": 9,
+   "participants": 10,
    "themes": [
     "Open Ended",
     "Beginner Friendly",

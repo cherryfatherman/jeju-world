@@ -5,16 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>판매 등록 · 바톤</title>
 <link rel="stylesheet" href="./style.css">
+<script src="./app.js"></script>
 </head>
 <body>
-<header class="top"><div class="wrap">
-  <a class="logo" href="./"><span class="mark">🏃</span>바톤</a>
-  <nav><a href="./#projects">프로젝트</a><a href="./#hackathons">해커톤 일정</a><a href="./sell.html" class="on">판매 등록</a></nav>
-</div></header>
-
 <main class="wrap" style="max-width:720px">
-  <div class="hero" style="padding-bottom:10px">
-    <h1 style="font-size:30px">주소 하나면 <em>30초</em>면 돼요</h1>
+  <div class="page-title">
+    <h1>주소 하나면 <em>30초</em>면 돼요</h1>
     <p>서비스 주소를 넣으면 AI가 페이지를 읽고 소개글, 분류, 태그, 가격대까지 써 드려요. 확인하고 고치기만 하면 끝이에요.</p>
   </div>
   <div class="steps"><span class="on" id="st1">1 주소 입력</span><span id="st2">2 AI 초안 확인</span><span id="st3">3 게시</span></div>
@@ -49,20 +45,18 @@
       <label>연락처 (구매 문의가 오면 알려줘요)<input name="contact" required maxlength="200" placeholder="이메일 또는 오픈채팅 링크"></label>
     </div>
     <input type="hidden" name="url">
-    <div style="display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap">
+    <div class="actions" style="justify-content:space-between">
       <button type="button" class="btn" id="backBtn">← 주소 다시 입력</button>
       <button class="btn primary big">🏃 바톤에 올리기</button>
     </div>
     <p class="note">올리면 바로 공개돼요. 연락처는 문의한 사람에게만 보여요. 개인정보가 담긴 서비스는 넘기기 전에 이용자 동의와 개인정보 처리를 꼭 확인하세요.</p>
   </form>
 </main>
-<div id="toast"></div>
 
 <script>
-const $ = (s) => document.querySelector(s);
+mountShell({ active: 'sell', banner: false });
 const CATS = ['생산성', '마케팅', '교육', '커뮤니티', '데이터·분석', '커머스', '헬스·웰빙', '개발도구', '지역·로컬', '기타'];
 $('#catSel').innerHTML = CATS.map((c) => `<option>${c}</option>`).join('');
-function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2500); }
 function setStep(n) { [1, 2, 3].forEach((i) => $('#st' + i).classList.toggle('on', i === n)); $('#step1').hidden = n !== 1; $('#step2').hidden = n !== 2; }
 let draftMeta = {};
 
