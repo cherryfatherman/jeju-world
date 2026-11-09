@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>제대 놀이터 · 동네 지도</title>
+<style>
+  :root { --accent: #ff7043; --ink: #23262b; --muted: #6b7280; --night: #1e2238; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Noto Sans KR", "Apple SD Gothic Neo", sans-serif; color: var(--ink); background: var(--night); }
+  button { font: inherit; cursor: pointer; }
+
+  #view { position: fixed; inset: 0; overflow: hidden; touch-action: none; cursor: grab; }
+  #view.drag { cursor: grabbing; }
+  #stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+  #stage img { display: block; user-select: none; -webkit-user-drag: none; pointer-events: none; }
+
+  .pin { position: absolute; transform-origin: 50% 100%; border: 0; background: none; padding: 0; }
+  .pin .dot { display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: var(--accent); box-shadow: 0 3px 8px rgba(0,0,0,.35); border: 3px solid #fff; }
+  .pin .dot span { transform: rotate(45deg); font-size: 18px; }
+  .pin.info .dot { width: 26px; height: 26px; background: #8a93a6; border-width: 2px; }
+  .pin.info .dot span { font-size: 12px; }
+  .pin .tag { position: absolute; left: 50%; top: -24px; transform: translateX(-50%); white-space: nowrap; background: #fff; border-radius: 10px; padding: 2px 8px; font-size: 12px; font-weight: 700; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
+  .pin.info .tag { display: none; }
+
+  header { position: fixed; top: 0; left: 0; right: 0; padding: 12px 12px 0; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+  .top { display: flex; align-items: center; gap: 8px; }
+  .brand { flex: 1; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,.6); }
+  .brand b { font-size: 18px; display: block; }
+  .brand small { font-size: 12px; opacity: .85; }
+  .chip { pointer-events: auto; border: 0; border-radius: 14px; padding: 9px 12px; background: rgba(255,255,255,.92); font-weight: 700; font-size: 13px; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+  .event { pointer-events: auto; display: flex; align-items: center; gap: 10px; border: 0; width: 100%; max-width: 480px; text-align: left; padding: 12px 14px; border-radius: 16px; color: #fff;
+    background: linear-gradient(120deg, #3a1c71, #d76d77 60%, #ffaf7b); box-shadow: 0 6px 18px rgba(0,0,0,.3); }
+  .event .em { font-size: 28px; }
+  .event b { display: block; font-size: 15px; }
+  .event small { font-size: 12px; opacity: .95; }
+  .event .go { margin-left: auto; background: rgba(255,255,255,.22); border-radius: 10px; padding: 6px 10px; font-weight: 800; font-size: 13px; white-space: nowrap; }
+
+  .legend { position: fixed; left: 12px; bottom: 12px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .legend span { background: rgba(255,255,255,.9); border-radius: 10px; padding: 5px 9px; font-size: 12px; font-weight: 600; }
+  .zoom { position: fixed; right: 12px; bottom: 12px; display: flex; flex-direction: column; gap: 6px; }
+  .zoom button { width: 42px; height: 42px; border-radius: 12px; border: 0; background: rgba(255,255,255,.92); font-size: 20px; font-weight: 800; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+
+  #sheet { position: fixed; left: 0; right: 0; bottom: 0; transform: translateY(105%); transition: transform .25s ease-out; z-index: 5; display: flex; justify-content: center; }
+  #sheet.show { transform: none; }
+  .card { width: min(480px, 100%); background: #fff; border-radius: 22px 22px 0 0; padding: 10px 18px 22px; box-shadow: 0 -10px 30px rgba(0,0,0,.25); }
+  .grab { width: 40px; height: 5px; border-radius: 3px; background: #e2e4e9; margin: 0 auto 12px; }
+  .card h2 { margin: 0; font-size: 20px; }
+  .card .kind { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .card .sample { display: inline-block; margin-top: 6px; font-size: 11px; font-weight: 700; color: #b45309; background: #fef3c7; border-radius: 8px; padding: 3px 8px; }
+  .card p { color: #4b5563; font-size: 14px; line-height: 1.5; margin: 10px 0 0; }
+  .coupon { margin-top: 14px; border: 2px dashed #ffb199; border-radius: 16px; padding: 14px; display: flex; align-items: center; gap: 12px; background: #fff7f3; }
+  .coupon .em { font-size: 30px; }
+  .coupon b { display: block; font-size: 16px; }
+  .coupon small { color: var(--muted); font-size: 12px; }
+  .card .primary { width: 100%; margin-top: 12px; padding: 14px; border: 0; border-radius: 14px; background: var(--accent); color: #fff; font-size: 16px; font-weight: 800; }
+  .card .primary:disabled { background: #c7cad1; }
+  .code { margin-top: 12px; text-align: center; padding: 14px; border-radius: 14px; background: #23262b; color: #fff; }
+  .code b { display: block; font-size: 28px; letter-spacing: 4px; }
+  .code small { opacity: .8; font-size: 12px; }
+  .credit { position: fixed; right: 64px; bottom: 14px; font-size: 10px; color: rgba(255,255,255,.75); }
+</style>
+</head>
+<body>
+<div id="view"><div id="stage"><img id="mapImg" alt="제주대학교 주변 지도"></div></div>
+
+<header>
+  <div class="top">
+    <div class="brand"><b>🏮 제대 놀이터</b><small>제주대학교 동네 지도</small></div>
+    <button class="chip" id="themeBtn">☀️ 낮 지도</button>
+  </div>
+  <button class="event" id="eventBtn">
+    <span class="em">👹</span>
+    <span><b>금요일 밤 9시 · 도깨비 공포체험</b><small>친구랑 같이 광장에서 만나요 · 1등 팀 가게 쿠폰</small></span>
+    <span class="go">🎮 광장 입장</span>
+  </button>
+</header>
+
+<div class="legend"><span>🧡 쿠폰 가게</span><span>⚪ 동네 시설</span></div>
+<div class="zoom"><button id="zin">＋</button><button id="zout">－</button></div>
+<div class="credit">지도 데이터 © OpenStreetMap 기여자</div>
+
+<div id="sheet"><div class="card" id="card"></div></div>
+
+<script>
+// 쿠폰 가게: 영업이 된 가게만 실제 정보로 바꾼다. 지금은 모두 예시.
+const SHOPS = [
+  { name: '감귤 카페 (예시)', kind: '카페', emoji: '☕', x: 1385, y: 62, sample: true,
+    desc: '정문 앞 감성 카페. 시험 기간엔 밤 12시까지 열어요.', coupon: '아메리카노 1,000원 할인', couponEmoji: '☕' },
+  { name: '아라 흑돼지 (예시)', kind: '식당', emoji: '🍖', x: 1540, y: 52, sample: true,
+    desc: '학생 세트 메뉴가 있는 흑돼지 집. 동아리 회식 단골.', coupon: '4인 이상 음료수 1병 무료', couponEmoji: '🥤' },
+  { name: '제대 분식 (예시)', kind: '분식', emoji: '🍢', x: 1615, y: 118, sample: true,
+    desc: '떡볶이와 김밥이 맛있는 정문 앞 분식집.', coupon: '떡볶이 주문 시 튀김 2개 서비스', couponEmoji: '🍤' },
+];
+const KIND_EMOJI = { '편의점': '🏪', '카페': '☕', '식당': '🍚', '약국': '💊', '우체국': '📮', '도서관': '📚', '병원': '🏥', '은행': '🏦', '동물병원': '🐾', '마트': '🛒' };
+
+const $ = (id) => document.getElementById(id);
+const view = $('view'), stage = $('stage'), img = $('mapImg');
+let night = (() => { const h = new Date().getHours(); return h >= 18 || h < 6; })();
+let s = 1, tx = 0, ty = 0, minS = 0.2;
+const pins = [];
+
+function setTheme() {
+  img.src = night ? 'maps/jnu-night.png' : 'maps/jnu.png';
+  $('themeBtn').textContent = night ? '☀️ 낮 지도' : '🏮 밤 축제 지도';
+  document.body.style.background = night ? '#1e2238' : '#ece6cd';
+}
+$('themeBtn').onclick = () => { night = !night; setTheme(); };
+
+function apply() {
+  const W = img.naturalWidth || 3129, H = img.naturalHeight || 1650;
+  const vw = innerWidth, vh = innerHeight;
+  // 지도 밖으로 너무 나가지 않게
+  tx = Math.min(vw * 0.5, Math.max(vw * 0.5 - W * s, tx));
+  ty = Math.min(vh * 0.6, Math.max(vh * 0.5 - H * s, ty));
+  stage.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`;
+  for (const p of pins) p.style.transform = `translate(-50%, -100%) scale(${1 / s})`;
+}
+function zoomAt(k, cx, cy) {
+  const ns = Math.min(3, Math.max(minS, s * k));
+  tx = cx - ((cx - tx) * ns) / s;
+  ty = cy - ((cy - ty) * ns) / s;
+  s = ns;
+  apply();
+}
+function centerOn(x, y, scale) {
+  // 위쪽 배너에 가리지 않게, 배너 아래 남은 공간의 가운데로 맞춤
+  const top = document.querySelector('header').getBoundingClientRect().bottom;
+  s = scale; tx = innerWidth / 2 - x * s; ty = top + (innerHeight - top) * 0.35 - y * s; apply();
+}
+
+// 핀 만들기
+function addPin(item, isShop) {
+  const b = document.createElement('button');
+  b.className = 'pin' + (isShop ? '' : ' info');
+  b.style.left = item.x + 'px';
+  b.style.top = item.y + 'px';
+  b.innerHTML = `<span class="dot"><span>${item.emoji || KIND_EMOJI[item.kind] || '📍'}</span></span>` + (isShop ? `<span class="tag"></span>` : '');
+  if (isShop) b.querySelector('.tag').textContent = item.name.replace(' (예시)', '');
+  b._item = item; b._isShop = isShop;
+  stage.append(b);
+  pins.push(b);
+}
+fetch('maps/jnu.pois.json').then((r) => r.json()).then((data) => {
+  for (const p of data.pois) addPin(p, false);
+  for (const shop of SHOPS) addPin(shop, true); // 쿠폰 가게가 위에 보이게 나중에
+  apply();
+}).catch(() => SHOPS.forEach((shop) => addPin(shop, true)));
+
+// 가게 카드
+function openCard(item, isShop) {
+  const card = $('card');
+  card.innerHTML = '<div class="grab"></div>';
+  const h = document.createElement('h2'); h.textContent = item.name; card.append(h);
+  const k = document.createElement('div'); k.className = 'kind'; k.textContent = item.kind; card.append(k);
+  if (isShop) {
+    if (item.sample) { const t = document.createElement('span'); t.className = 'sample'; t.textContent = '예시 가게 · 실제 가게가 아니에요'; card.append(t); }
+    const p = document.createElement('p'); p.textContent = item.desc; card.append(p);
+    const c = document.createElement('div'); c.className = 'coupon';
+    c.innerHTML = `<span class="em">${item.couponEmoji}</span><span><b></b><small>제대 놀이터 회원 쿠폰</small></span>`;
+    c.querySelector('b').textContent = item.coupon;
+    card.append(c);
+    const btn = document.createElement('button'); btn.className = 'primary'; btn.textContent = '쿠폰 받기';
+    btn.onclick = () => {
+      btn.disabled = true; btn.textContent = '받았어요!';
+      const code = document.createElement('div'); code.className = 'code';
+      code.innerHTML = `<b>${Math.random().toString(36).slice(2, 7).toUpperCase()}</b><small>계산할 때 이 화면을 보여주세요 (예시 쿠폰이라 실제로 쓸 수 없어요)</small>`;
+      card.append(code);
+    };
+    card.append(btn);
+  } else {
+    const p = document.createElement('p'); p.textContent = '동네 시설이에요. 이 가게가 제대 놀이터에 들어오면 쿠폰이 생겨요.'; card.append(p);
+  }
+  $('sheet').classList.add('show');
+}
+const closeCard = () => $('sheet').classList.remove('show');
+
+// 이동 · 확대 (마우스, 한 손가락 끌기, 두 손가락 벌리기)
+const pts = new Map();
+let moved = false, last = null, lastDist = 0;
+view.addEventListener('pointerdown', (e) => {
+  pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  view.setPointerCapture(e.pointerId);
+  moved = false; last = { x: e.clientX, y: e.clientY };
+  if (pts.size === 2) { const [a, b] = [...pts.values()]; lastDist = Math.hypot(a.x - b.x, a.y - b.y); }
+  view.classList.add('drag');
+});
+view.addEventListener('pointermove', (e) => {
+  if (!pts.has(e.pointerId)) return;
+  pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pts.size === 2) {
+    const [a, b] = [...pts.values()];
+    const dist = Math.hypot(a.x - b.x, a.y - b.y);
+    if (lastDist) zoomAt(dist / lastDist, (a.x + b.x) / 2, (a.y + b.y) / 2);
+    lastDist = dist; moved = true;
+  } else if (last) {
+    const dx = e.clientX - last.x, dy = e.clientY - last.y;
+    if (Math.abs(dx) + Math.abs(dy) > 2) moved = true;
+    tx += dx; ty += dy; last = { x: e.clientX, y: e.clientY }; apply();
+  }
+});
+const up = (e) => {
+  pts.delete(e.pointerId);
+  if (pts.size < 2) lastDist = 0;
+  if (pts.size === 1) { const [p] = pts.values(); last = { ...p }; }
+  if (!pts.size) {
+    view.classList.remove('drag');
+    if (!moved) { // 눌렀다 뗀 곳에 핀이 있으면 카드 열기
+      const pin = document.elementFromPoint(e.clientX, e.clientY)?.closest('.pin');
+      pin ? openCard(pin._item, pin._isShop) : closeCard();
+    }
+  }
+};
+view.addEventListener('pointerup', up);
+view.addEventListener('pointercancel', up);
+view.addEventListener('wheel', (e) => { e.preventDefault(); zoomAt(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX, e.clientY); }, { passive: false });
+$('zin').onclick = () => zoomAt(1.4, innerWidth / 2, innerHeight / 2);
+$('zout').onclick = () => zoomAt(1 / 1.4, innerWidth / 2, innerHeight / 2);
+$('eventBtn').onclick = () => { location.href = './'; };
+
+img.onload = () => {
+  const W = img.naturalWidth, H = img.naturalHeight;
+  minS = Math.max(innerWidth / W, innerHeight / H) * 0.6;
+  if (!apply.done) { apply.done = true; centerOn(1500, 110, innerWidth < 600 ? 0.6 : 1); } else apply();
+};
+addEventListener('resize', apply);
+setTheme();
+</script>
+</body>
+</html>
