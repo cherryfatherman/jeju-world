@@ -1,0 +1,46 @@
+{
+ "site": {
+  "name": "바톤",
+  "slogan": "해커톤의 바통을 다음 주자에게",
+  "defaultTheme": "auto",
+  "threads": "https://www.threads.net/",
+  "openchat": "#",
+  "showSamples": true
+ },
+ "banner": {
+  "kicker": "🍊 제주에서 시작한 프로젝트 장터",
+  "title": "해커톤이 끝나도\n프로젝트는 [끝나지 않게]",
+  "sub": "AI로 만든 서비스와 해커톤 결과물을 이어갈 [다음 주인]에게 넘기는 곳. 주소 하나면 AI가 30초 만에 판매 글을 써 드려요.",
+  "primaryLabel": "🏃 내 프로젝트 넘기기",
+  "secondaryLabel": "👀 사고 싶어요 알림"
+ },
+ "ticker": {
+  "enabled": true,
+  "mode": "auto",
+  "title": "",
+  "text": "",
+  "url": ""
+ },
+ "nav": [
+  { "label": "홈", "href": "./", "key": "home" },
+  { "label": "장터", "href": "./#projects", "key": "market" },
+  { "label": "수상작 도감", "href": "./winners.html", "key": "winners", "badge": "NEW" },
+  { "label": "해커톤 일정", "href": "./#hackathons", "key": "hackathons" },
+  { "label": "판매 등록", "href": "./sell.html", "key": "sell", "badge": "AI" }
+ ],
+ "tools": [
+  { "icon": "🧩", "label": "프로젝트 장터", "sub": "다음 주인 찾는 중", "href": "./#projects" },
+  { "icon": "✨", "label": "AI 판매 등록", "sub": "주소 하나로 30초", "href": "./sell.html", "badge": "AI", "hot": true },
+  { "icon": "🏆", "label": "수상작 도감", "sub": "해외 해커톤 수상작", "href": "./winners.html", "badge": "NEW" },
+  { "icon": "📅", "label": "해커톤 일정", "sub": "자동 수집", "href": "./#hackathons" },
+  { "icon": "🧮", "label": "가격 계산기", "sub": "내 프로젝트 가치는?", "href": "", "badge": "곧", "soon": true },
+  { "icon": "✅", "label": "인수 체크리스트", "sub": "넘기기 전 확인", "href": "", "badge": "곧", "soon": true }
+ ],
+ "colors": {
+  "accent": "#ff7a1a",
+  "accent2": "#f5b942"
+ },
+ "footer": {
+  "note": "해커톤 일정 출처: Devpost 공개 API · 수상작 도감 출처: Devpost · \"예시\" 표시 프로젝트는 시연용 가상 데이터예요"
+ }
+}

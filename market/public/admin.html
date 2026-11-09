@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>관리자 · 바톤</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="./style.css">
+<script src="./app.js"></script>
+<style>
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 16px 0; }
+  .tabs button { padding: 8px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); font-weight: 700; }
+  .tabs button.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .pane { display: none; } .pane.on { display: block; }
+  .help { font-size: 12px; color: var(--muted); margin-top: -4px; }
+  .item { display: grid; grid-template-columns: 50px 1fr 1fr 1.4fr 70px 60px 40px; gap: 6px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .item input { padding: 8px 10px; font-size: 13px; }
+  .item .del { background: none; border: 0; color: var(--hot); font-size: 16px; }
+  .item.nav { grid-template-columns: 1fr 1.4fr 90px 70px 40px; }
+  .savebar { position: sticky; bottom: 0; background: var(--bg); padding: 12px 0; display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid var(--line); margin-top: 16px; }
+  .trow { display: flex; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14px; flex-wrap: wrap; }
+  .trow .grow { flex: 1; min-width: 200px; }
+  .trow .btn { padding: 6px 10px; font-size: 12px; }
+  .muted { color: var(--muted); font-size: 12px; }
+  .swatch { width: 44px; height: 44px; padding: 0; border: 1px solid var(--line); border-radius: 10px; background: none; }
+  @media (max-width: 760px) { .item, .item.nav { grid-template-columns: 1fr 1fr; } }
+</style>
+</head>
+<body>
+<main class="wrap" style="max-width:860px">
+  <div class="page-title"><h1>⚙️ 관리자</h1><p>문구·색·메뉴·공지를 여기서 고치면 사이트에 바로 반영돼요. 코드는 만질 필요 없어요.</p></div>
+
+  <form class="form" id="login">
+    <label>관리자 비밀번호<input name="password" type="password" required placeholder="기본값은 README에 적혀 있어요"></label>
+    <div class="actions"><button class="btn primary">들어가기</button></div>
+  </form>
+
+  <div id="panel" hidden>
+    <div class="tabs">
+      <button data-tab="site" class="on">기본·배너</button><button data-tab="ticker">공지 띠</button><button data-tab="nav">메뉴·도구 상자</button><button data-tab="projects">프로젝트 관리</button><button data-tab="inbox">받은 편지함</button><button data-tab="threads">스레드 글</button>
+    </div>
+
+    <!-- 기본·배너 -->
+    <div class="pane on" id="pane-site"><div class="form">
+      <div class="row2">
+        <label>사이트 이름<input id="f-name"></label>
+        <label>슬로건<input id="f-slogan"></label>
+      </div>
+      <div class="row2">
+        <label>기본 테마<select id="f-theme"><option value="auto">자동 (18시~6시 밤)</option><option value="day">항상 낮</option><option value="night">항상 밤</option></select></label>
+        <label>예시 프로젝트 보이기<select id="f-samples"><option value="true">보이기 (시연용)</option><option value="false">숨기기 (실제 운영)</option></select></label>
+      </div>
+      <div class="row2">
+        <label>스레드 주소<input id="f-threads" placeholder="https://www.threads.net/@계정"></label>
+        <label>오픈채팅 주소<input id="f-openchat" placeholder="https://open.kakao.com/o/..."></label>
+      </div>
+      <div class="row2">
+        <label>포인트 색 <span class="help">버튼·강조</span><div style="display:flex;gap:8px"><input id="f-accent" placeholder="#ff7a1a"><input type="color" class="swatch" id="c-accent"></div></label>
+        <label>보조 색 <span class="help">배너 강조 글자</span><div style="display:flex;gap:8px"><input id="f-accent2" placeholder="#f5b942"><input type="color" class="swatch" id="c-accent2"></div></label>
+      </div>
+      <hr style="border:0;border-top:1px solid var(--line);margin:4px 0">
+      <label>배너 작은 글<input id="f-kicker"></label>
+      <label>배너 제목 <span class="help">줄바꿈은 엔터, 강조할 말은 [대괄호]</span><textarea id="f-title" style="min-height:70px"></textarea></label>
+      <label>배너 설명 <span class="help">강조할 말은 [대괄호]</span><textarea id="f-sub" style="min-height:70px"></textarea></label>
+      <div class="row2">
+        <label>주 버튼 글자<input id="f-primary"></label>
+        <label>보조 버튼 글자<input id="f-secondary"></label>
+      </div>
+      <label>푸터 안내문<input id="f-footer"></label>
+    </div></div>
+
+    <!-- 공지 띠 -->
+    <div class="pane" id="pane-ticker"><div class="form">
+      <label>공지 띠<select id="t-enabled"><option value="true">보이기</option><option value="false">숨기기</option></select></label>
+      <label>내용<select id="t-mode"><option value="auto">자동 (국내 해커톤 → 없으면 참가자 최다 대회)</option><option value="custom">직접 쓰기</option></select></label>
+      <label>제목<input id="t-title" placeholder="예: 금요일 발표! 바톤 시연 중"></label>
+      <label>설명<input id="t-text" placeholder="예: 지금 올리면 발표에 소개돼요"></label>
+      <label>링크<input id="t-url" placeholder="https://..."></label>
+    </div></div>
+
+    <!-- 메뉴·도구 상자 -->
+    <div class="pane" id="pane-nav"><div class="form">
+      <b>상단 메뉴</b><p class="help">순서대로 보여요. key는 현재 페이지 표시용(home, market, winners, hackathons, sell)</p>
+      <div id="navList"></div>
+      <button type="button" class="btn" id="addNav">＋ 메뉴 추가</button>
+      <hr style="border:0;border-top:1px solid var(--line);margin:8px 0">
+      <b>도구 상자</b><p class="help">아이콘(이모지) · 이름 · 작은 설명 · 링크 · 배지(NEW/AI/곧) · 준비중이면 체크</p>
+      <div id="toolList"></div>
+      <button type="button" class="btn" id="addTool">＋ 도구 추가</button>
+    </div></div>
+
+    <!-- 프로젝트 관리 -->
+    <div class="pane" id="pane-projects"><div class="form"><div id="projList"></div></div></div>
+
+    <!-- 받은 편지함 -->
+    <div class="pane" id="pane-inbox"><div class="form"><div id="inbox"></div></div></div>
+
+    <!-- 스레드 글 -->
+    <div class="pane" id="pane-threads"><div class="form">
+      <p class="note">오늘 올릴 스레드 글 초안이에요. 복사해서 붙여넣기만 하세요. (AI 키가 있으면 AI가, 없으면 기본 문장으로 만들어요)</p>
+      <button type="button" class="btn primary" id="genThreads">✨ 오늘 글 3개 만들기</button>
+      <div id="threadsOut"></div>
+    </div></div>
+
+    <div class="savebar"><a class="btn" href="./" target="_blank">사이트 보기 ↗</a><button class="btn primary big" id="save">💾 저장하고 반영</button></div>
+  </div>
+</main>
+
+<script>
+let cfg;
+mountShell({ active: 'admin', banner: false }).then((c) => { cfg = c; if (sessionStorage.getItem('adminpw')) enter(); });
+const v = (id, val) => { const el = $(id); if (val !== undefined) el.value = val ?? ''; return el.value; };
+
+$('#login').onsubmit = async (e) => {
+  e.preventDefault();
+  const pw = new FormData(e.target).get('password');
+  try { await api('/api/admin/login', { password: pw }); sessionStorage.setItem('adminpw', pw); enter(); } catch (err) { toast(err.message); }
+};
+async function enter() {
+  try { await api('/api/admin/inbox'); } catch { sessionStorage.removeItem('adminpw'); return; }
+  $('#login').hidden = true; $('#panel').hidden = false; fill(); loadProjects(); loadInbox();
+}
+$$('.tabs button').forEach((b) => b.onclick = () => { $$('.tabs button').forEach((x) => x.classList.toggle('on', x === b)); $$('.pane').forEach((p) => p.classList.toggle('on', p.id === 'pane-' + b.dataset.tab)); });
+
+function fill() {
+  const S = cfg.site, B = cfg.banner, T = cfg.ticker || {}, C = cfg.colors || {};
+  v('#f-name', S.name); v('#f-slogan', S.slogan); v('#f-theme', S.defaultTheme || 'auto'); v('#f-samples', String(S.showSamples !== false));
+  v('#f-threads', S.threads); v('#f-openchat', S.openchat);
+  v('#f-accent', C.accent || '#ff7a1a'); v('#c-accent', C.accent || '#ff7a1a'); v('#f-accent2', C.accent2 || '#f5b942'); v('#c-accent2', C.accent2 || '#f5b942');
+  v('#f-kicker', B.kicker); v('#f-title', B.title); v('#f-sub', B.sub); v('#f-primary', B.primaryLabel); v('#f-secondary', B.secondaryLabel);
+  v('#f-footer', cfg.footer?.note || '');
+  v('#t-enabled', String(T.enabled !== false)); v('#t-mode', T.mode || 'auto'); v('#t-title', T.title); v('#t-text', T.text); v('#t-url', T.url);
+  renderNav(); renderTools();
+}
+$('#c-accent').oninput = (e) => v('#f-accent', e.target.value); $('#c-accent2').oninput = (e) => v('#f-accent2', e.target.value);
+
+function renderNav() {
+  $('#navList').replaceChildren(...cfg.nav.map((n, i) => { const d = document.createElement('div'); d.className = 'item nav';
+    d.innerHTML = `<input value="${esc(n.label)}" placeholder="이름" data-k="label"><input value="${esc(n.href)}" placeholder="링크" data-k="href"><input value="${esc(n.key || '')}" placeholder="key" data-k="key"><input value="${esc(n.badge || '')}" placeholder="배지" data-k="badge"><button type="button" class="del">✕</button>`;
+    d.querySelectorAll('input').forEach((inp) => inp.oninput = () => { n[inp.dataset.k] = inp.value; });
+    d.querySelector('.del').onclick = () => { cfg.nav.splice(i, 1); renderNav(); }; return d; }));
+}
+function renderTools() {
+  $('#toolList').replaceChildren(...cfg.tools.map((t, i) => { const d = document.createElement('div'); d.className = 'item';
+    d.innerHTML = `<input value="${esc(t.icon)}" data-k="icon"><input value="${esc(t.label)}" placeholder="이름" data-k="label"><input value="${esc(t.sub || '')}" placeholder="설명" data-k="sub"><input value="${esc(t.href || '')}" placeholder="링크" data-k="href"><input value="${esc(t.badge || '')}" placeholder="배지" data-k="badge"><label style="flex-direction:row;align-items:center;gap:4px;font-size:11px"><input type="checkbox" style="width:auto" ${t.soon ? 'checked' : ''}>준비중</label><button type="button" class="del">✕</button>`;
+    d.querySelectorAll('input[data-k]').forEach((inp) => inp.oninput = () => { t[inp.dataset.k] = inp.value; });
+    d.querySelector('input[type=checkbox]').onchange = (e) => { t.soon = e.target.checked; };
+    d.querySelector('.del').onclick = () => { cfg.tools.splice(i, 1); renderTools(); }; return d; }));
+}
+$('#addNav').onclick = () => { cfg.nav.push({ label: '새 메뉴', href: './', key: '' }); renderNav(); };
+$('#addTool').onclick = () => { cfg.tools.push({ icon: '🆕', label: '새 도구', sub: '', href: '' }); renderTools(); };
+
+$('#save').onclick = async () => {
+  cfg.site = { ...cfg.site, name: v('#f-name'), slogan: v('#f-slogan'), defaultTheme: v('#f-theme'), showSamples: v('#f-samples') === 'true', threads: v('#f-threads'), openchat: v('#f-openchat') };
+  cfg.colors = { accent: v('#f-accent'), accent2: v('#f-accent2') };
+  cfg.banner = { kicker: v('#f-kicker'), title: v('#f-title'), sub: v('#f-sub'), primaryLabel: v('#f-primary'), secondaryLabel: v('#f-secondary') };
+  cfg.footer = { note: v('#f-footer') };
+  cfg.ticker = { enabled: v('#t-enabled') === 'true', mode: v('#t-mode'), title: v('#t-title'), text: v('#t-text'), url: v('#t-url') };
+  try { await api('/api/config', cfg, 'PUT'); toast('저장했어요! 사이트에 바로 반영돼요 ✅'); } catch (err) { toast(err.message); }
+};
+
+async function loadProjects() {
+  const list = await api('/api/admin/projects');
+  $('#projList').replaceChildren(...list.map((p) => { const d = document.createElement('div'); d.className = 'trow';
+    d.innerHTML = `<div class="grow"><b>${esc(p.name)}</b> ${p.sample ? '<span class="badge sample">예시</span>' : ''} <span class="badge">${p.status === 'live' ? '공개' : '숨김'}</span><div class="muted">${esc(p.tagline)} · ♥ ${p.interest || 0} · 연락처 ${esc(p.contact)}</div></div><a class="btn" href="./project.html?id=${p.id}" target="_blank">보기</a><button class="btn" data-a="toggle">${p.status === 'live' ? '숨기기' : '공개'}</button><button class="btn" data-a="delete" style="color:var(--hot)">삭제</button>`;
+    d.querySelectorAll('[data-a]').forEach((b) => b.onclick = async () => { if (b.dataset.a === 'delete' && !confirm(`"${p.name}"을(를) 정말 삭제할까요?`)) return; await api(`/api/admin/projects/${p.id}`, { action: b.dataset.a }); loadProjects(); }); return d; }));
+}
+async function loadInbox() {
+  const d = await api('/api/admin/inbox');
+  const sec = (title, rows) => `<h3 style="margin:14px 0 6px">${title} <span class="muted">${rows.length}건</span></h3>` + (rows.length ? rows.map((r) => `<div class="trow"><div class="grow">${r}</div></div>`).join('') : '<p class="muted">아직 없어요</p>');
+  $('#inbox').innerHTML =
+    sec('💬 구매 문의', d.inquiries.map((i) => `<b>${esc(i.projectName)}</b> ← ${esc(i.name || '익명')} (${esc(i.contact)})<div class="muted">${esc(i.message)} · ${new Date(i.createdAt).toLocaleString('ko-KR')}</div>`)) +
+    sec('👀 알림 신청', d.waitlist.map((w) => `<b>${{ buy: '사고 싶어요', sell: '팔고 싶어요', both: '둘 다' }[w.role]}</b> ${esc(w.contact)}<div class="muted">${esc(w.note || '')} · ${new Date(w.createdAt).toLocaleString('ko-KR')}</div>`)) +
+    sec('🗨️ 한 줄 추천', d.comments.map((c) => `<b>${esc(c.name)}</b> ${esc(c.text)}<div class="muted">${new Date(c.createdAt).toLocaleString('ko-KR')}</div>`));
+}
+$('#genThreads').onclick = async () => {
+  $('#genThreads').disabled = true; $('#genThreads').innerHTML = '<span class="spinner"></span> 만드는 중…';
+  try { const d = await api('/api/threads-drafts'); $('#threadsOut').innerHTML = `<p class="muted">${d.ai ? '✨ AI 작성' : 'ℹ️ 기본 문장 (AI 키 없음)'}</p>` + d.posts.map((p) => `<div class="trow"><div class="grow" style="white-space:pre-line">${esc(p)}</div><button class="btn" onclick="navigator.clipboard.writeText(this.previousElementSibling.textContent);toast('복사했어요')">복사</button></div>`).join(''); } catch (err) { toast(err.message); }
+  $('#genThreads').disabled = false; $('#genThreads').textContent = '✨ 오늘 글 3개 만들기';
+};
+</script>
+</body>
+</html>

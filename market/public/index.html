@@ -14,14 +14,7 @@
 
   <section>
     <div class="sec-head"><h2>🧰 도구 상자</h2><span class="more">로그인 없이 바로 써요</span></div>
-    <div class="tools">
-      <a class="tool" href="./#projects"><span class="ic">🧩</span><span>프로젝트 장터<small>다음 주인 찾는 중</small></span></a>
-      <a class="tool" href="./sell.html"><span class="ic">✨</span><span>AI 판매 등록<small>주소 하나로 30초</small></span><i class="bd hot">AI</i></a>
-      <a class="tool" href="./winners.html"><span class="ic">🏆</span><span>수상작 도감<small>해외 해커톤 수상작</small></span><i class="bd">NEW</i></a>
-      <a class="tool" href="./#hackathons"><span class="ic">📅</span><span>해커톤 일정<small>자동 수집</small></span></a>
-      <a class="tool soon" href="#" onclick="toast('준비 중이에요. 금요일 이후 열려요!');return false"><span class="ic">🧮</span><span>가격 계산기<small>내 프로젝트 가치는?</small></span><i class="bd">곧</i></a>
-      <a class="tool soon" href="#" onclick="toast('준비 중이에요!');return false"><span class="ic">✅</span><span>인수 체크리스트<small>넘기기 전 확인</small></span><i class="bd">곧</i></a>
-    </div>
+    <div class="tools" id="tools"></div>
   </section>
 
   <section><div class="stats" id="stats"></div></section>
@@ -45,8 +38,12 @@
 </main>
 
 <script>
-mountShell({ active: 'home' });
-let projects = [], cat = '전체';
+let projects = [], cat = '전체', CFG;
+function renderTools() {
+  $('#tools').replaceChildren(...(CFG.tools || []).map((t) => { const a = document.createElement('a'); a.className = 'tool' + (t.soon ? ' soon' : ''); a.href = t.soon || !t.href ? '#' : t.href;
+    if (t.soon || !t.href) a.onclick = (e) => { e.preventDefault(); toast('준비 중이에요!'); };
+    a.innerHTML = `<span class="ic">${esc(t.icon)}</span><span>${esc(t.label)}<small>${esc(t.sub || '')}</small></span>${t.badge ? `<i class="bd ${t.hot ? 'hot' : ''}">${esc(t.badge)}</i>` : ''}`; return a; }));
+}
 function card(p) {
   const a = document.createElement('a'); a.className = 'card'; a.href = `./project.html?id=${encodeURIComponent(p.id)}`;
   a.innerHTML = `<div class="meta"><span class="badge stage-${esc(p.stage)}">${STAGE[p.stage] || ''}</span><span class="badge">${esc(p.category)}</span>${p.sample ? '<span class="badge sample">예시</span>' : ''}</div>
@@ -80,10 +77,12 @@ async function load() {
   $('#hackList').replaceChildren(...items.slice(0, 12).map((x) => { const a = document.createElement('a'); a.href = x.url; a.target = '_blank'; a.rel = 'noopener';
     a.innerHTML = `<span class="src ${x.source}">${x.source === 'local' ? '국내 · 직접 등록' : 'Devpost'}</span><b>${esc(x.title)}</b><span class="d">${esc(x.dates || '')} · ${esc(x.location || '')}${x.participants ? ` · ${x.participants.toLocaleString()}명 참가` : ''}</span><span class="p">${x.prize ? `상금 ${esc(x.prize)}` : ''}</span>`; return a; }));
   // 공지 띠: 국내 대회가 있으면 그것, 없으면 참가자 최다 대회
-  const t = items.find((x) => x.source === 'local') || items[0];
-  if (t) $('#ticker').innerHTML = `<div class="ticker"><span class="ic">📣</span><div><b>${esc(t.title)}</b><small>${esc(t.dates || '')}${t.location ? ` · ${esc(t.location)}` : ''}${t.prize ? ` · 상금 ${esc(t.prize)}` : ''} — 끝나면 결과물을 바톤에 올려 주세요</small></div><a href="${esc(t.url)}" target="_blank" rel="noopener">바로가기 →</a></div>`;
+  const T = CFG.ticker || {};
+  let t = null;
+  if (T.enabled !== false) t = T.mode === 'custom' ? { title: T.title, dates: T.text, url: T.url } : (items.find((x) => x.source === 'local') || items[0]);
+  if (t && t.title) $('#ticker').innerHTML = `<div class="ticker"><span class="ic">📣</span><div><b>${esc(t.title)}</b><small>${esc(t.dates || '')}${t.location ? ` · ${esc(t.location)}` : ''}${t.prize ? ` · 상금 ${esc(t.prize)}` : ''} ${T.mode === 'custom' ? '' : ' — 끝나면 결과물을 바톤에 올려 주세요'}</small></div>${t.url ? `<a href="${esc(t.url)}" target="_blank" rel="noopener">바로가기 →</a>` : ''}</div>`;
 }
-load();
+mountShell({ active: 'home' }).then((c) => { CFG = c; renderTools(); load(); });
 </script>
 </body>
 </html>

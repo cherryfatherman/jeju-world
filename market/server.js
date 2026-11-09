@@ -15,13 +15,41 @@ const clean = (s, max) => String(s ?? '').replace(/[\u0000-\u0008\u000b-\u001f]/
 const isUrl = (s) => /^https?:\/\/[^\s]+$/i.test(s);
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
+const CONFIG_FILE = path.join(__dirname, 'config.json');
+const readConfig = () => JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'baton1234'; // 배포할 때 환경변수로 꼭 바꾸세요
+const adminOnly = (req, res, next) => (req.get('x-admin-password') === ADMIN_PASSWORD ? next() : res.status(401).json({ error: '관리자 비밀번호가 틀려요.' }));
+
 const app = express();
 app.use(express.json({ limit: '200kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ---- 사이트 설정 (관리자 화면에서 수정) ----
+app.get('/api/config', (req, res) => res.json(readConfig()));
+app.post('/api/admin/login', (req, res) => (req.body.password === ADMIN_PASSWORD ? res.json({ ok: true }) : res.status(401).json({ error: '비밀번호가 틀려요.' })));
+app.put('/api/config', adminOnly, (req, res) => {
+  const c = req.body;
+  if (!c || typeof c !== 'object' || !c.site || !c.banner) return res.status(400).json({ error: '설정 형식이 맞지 않아요.' });
+  fs.writeFileSync(CONFIG_FILE, JSON.stringify(c, null, 1));
+  res.json({ ok: true });
+});
+// 관리자용: 전체 프로젝트(예시 포함) 보기 · 숨기기/보이기 · 삭제
+app.get('/api/admin/projects', adminOnly, (req, res) => res.json(load('projects.json', [])));
+app.post('/api/admin/projects/:id', adminOnly, (req, res) => {
+  const list = load('projects.json', []);
+  const p = list.find((x) => x.id === req.params.id);
+  if (!p) return res.status(404).json({ error: 'not found' });
+  if (req.body.action === 'toggle') p.status = p.status === 'live' ? 'hidden' : 'live';
+  if (req.body.action === 'delete') list.splice(list.indexOf(p), 1);
+  save('projects.json', list);
+  res.json({ ok: true });
+});
+app.get('/api/admin/inbox', adminOnly, (req, res) => res.json({ inquiries: load('inquiries.json', []), waitlist: load('waitlist.json', []), comments: load('comments.json', []) }));
+
 // ---- 프로젝트 목록 ----
 app.get('/api/projects', (req, res) => {
-  const list = load('projects.json', []).filter((p) => p.status === 'live');
+  const showSamples = readConfig().site.showSamples !== false;
+  const list = load('projects.json', []).filter((p) => p.status === 'live' && (showSamples || !p.sample));
   res.json(list.map(publicProject));
 });
 app.get('/api/projects/:id', (req, res) => {
@@ -157,7 +185,8 @@ async function refreshHackathons() {
 
 // ---- 통계 + 스레드 글 초안 (운영 자동화) ----
 app.get('/api/stats', (req, res) => {
-  const projects = load('projects.json', []).filter((p) => p.status === 'live');
+  const showSamples = readConfig().site.showSamples !== false;
+  const projects = load('projects.json', []).filter((p) => p.status === 'live' && (showSamples || !p.sample));
   const waitlist = load('waitlist.json', []);
   res.json({
     projects: projects.length,

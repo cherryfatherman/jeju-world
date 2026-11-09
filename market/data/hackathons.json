@@ -1,5 +1,5 @@
 {
- "updatedAt": "2026-11-09T09:17:23.049Z",
+ "updatedAt": "2026-11-09T09:21:57.044Z",
  "items": [
   {
    "source": "local",
@@ -22,7 +22,7 @@
    "prize": "$67,500",
    "dates": "Oct 01 - Nov 12, 2026",
    "location": "Online",
-   "participants": 31842,
+   "participants": 31847,
    "themes": [
     "Low/No Code",
     "Machine Learning/AI",
@@ -37,7 +37,7 @@
    "prize": "$100,000",
    "dates": "Oct 30 - Dec 04, 2026",
    "location": "Online",
-   "participants": 10699,
+   "participants": 10703,
    "themes": [
     "Beginner Friendly",
     "Machine Learning/AI",
@@ -127,7 +127,7 @@
    "prize": "$50,000",
    "dates": "Nov 02 - Dec 15, 2026",
    "location": "Online",
-   "participants": 906,
+   "participants": 907,
    "themes": [
     "IoT",
     "Machine Learning/AI",
@@ -142,7 +142,7 @@
    "prize": "$17,150",
    "dates": "Nov 08 - 15, 2026",
    "location": "Online",
-   "participants": 373,
+   "participants": 374,
    "themes": [
     "Beginner Friendly",
     "Low/No Code",

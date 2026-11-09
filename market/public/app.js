@@ -1,26 +1,18 @@
-/* 바톤 공통 틀: 테마(낮/밤), 상단 메뉴, 제주 야시장 배너, 푸터, 공용 도우미
-   ─ 색·문구를 바꾸려면 아래 CONFIG와 style.css 맨 위 변수만 고치면 됩니다. */
-const CONFIG = {
-  name: '바톤',
-  slogan: '해커톤의 바통을 다음 주자에게',
-  threads: 'https://www.threads.net/',   // 스레드 계정 주소로 바꾸세요
-  openchat: '#',                         // 카카오 오픈채팅 링크로 바꾸세요
-  nav: [
-    { href: './', label: '홈', key: 'home' },
-    { href: './#projects', label: '장터', key: 'market' },
-    { href: './winners.html', label: '수상작 도감', key: 'winners', badge: 'NEW' },
-    { href: './#hackathons', label: '해커톤 일정', key: 'hackathons' },
-    { href: './sell.html', label: '판매 등록', key: 'sell', badge: 'AI' },
-  ],
-};
-
+/* 바톤 공통 틀: 설정(config.json) 읽기 → 테마 · 상단 메뉴 · 배너 · 푸터 그리기
+   문구·색·메뉴는 /admin.html 에서 고치세요. 코드를 만질 일은 레이아웃을 바꿀 때뿐입니다. */
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const won = (n) => (n ? Number(n).toLocaleString('ko-KR') + '원' : '');
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+// 설정 문구의 [강조]를 색 글자로, 줄바꿈(\n)을 <br>로
+const rich = (s) => esc(s).replace(/\[([^\]]+)\]/g, '<em>$1</em>').replace(/\n/g, '<br>');
 const STAGE = { idea: '아이디어', demo: '데모', users: '사용자 있음', revenue: '매출 있음' };
-async function api(path, opts) {
-  const r = await fetch(path, opts && { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(opts) });
+let CONFIG = null;
+
+async function api(path, body, method) {
+  const headers = { 'Content-Type': 'application/json' };
+  const pw = sessionStorage.getItem('adminpw'); if (pw) headers['x-admin-password'] = pw;
+  const r = await fetch(path, body !== undefined ? { method: method || 'POST', headers, body: JSON.stringify(body) } : { headers });
   const d = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(d.error || '요청에 실패했어요');
   return d;
@@ -36,10 +28,10 @@ function priceText(p) {
   return p.priceMin ? `${won(p.priceMin)} ~ ${won(p.priceMax)}` : `~ ${won(p.priceMax)}`;
 }
 
-/* ── 테마: 18시~06시는 밤(야시장), 버튼으로 바꾸면 기억 ── */
-function initTheme() {
+/* ── 테마 ── */
+function initTheme(defaultTheme) {
   let t = null; try { t = localStorage.getItem('theme'); } catch {}
-  if (!t) { const h = new Date().getHours(); t = h >= 18 || h < 6 ? 'night' : 'day'; }
+  if (!t) { if (defaultTheme === 'day' || defaultTheme === 'night') t = defaultTheme; else { const h = new Date().getHours(); t = h >= 18 || h < 6 ? 'night' : 'day'; } }
   document.documentElement.dataset.theme = t;
 }
 function toggleTheme() {
@@ -47,8 +39,12 @@ function toggleTheme() {
   document.documentElement.dataset.theme = t; try { localStorage.setItem('theme', t); } catch {}
   $$('.themeBtn').forEach((b) => (b.textContent = t === 'night' ? '☀️ 낮' : '🏮 밤'));
 }
+function applyColors(c) {
+  if (!c) return; const r = document.documentElement.style;
+  if (c.accent) r.setProperty('--accent', c.accent); if (c.accent2) r.setProperty('--accent2', c.accent2);
+}
 
-/* ── 제주 야시장 배너 (코드로 그린 그림, 이미지 파일 없음) ── */
+/* ── 제주 야시장 배너 (코드로 그린 그림) ── */
 function bannerSVG() {
   const lanterns = Array.from({ length: 14 }, (_, i) => { const x = 40 + i * 92; const y = 46 + Math.sin(i * 1.1) * 10; return `<g class="lan" style="animation-delay:${(i % 5) * .4}s"><line x1="${x}" y1="${y - 14}" x2="${x}" y2="${y}" stroke="#5a3a2a" stroke-width="2"/><ellipse cx="${x}" cy="${y + 12}" rx="11" ry="14" fill="var(--lan1)"/><path d="M${x - 11} ${y + 12} a11 14 0 0 0 22 0z" fill="var(--lan2)"/><ellipse cx="${x}" cy="${y + 10}" rx="4" ry="6" fill="#fff5d6" opacity=".9"/></g>`; }).join('');
   const stalls = [120, 330, 560, 820, 1060].map((x, i) => `<g><path d="M${x - 70} 198 L${x} 150 L${x + 70} 198z" fill="${i % 2 ? 'var(--roof1)' : 'var(--roof2)'}"/><rect x="${x - 56}" y="198" width="112" height="46" fill="var(--stall)"/><rect x="${x - 44}" y="212" width="88" height="18" rx="4" fill="var(--sign)"/><rect x="${x - 60}" y="196" width="6" height="52" fill="#4a3426"/><rect x="${x + 54}" y="196" width="6" height="52" fill="#4a3426"/></g>`).join('');
@@ -69,24 +65,26 @@ function bannerSVG() {
 </svg>`;
 }
 
-/* ── 상단 메뉴 · 배너 · 푸터 삽입 ── */
-function mountShell({ active, banner = true }) {
-  initTheme();
+/* ── 상단 메뉴 · 배너 · 푸터 삽입 (설정을 읽은 뒤) ── */
+async function mountShell({ active, banner = true } = {}) {
+  CONFIG = await api('/api/config');
+  const S = CONFIG.site, B = CONFIG.banner;
+  initTheme(S.defaultTheme); applyColors(CONFIG.colors);
+  document.title = document.title.replace('바톤', S.name);
   const isNight = document.documentElement.dataset.theme === 'night';
-  const nav = CONFIG.nav.map((n) => `<a href="${n.href}" class="${n.key === active ? 'on' : ''}">${n.label}${n.badge ? `<i class="nb">${n.badge}</i>` : ''}</a>`).join('');
+  const nav = (CONFIG.nav || []).map((n) => `<a href="${esc(n.href)}" class="${n.key === active ? 'on' : ''}">${esc(n.label)}${n.badge ? `<i class="nb">${esc(n.badge)}</i>` : ''}</a>`).join('');
   const header = document.createElement('header'); header.className = 'top';
-  header.innerHTML = `<div class="wrap"><a class="logo" href="./"><span class="mark">🏃</span>${CONFIG.name}</a><nav>${nav}</nav><button class="themeBtn" aria-label="테마 바꾸기">${isNight ? '☀️ 낮' : '🏮 밤'}</button></div>`;
+  header.innerHTML = `<div class="wrap"><a class="logo" href="./"><span class="mark">🏃</span>${esc(S.name)}</a><nav>${nav}</nav><button class="themeBtn" aria-label="테마 바꾸기">${isNight ? '☀️ 낮' : '🏮 밤'}</button></div>`;
   header.querySelector('.themeBtn').onclick = toggleTheme;
   document.body.prepend(header);
   if (banner) {
     const b = document.createElement('div'); b.className = 'banner';
-    b.innerHTML = bannerSVG() + `<div class="wrap banner-text"><p class="kicker">🍊 제주에서 시작한 프로젝트 장터</p><h1>해커톤이 끝나도<br>프로젝트는 <em>끝나지 않게</em></h1><p class="sub">AI로 만든 서비스와 해커톤 결과물을 이어갈 <b>다음 주인</b>에게 넘기는 곳. 주소 하나면 AI가 30초 만에 판매 글을 써 드려요.</p><div class="cta"><a class="btn primary big" href="./sell.html">🏃 내 프로젝트 넘기기</a><button class="btn big ghost" id="wantBtn">👀 사고 싶어요 알림</button></div></div>`;
+    b.innerHTML = bannerSVG() + `<div class="wrap banner-text"><p class="kicker">${esc(B.kicker)}</p><h1>${rich(B.title)}</h1><p class="sub">${rich(B.sub).replace(/<em>/g, '<b>').replace(/<\/em>/g, '</b>')}</p><div class="cta"><a class="btn primary big" href="./sell.html">${esc(B.primaryLabel)}</a><button class="btn big ghost" id="wantBtn">${esc(B.secondaryLabel)}</button></div></div>`;
     header.after(b);
   }
   const footer = document.createElement('footer');
-  footer.innerHTML = `<div class="wrap"><div><b>🏃 ${CONFIG.name}</b> · ${CONFIG.slogan}<br><small>해커톤 일정 출처: Devpost 공개 API · 수상작 도감 출처: Devpost · "예시" 표시 프로젝트는 시연용 가상 데이터예요</small></div><div class="links"><a class="btn" href="${CONFIG.threads}" target="_blank" rel="noopener">🧵 스레드 팔로우</a><a class="btn" href="${CONFIG.openchat}">💬 오픈채팅</a></div></div>`;
+  footer.innerHTML = `<div class="wrap"><div><b>🏃 ${esc(S.name)}</b> · ${esc(S.slogan)}<br><small>${esc(CONFIG.footer?.note || '')}</small></div><div class="links"><a class="btn" href="${esc(S.threads)}" target="_blank" rel="noopener">🧵 스레드 팔로우</a><a class="btn" href="${esc(S.openchat)}">💬 오픈채팅</a><a class="btn" href="./admin.html" style="opacity:.6">⚙️</a></div></div>`;
   document.body.append(footer);
-  // 관심 등록 모달 (배너 버튼용)
   if (banner) {
     const m = document.createElement('div'); m.className = 'modal'; m.id = 'wantModal';
     m.innerHTML = `<form class="form" id="wantForm"><h3>알림 받기</h3><p class="note">새 프로젝트가 올라오거나 장터가 정식으로 열리면 알려드려요.</p>
@@ -100,4 +98,5 @@ function mountShell({ active, banner = true }) {
     m.onclick = (e) => { if (e.target === m) m.classList.remove('show'); };
     $('#wantForm').onsubmit = async (e) => { e.preventDefault(); try { await api('/api/waitlist', Object.fromEntries(new FormData(e.target))); m.classList.remove('show'); e.target.reset(); toast('등록됐어요! 새 소식을 보내드릴게요 🙌'); document.dispatchEvent(new Event('stats:refresh')); } catch (err) { toast(err.message); } };
   }
+  return CONFIG;
 }
