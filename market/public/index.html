@@ -21,12 +21,12 @@
 
   <section>
     <div class="sec-head"><h2>🏠 새로 나온 집</h2><a class="more" href="./market.html?type=home">전체 보기 →</a></div>
-    <div class="grid" id="homes"></div>
+    <div class="grid" id="homes"><div class="skeleton"></div><div class="skeleton"></div></div>
   </section>
 
   <section>
     <div class="sec-head"><h2>📦 새로 나온 물건</h2><a class="more" href="./market.html?type=item">전체 보기 →</a></div>
-    <div class="grid" id="items"></div>
+    <div class="grid" id="items"><div class="skeleton"></div><div class="skeleton"></div></div>
   </section>
 
   <section>
@@ -49,7 +49,9 @@ function renderTools() {
 }
 async function loadStats() {
   const s = await api('/api/stats');
-  $('#stats').innerHTML = [[s.homes, '집'], [s.items, '물건'], [s.projects, '프로젝트'], [s.interest, '추천 ♥'], [s.hackathons, '열린 해커톤'], [s.winners, '도감 수상작']].map(([n, l]) => `<div class="stat"><b>${n ?? 0}</b><span>${l}</span></div>`).join('');
+  const rows = [[s.homes, '집'], [s.items, '물건'], [s.projects, '프로젝트'], [s.interest, '추천 ♥'], [s.hackathons, '열린 해커톤'], [s.winners, '도감 수상작']];
+  $('#stats').innerHTML = rows.map(([n, l]) => `<div class="stat"><b>0</b><span>${l}</span></div>`).join('');
+  $$('#stats b').forEach((b, i) => countUp(b, rows[i][0] ?? 0));
 }
 document.addEventListener('stats:refresh', loadStats);
 async function load() {

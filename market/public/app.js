@@ -2,7 +2,39 @@
    문구·색·메뉴는 /admin.html 에서 고치세요. 코드를 만질 일은 레이아웃을 바꿀 때뿐입니다. */
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
-const won = (n) => (n ? Number(n).toLocaleString('ko-KR') + '원' : '');
+// 금액: 한국식 "300만 원", "1만 5천 원", "9,000원"
+const won = (n) => {
+  n = Number(n) || 0; if (!n) return '';
+  if (n >= 100000000) { const eok = Math.floor(n / 100000000), man = Math.round((n % 100000000) / 10000); return `${eok}억${man ? ` ${man.toLocaleString('ko-KR')}만` : ''} 원`; }
+  if (n >= 10000) { const man = Math.floor(n / 10000), rest = n % 10000; return `${man.toLocaleString('ko-KR')}만${rest ? ` ${rest >= 1000 && rest % 1000 === 0 ? rest / 1000 + '천' : rest.toLocaleString('ko-KR')}` : ''} 원`; }
+  return n.toLocaleString('ko-KR') + '원';
+};
+// 오늘의 제주어 (매일 하나)
+const JEJU_WORDS = [
+  ['혼저옵서예', '어서 오세요'], ['폭삭 속았수다', '정말 수고하셨습니다'], ['맨도롱 또똣', '따뜻하게, 알맞게 따끈한'], ['감수광', '가십니까?'], ['왕 봥 갑서', '와서 보고 가세요'],
+  ['고맙수다', '고맙습니다'], ['놀멍 쉬멍', '놀면서 쉬면서'], ['도르멍', '빨리, 서둘러서'], ['하영', '많이'], ['지꺼지다', '기쁘다, 신나다'],
+  ['소랑햄수다', '사랑합니다'], ['또시 봅주', '다시 봐요'], ['무사', '왜'], ['어떵 살암수과', '어떻게 지내세요?'], ['촘말로', '정말로'],
+];
+const todaysWord = () => JEJU_WORDS[Math.floor((Date.now() / 86400000)) % JEJU_WORDS.length];
+// 숫자가 올라가는 효과
+function countUp(el, to, ms = 900) {
+  const start = performance.now(); const from = 0;
+  const step = (t) => { const k = Math.min(1, (t - start) / ms); const e = 1 - Math.pow(1 - k, 3); el.textContent = Math.round(from + (to - from) * e).toLocaleString('ko-KR'); if (k < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+// 🍊 축하 효과 (글 올리기 성공 등)
+function confetti(n = 36) {
+  const wrap = document.createElement('div'); wrap.className = 'confetti'; document.body.append(wrap);
+  for (let i = 0; i < n; i++) { const s = document.createElement('span'); s.textContent = ['🍊', '🏮', '✨', '🌊', '🍊'][i % 5]; s.style.left = Math.random() * 100 + 'vw'; s.style.animationDelay = Math.random() * .6 + 's'; s.style.fontSize = 14 + Math.random() * 18 + 'px'; wrap.append(s); }
+  setTimeout(() => wrap.remove(), 3200);
+}
+// 공유 (휴대폰은 공유창, PC는 링크 복사)
+async function share(title, text, url = location.href) {
+  try { if (navigator.share) { await navigator.share({ title, text, url }); return; } } catch { return; }
+  try { await navigator.clipboard.writeText(url); toast('링크를 복사했어요 🔗'); } catch { prompt('링크를 복사하세요', url); }
+}
+// 방문 집계 (개인정보 없음)
+try { fetch('/api/ping', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ page: location.pathname.split('/').pop() || 'index.html' }) }); } catch {}
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 // 설정 문구의 [강조]를 색 글자로, 줄바꿈(\n)을 <br>로
 const rich = (s) => esc(s).replace(/\[([^\]]+)\]/g, '<em>$1</em>').replace(/\n/g, '<br>');
@@ -88,6 +120,9 @@ function bannerSVG() {
 /* ── 상단 메뉴 · 배너 · 푸터 삽입 (설정을 읽은 뒤) ── */
 async function mountShell({ active, banner = true } = {}) {
   CONFIG = await api('/api/config');
+  // 파비콘(이모지) + 공유 미리보기 메타
+  if (!$('link[rel=icon]')) { const l = document.createElement('link'); l.rel = 'icon'; l.href = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#ff7a1a"/><text y="72" x="50" text-anchor="middle" font-size="60">🏃</text></svg>')}`; document.head.append(l); }
+  for (const [k, v] of [['og:title', document.title], ['og:description', $('meta[name=description]')?.content || CONFIG.site.slogan], ['og:type', 'website'], ['og:site_name', CONFIG.site.name]]) { if (!$(`meta[property="${k}"]`)) { const m = document.createElement('meta'); m.setAttribute('property', k); m.content = v; document.head.append(m); } }
   const S = CONFIG.site, B = CONFIG.banner;
   initTheme(S.defaultTheme); applyColors(CONFIG.colors);
   document.title = document.title.replace('바톤', S.name);
@@ -99,18 +134,19 @@ async function mountShell({ active, banner = true } = {}) {
   document.body.prepend(header);
   if (banner) {
     const b = document.createElement('div'); b.className = 'banner';
-    b.innerHTML = bannerSVG() + `<div class="wrap banner-text"><p class="kicker">${esc(B.kicker)}</p><h1>${rich(B.title)}</h1><p class="sub">${rich(B.sub).replace(/<em>/g, '<b>').replace(/<\/em>/g, '</b>')}</p><div class="cta"><a class="btn primary big" href="./sell.html">${esc(B.primaryLabel)}</a><button class="btn big ghost" id="wantBtn">${esc(B.secondaryLabel)}</button></div></div>`;
+    b.innerHTML = bannerSVG() + `<div class="wrap banner-text"><p class="kicker">${esc(B.kicker)}</p><h1>${rich(B.title)}</h1><p class="sub">${rich(B.sub).replace(/<em>/g, '<b>').replace(/<\/em>/g, '</b>')}</p><div class="cta"><a class="btn primary big" href="./sell.html">${esc(B.primaryLabel)}</a><button class="btn big ghost" id="wantBtn">${esc(B.secondaryLabel)}</button></div><button class="word" id="jejuWord" title="오늘의 제주어 · 누르면 뜻이 보여요">🗣️ 오늘의 제주어 <b>${esc(todaysWord()[0])}</b></button></div>`;
     header.after(b);
+    $('#jejuWord').onclick = (e) => { const [w, m] = todaysWord(); e.currentTarget.innerHTML = `🗣️ <b>${esc(w)}</b> = ${esc(m)}`; e.currentTarget.classList.add('open'); };
   }
   const footer = document.createElement('footer');
-  footer.innerHTML = `<div class="wrap"><div><b>🏃 ${esc(S.name)}</b> · ${esc(S.slogan)}<br><small>${esc(CONFIG.footer?.note || '')}</small></div><div class="links"><a class="btn" href="${esc(S.threads)}" target="_blank" rel="noopener">🧵 스레드 팔로우</a><a class="btn" href="${esc(S.openchat)}">💬 오픈채팅</a><a class="btn" href="./admin.html" style="opacity:.6">⚙️</a></div></div>`;
+  footer.innerHTML = `<div class="wrap"><div><b>🏃 ${esc(S.name)}</b> · ${esc(S.slogan)}<br><small>${esc(CONFIG.footer?.note || '')}</small></div><div class="links"><a class="btn" href="${esc(S.threads)}" target="_blank" rel="noopener">🧵 스레드 팔로우</a><a class="btn" href="${esc(S.openchat)}">💬 오픈채팅</a><a class="btn" href="./admin.html" style="opacity:.6" title="관리자">⚙️ 관리자</a></div></div>`;
   document.body.append(footer);
   if (banner) {
     const m = document.createElement('div'); m.className = 'modal'; m.id = 'wantModal';
-    m.innerHTML = `<form class="form" id="wantForm"><h3>알림 받기</h3><p class="note">새 프로젝트가 올라오거나 장터가 정식으로 열리면 알려드려요.</p>
-      <label>나는<select name="role"><option value="buy">사고 싶어요 (프로젝트를 이어가고 싶어요)</option><option value="sell">팔고 싶어요 (넘길 프로젝트가 있어요)</option><option value="both">둘 다요</option></select></label>
+    m.innerHTML = `<form class="form" id="wantForm"><h3>알림 받기</h3><p class="note">새 글이 올라오거나 바톤이 정식으로 열리면 알려드려요. 스팸은 안 보내요.</p>
+      <label>나는<select name="role"><option value="buy">찾고 있어요 (집·물건·프로젝트)</option><option value="sell">내놓을 게 있어요</option><option value="both">둘 다요</option></select></label>
       <label>연락처 (이메일 또는 스레드 아이디)<input name="contact" required placeholder="you@example.com 또는 @threads_id"></label>
-      <label>찾는 것 (선택)<input name="note" placeholder="예: 사용자 있는 교육 서비스, 100만 원 이하"></label>
+      <label>찾는 것 (선택)<input name="note" placeholder="예: 아라동 원룸 월 40 이하 / 중고 자전거"></label>
       <div class="actions"><button type="button" class="btn" data-close>닫기</button><button class="btn primary">등록</button></div></form>`;
     document.body.append(m);
     $('#wantBtn').onclick = () => m.classList.add('show');

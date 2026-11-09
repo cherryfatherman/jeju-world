@@ -55,7 +55,7 @@
         <label>건물 용도<input name="use" placeholder="다가구주택"></label>
       </div>
       <div class="row2">
-        <label>면적 (㎡) <span class="help" id="pyeong"></span><input name="areaM2" type="number" step="0.1" min="0" id="areaM2"></label>
+        <label>면적 <span class="help">㎡와 평 중 아는 쪽만 적으면 서로 바뀌어요</span><div style="display:flex;gap:6px;align-items:center"><input name="areaM2" type="number" step="0.1" min="0" id="areaM2" placeholder="㎡"><span>㎡ =</span><input type="number" step="0.1" min="0" id="pyeongIn" placeholder="평"><span>평</span></div></label>
         <label>층<input name="floor" placeholder="2/3층"></label>
       </div>
       <div class="row2">
@@ -64,8 +64,8 @@
       </div>
       <label>옵션 (쉼표로)<input name="options" placeholder="에어컨, 세탁기, 붙박이장"></label>
       <div class="row2">
-        <label>거래 종류<select name="homeDeal"><option>월세</option><option>전세</option><option>매매</option><option value="단기">단기(한달살기)</option><option>미정</option></select></label>
-        <label>보증금 / 월세 또는 매매가 (원)<div style="display:flex;gap:6px;align-items:center"><input name="deposit" type="number" min="0" step="100000" placeholder="보증금"><span>/</span><input name="monthly" type="number" min="0" step="10000" placeholder="월세"></div></label>
+        <label>거래 종류<select name="homeDeal" id="homeDeal"><option>월세</option><option>전세</option><option>매매</option><option value="단기">단기(한달살기)</option><option>미정</option></select></label>
+        <label id="priceLabel">보증금 / 월세 (만 원 단위로 적어도 돼요: 300 → 300만)<div style="display:flex;gap:6px;align-items:center"><input name="deposit" type="number" min="0" id="deposit" placeholder="보증금"><span id="priceSep">/</span><input name="monthly" type="number" min="0" id="monthly" placeholder="월세"></div><span class="help" id="priceEcho"></span></label>
       </div>
       <input type="hidden" name="extractedFrom">
       <label style="flex-direction:row;align-items:flex-start;gap:8px;font-size:14px;color:var(--ink)"><input type="checkbox" name="ownerConfirmed" style="width:auto;margin-top:4px" required><span>저는 이 집의 <b>집주인 본인</b> 또는 <b>공인중개사</b>이며, 등록 정보가 사실임을 확인합니다. (중개업 등록 없이 타인 매물을 올리면 법에 어긋나요)</span></label>
@@ -94,12 +94,12 @@
     </div>
     <label>태그 (쉼표로)<input name="tags" placeholder="아라동, 투룸, 단기가능"></label>
     <div class="row2">
-      <label>표시 이름<input name="seller" maxlength="30" placeholder="예: 집주인 / 과수원집 딸"></label>
-      <label>연락처 (문의가 오면 알려줘요)<input name="contact" required maxlength="200" placeholder="이메일 또는 오픈채팅 링크"></label>
+      <label>표시 이름 (선택)<input name="seller" maxlength="30" placeholder="예: 집주인 / 과수원집 딸 / 졸업반 개발자"></label>
+      <label>연락처 (문의한 사람에게만 보여요)<input name="contact" required maxlength="200" placeholder="이메일 또는 카카오 오픈채팅 링크"></label>
     </div>
     <input type="hidden" name="url"><input type="hidden" name="type">
     <div class="actions" style="justify-content:space-between"><button type="button" class="btn" id="backBtn">← 다시 올리기</button><button class="btn primary big">🏃 바톤에 올리기</button></div>
-    <p class="note">올리면 바로 공개돼요. 연락처는 문의한 사람에게만 보여요. AI가 쓴 내용은 꼭 확인하고 고쳐 주세요.</p>
+    <p class="note">올리면 바로 공개돼요. 연락처는 문의한 사람에게만 보여요. AI가 쓴 내용은 꼭 확인하고 고쳐 주세요. 글을 내리고 싶으면 아래 오픈채팅이나 관리자에게 알려주세요.</p>
   </form>
 </main>
 
@@ -117,7 +117,8 @@ let draftMeta = {};
 function setType(t) {
   type = t; history.replaceState(null, '', `?type=${t}`);
   $$('#typetabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === t));
-  $$('[data-for]').forEach((el) => { el.hidden = !el.dataset.for.split(' ').includes(t); el.querySelectorAll('[required]').forEach((i) => { i.disabled = el.hidden; }); });
+  // 숨긴 분류의 입력칸은 꺼서(disabled) 다른 분류 값이 섞여 전송되지 않게 한다
+  $$('[data-for]').forEach((el) => { el.hidden = !el.dataset.for.split(' ').includes(t); el.querySelectorAll('input, select, textarea').forEach((i) => { i.disabled = el.hidden; }); });
   $('#hint').placeholder = HINTS[t]; $('#hintNote').textContent = NOTES[t];
   $('#step1 [name=url]').required = t === 'project';
 }
@@ -138,7 +139,22 @@ async function pick(input, arr, el, max) {
 $('#homePhotos').onchange = (e) => pick(e.target, photos.home, $('#homeThumbs'), 6);
 $('#homeDocs').onchange = (e) => pick(e.target, docs, $('#docThumbs'), 3);
 $('#itemPhotos').onchange = (e) => pick(e.target, photos.item, $('#itemThumbs'), 6);
-$('#areaM2').oninput = (e) => { const v = Number(e.target.value); $('#pyeong').textContent = v ? `≈ ${(v / 3.3058).toFixed(1)}평` : ''; };
+$('#areaM2').oninput = (e) => { const v = Number(e.target.value); $('#pyeongIn').value = v ? (v / 3.3058).toFixed(1) : ''; };
+$('#pyeongIn').oninput = (e) => { const v = Number(e.target.value); $('#areaM2').value = v ? (v * 3.3058).toFixed(1) : ''; };
+// 금액: 10000 미만으로 적으면 "만 원" 단위로 본다 (300 → 3,000,000)
+const toWon = (v) => { v = Number(v) || 0; return v && v < 10000 ? v * 10000 : v; };
+function priceUI() {
+  const d = $('#homeDeal').value; const mon = $('#monthly'), dep = $('#deposit');
+  const monthlyOn = d === '월세' || d === '단기' || d === '미정';
+  mon.style.display = monthlyOn ? '' : 'none'; $('#priceSep').style.display = monthlyOn ? '' : 'none';
+  dep.placeholder = d === '매매' ? '매매가' : d === '전세' ? '전세금' : '보증금'; mon.placeholder = d === '단기' ? '월(또는 총액)' : '월세';
+  $('#priceEcho').textContent = [dep.value && `${dep.placeholder} ${won(toWon(dep.value))}`, monthlyOn && mon.value && `월 ${won(toWon(mon.value))}`].filter(Boolean).join(' · ');
+}
+$('#homeDeal').onchange = priceUI; $('#deposit').oninput = priceUI; $('#monthly').oninput = priceUI;
+// AI 초안이 타이핑되듯 채워지는 효과
+function typeInto(el, text, speed = 6) {
+  return new Promise((res) => { if (!text) { el.value = ''; return res(); } el.classList.add('typing'); el.value = ''; let i = 0; const step = () => { i = Math.min(text.length, i + Math.max(1, Math.round(text.length / 60))); el.value = text.slice(0, i); if (i < text.length) setTimeout(step, speed); else { el.classList.remove('typing'); res(); } }; step(); });
+}
 
 $('#step1').onsubmit = async (e) => {
   e.preventDefault();
@@ -152,21 +168,21 @@ $('#step1').onsubmit = async (e) => {
     const d = await api('/api/generate', body);
     const f = $('#step2');
     f.type.value = type; f.url.value = body.url || '';
-    f.name.value = d.name || ''; f.tagline.value = d.tagline || ''; f.description.value = d.description || '';
     f.tags.value = (d.tags || []).join(', ');
+    setStep(2); window.scrollTo({ top: 0, behavior: 'smooth' });
+    await typeInto(f.name, d.name || ''); await typeInto(f.tagline, d.tagline || ''); typeInto(f.description, d.description || '', 4);
     thumbs($('#previewThumbs'), type === 'project' ? [] : photos[type], false);
     if (type === 'home') {
       f.dong.value = d.dong || ''; f.use.value = d.use || ''; f.areaM2.value = d.areaM2 || ''; $('#areaM2').dispatchEvent(new Event('input'));
       f.floor.value = d.floor || ''; f.builtYear.value = d.builtYear || ''; f.rooms.value = d.rooms || ''; f.options.value = (d.options || []).join(', ');
-      f.homeDeal.value = ['매매', '전세', '월세', '단기'].includes(d.dealType) ? d.dealType : '월세'; f.extractedFrom.value = d.extractedFrom || '';
+      f.homeDeal.value = ['매매', '전세', '월세', '단기'].includes(d.dealType) ? d.dealType : '월세'; f.extractedFrom.value = d.extractedFrom || ''; priceUI();
       $('#extractNote').textContent = d.ai ? (d.extractedFrom ? `✨ ${d.extractedFrom}에서 읽은 값이에요 (신뢰도 ${d.confidence}). 원본과 꼭 대조해 주세요.` : '✨ 서류를 읽지 못했어요. 면적·층·용도를 직접 입력해 주세요.') : '';
     }
-    if (type === 'item') { f.category.value = d.category || '기타'; f.condition.value = d.condition || '사용감 있음'; }
+    if (type === 'item') { $('#itemCat').value = d.category || '기타'; f.condition.value = d.condition || '사용감 있음'; }
     if (type === 'project') { $('#projCat').value = d.category || '기타'; }
     if (type !== 'home') { f.priceMin.value = d.priceMin || ''; f.priceMax.value = d.priceMax || ''; $('#priceReason').textContent = d.priceReason ? `AI 가격 근거: ${d.priceReason}` : ''; }
     draftMeta = { priceReason: d.priceReason, nextSteps: d.nextSteps };
     $('#aiNote').textContent = d.ai ? '✨ AI가 쓴 초안이에요. 틀린 부분은 고쳐 주세요. 과장된 표현은 거래 신뢰를 떨어뜨려요.' : `ℹ️ ${d.note || '기본 초안이에요. 내용을 채워 주세요.'}`;
-    setStep(2); window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (err) { toast(err.message); }
   btn.disabled = false; btn.textContent = '✨ AI로 글 만들기';
 };
@@ -176,11 +192,11 @@ $('#step2').onsubmit = async (e) => {
   const fd = Object.fromEntries(new FormData(e.target));
   fd.tags = (fd.tags || '').split(',').map((s) => s.trim()).filter(Boolean);
   fd.photos = type === 'project' ? [] : photos[type];
-  if (type === 'home') { fd.ownerConfirmed = !!e.target.ownerConfirmed.checked; fd.category = '집'; fd.stage = 'users'; fd.dealType = 'sell'; }
+  if (type === 'home') { fd.ownerConfirmed = !!e.target.ownerConfirmed.checked; fd.category = '집'; fd.stage = 'users'; fd.dealType = 'sell'; fd.deposit = toWon(fd.deposit); fd.monthly = toWon(fd.monthly); }
   if (type === 'item') { fd.stage = 'users'; fd.dealType = 'sell'; }
   Object.assign(fd, draftMeta);
   const btn = e.target.querySelector('.primary'); btn.disabled = true;
-  try { const d = await api('/api/projects', fd); setStep(3); location.href = `./project.html?id=${d.id}`; } catch (err) { btn.disabled = false; toast(err.message); }
+  try { const d = await api('/api/projects', fd); setStep(3); confetti(); toast('올라갔어요! 🍊'); setTimeout(() => { location.href = `./project.html?id=${d.id}&new=1`; }, 900); } catch (err) { btn.disabled = false; toast(err.message); }
 };
 mountShell({ active: 'sell', banner: false }).then(() => setType(type));
 </script>

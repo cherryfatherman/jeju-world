@@ -1,5 +1,5 @@
 {
- "updatedAt": "2026-11-09T09:44:41.880Z",
+ "updatedAt": "2026-11-09T22:18:06.401Z",
  "items": [
   {
    "source": "local",
@@ -22,7 +22,7 @@
    "prize": "$67,500",
    "dates": "Oct 01 - Nov 12, 2026",
    "location": "Online",
-   "participants": 31864,
+   "participants": 32356,
    "themes": [
     "Low/No Code",
     "Machine Learning/AI",
@@ -37,7 +37,7 @@
    "prize": "$100,000",
    "dates": "Oct 30 - Dec 04, 2026",
    "location": "Online",
-   "participants": 10712,
+   "participants": 10957,
    "themes": [
     "Beginner Friendly",
     "Machine Learning/AI",
@@ -52,7 +52,7 @@
    "prize": "$1,000,000",
    "dates": "Sep 24 - Nov 18, 2026",
    "location": "Online",
-   "participants": 5526,
+   "participants": 5614,
    "themes": [
     "AR/VR",
     "Machine Learning/AI",
@@ -67,7 +67,7 @@
    "prize": "$120,000",
    "dates": "Oct 27 - Dec 22, 2026",
    "location": "Online",
-   "participants": 2375,
+   "participants": 2504,
    "themes": [
     "Machine Learning/AI",
     "Enterprise",
@@ -82,41 +82,11 @@
    "prize": "$46,000",
    "dates": "Oct 22 - Nov 16, 2026",
    "location": "Online",
-   "participants": 1808,
+   "participants": 1891,
    "themes": [
     "Lifehacks",
     "Machine Learning/AI",
     "Productivity"
-   ],
-   "status": "open"
-  },
-  {
-   "source": "devpost",
-   "title": "Learn AR with SPECS",
-   "url": "https://learn-specs.devpost.com/",
-   "prize": "$2,500",
-   "dates": "Oct 15 - Nov 09, 2026",
-   "location": "Online",
-   "participants": 1227,
-   "themes": [
-    "AR/VR",
-    "Machine Learning/AI",
-    "Design"
-   ],
-   "status": "open"
-  },
-  {
-   "source": "devpost",
-   "title": "Arbiter Hacks V1",
-   "url": "https://arbiter-hacks-v1.devpost.com/",
-   "prize": "$7,800",
-   "dates": "Oct 20 - Dec 21, 2026",
-   "location": "Online",
-   "participants": 964,
-   "themes": [
-    "Beginner Friendly",
-    "Machine Learning/AI",
-    "Open Ended"
    ],
    "status": "open"
   },
@@ -127,10 +97,39 @@
    "prize": "$50,000",
    "dates": "Nov 02 - Dec 15, 2026",
    "location": "Online",
-   "participants": 911,
+   "participants": 983,
    "themes": [
     "IoT",
     "Machine Learning/AI",
+    "Open Ended"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "Arbiter Hacks V1",
+   "url": "https://arbiter-hacks-v1.devpost.com/",
+   "prize": "$7,800",
+   "dates": "Oct 20 - Dec 21, 2026",
+   "location": "Online",
+   "participants": 980,
+   "themes": [
+    "Beginner Friendly",
+    "Machine Learning/AI",
+    "Open Ended"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "LaunchPad Hacks",
+   "url": "https://launchpad-hacks.devpost.com/",
+   "prize": "$300",
+   "dates": "Oct 16 - Nov 20, 2026",
+   "location": "Online",
+   "participants": 500,
+   "themes": [
+    "Beginner Friendly",
     "Open Ended"
    ],
    "status": "open"
@@ -142,7 +141,7 @@
    "prize": "$17,150",
    "dates": "Nov 08 - 15, 2026",
    "location": "Online",
-   "participants": 378,
+   "participants": 423,
    "themes": [
     "Beginner Friendly",
     "Low/No Code",
@@ -157,7 +156,7 @@
    "prize": "€1,000",
    "dates": "Nov 04 - Dec 18, 2026",
    "location": "Online",
-   "participants": 261,
+   "participants": 274,
    "themes": [
     "Low/No Code",
     "Machine Learning/AI",
@@ -172,7 +171,7 @@
    "prize": "₹ 200,000",
    "dates": "Oct 17 - Nov 10, 2026",
    "location": "Online",
-   "participants": 253,
+   "participants": 263,
    "themes": [
     "Beginner Friendly",
     "Blockchain",
@@ -187,7 +186,7 @@
    "prize": "$480",
    "dates": "Nov 01 - 10, 2026",
    "location": "Online",
-   "participants": 232,
+   "participants": 242,
    "themes": [
     "Machine Learning/AI",
     "Open Ended",
@@ -202,7 +201,7 @@
    "prize": "$64,000",
    "dates": "Nov 02 - Dec 11, 2026",
    "location": "Online",
-   "participants": 222,
+   "participants": 237,
    "themes": [
     "Machine Learning/AI",
     "Productivity",
@@ -217,7 +216,7 @@
    "prize": "$CAD 1,050",
    "dates": "Nov 01 - Dec 26, 2026",
    "location": "Online",
-   "participants": 206,
+   "participants": 222,
    "themes": [
     "Beginner Friendly",
     "IoT",
@@ -232,7 +231,7 @@
    "prize": "$900",
    "dates": "Oct 26 - Nov 20, 2026",
    "location": "Online",
-   "participants": 197,
+   "participants": 209,
    "themes": [
     "Blockchain",
     "Fintech",
@@ -247,7 +246,7 @@
    "prize": "$45,000",
    "dates": "Nov 06 - 25, 2026",
    "location": "Online",
-   "participants": 179,
+   "participants": 194,
    "themes": [
     "AR/VR",
     "Beginner Friendly",
@@ -262,7 +261,7 @@
    "prize": "$28,000",
    "dates": "Nov 06 - 10, 2026",
    "location": "Online",
-   "participants": 164,
+   "participants": 185,
    "themes": [
     "Beginner Friendly",
     "Machine Learning/AI",
@@ -277,7 +276,7 @@
    "prize": "₹ 500,000",
    "dates": "Oct 16 - Nov 25, 2026",
    "location": "Online",
-   "participants": 157,
+   "participants": 162,
    "themes": [
     "Education",
     "Health",
@@ -292,7 +291,7 @@
    "prize": "$1,750",
    "dates": "Oct 26 - Nov 10, 2026",
    "location": "Online",
-   "participants": 138,
+   "participants": 141,
    "themes": [
     "E-commerce/Retail",
     "Fintech",
@@ -307,7 +306,7 @@
    "prize": "$4,500",
    "dates": "Nov 07 - Dec 07, 2026",
    "location": "Online",
-   "participants": 93,
+   "participants": 109,
    "themes": [
     "Beginner Friendly",
     "Open Ended",
@@ -322,7 +321,7 @@
    "prize": "$CAD 1,400",
    "dates": "Nov 01 - 14, 2026",
    "location": "Online",
-   "participants": 60,
+   "participants": 64,
    "themes": [
     "Design",
     "Health",
@@ -337,7 +336,7 @@
    "prize": "$200,000",
    "dates": "Nov 04 - 11, 2026",
    "location": "VIT Bhopal University",
-   "participants": 45,
+   "participants": 51,
    "themes": [
     "Health",
     "Lifehacks",
@@ -352,11 +351,40 @@
    "prize": "$750",
    "dates": "Nov 06 - 12, 2026",
    "location": "eGain Corp.",
-   "participants": 38,
+   "participants": 50,
    "themes": [
     "Beginner Friendly",
     "Machine Learning/AI",
     "Productivity"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "Silicon Valley Buildathon",
+   "url": "https://silicon-valley-buildathon.devpost.com/",
+   "prize": "$500",
+   "dates": "Nov 08 - Dec 15, 2026",
+   "location": "Online",
+   "participants": 25,
+   "themes": [
+    "Open Ended",
+    "Beginner Friendly",
+    "Low/No Code"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "Blockchain Innovation Challenge powered by Stellar",
+   "url": "https://blockchain-stellar-ic.devpost.com/",
+   "prize": "$CAD 15,000",
+   "dates": "Nov 06 - 13, 2026",
+   "location": "Velocity, Innovation Arena",
+   "participants": 21,
+   "themes": [
+    "Blockchain",
+    "Fintech"
    ],
    "status": "open"
   },
@@ -377,45 +405,16 @@
   },
   {
    "source": "devpost",
-   "title": "Blockchain Innovation Challenge powered by Stellar",
-   "url": "https://blockchain-stellar-ic.devpost.com/",
-   "prize": "$CAD 15,000",
-   "dates": "Nov 06 - 13, 2026",
-   "location": "Velocity, Innovation Arena",
-   "participants": 16,
-   "themes": [
-    "Blockchain",
-    "Fintech"
-   ],
-   "status": "open"
-  },
-  {
-   "source": "devpost",
    "title": "Inceptrix 3.0",
    "url": "https://inceptrix-hackathon.devpost.com/",
    "prize": "₹ 250,000",
    "dates": "Nov 05 - Dec 24, 2026",
    "location": "Online",
-   "participants": 16,
+   "participants": 18,
    "themes": [
     "Beginner Friendly",
     "Education",
     "Web"
-   ],
-   "status": "open"
-  },
-  {
-   "source": "devpost",
-   "title": "Silicon Valley Buildathon",
-   "url": "https://silicon-valley-buildathon.devpost.com/",
-   "prize": "$500",
-   "dates": "Nov 08 - Dec 15, 2026",
-   "location": "Online",
-   "participants": 11,
-   "themes": [
-    "Open Ended",
-    "Beginner Friendly",
-    "Low/No Code"
    ],
    "status": "open"
   }

@@ -35,7 +35,7 @@
         <dl id="facts"></dl>
       </div>
       <button class="btn primary big" id="inquiryBtn">💬 문의하기</button>
-      <button class="btn big" id="interestBtn">♥ 추천해요</button>
+      <div style="display:flex;gap:8px"><button class="btn big" id="interestBtn" style="flex:1">♥ 추천해요</button><button class="btn big" id="shareBtn" style="flex:1">🔗 공유</button></div>
       <p class="note" id="safety"></p>
     </aside>
   </div>
@@ -71,8 +71,9 @@ async function load() {
   $('#detail').hidden = false;
   $('#gallery').replaceChildren(...(p.photos || []).map((src) => { const i = document.createElement('img'); i.src = src; i.alt = ''; i.onclick = () => window.open(src); return i; }));
   if (!(p.photos || []).length) $('#gallery').innerHTML = `<div class="nophoto">${TYPE_ICON[p.type] || '🧩'}</div>`;
-  $('#meta').innerHTML = `<span class="badge">${TYPE_ICON[p.type]} ${TYPE_LABEL[p.type]}</span>${p.type === 'project' ? `<span class="badge stage-${esc(p.stage)}">${STAGE[p.stage] || ''}</span>` : ''}<span class="badge">${esc(p.category)}</span>${p.condition ? `<span class="badge">${esc(p.condition)}</span>` : ''}${p.sample ? '<span class="badge sample">예시 · 시연용 가상 데이터</span>' : ''}${(p.tags || []).map((t) => `<span class="badge">#${esc(t)}</span>`).join('')}`;
-  $('#name').textContent = p.name; $('#tagline').textContent = p.tagline; $('#desc').textContent = p.description;
+  $('#meta').innerHTML = `<span class="badge">${TYPE_ICON[p.type]} ${TYPE_LABEL[p.type]}</span>${p.type === 'project' ? `<span class="badge stage-${esc(p.stage)}">${STAGE[p.stage] || ''}</span>` : ''}${p.category && p.category !== TYPE_LABEL[p.type] ? `<span class="badge">${esc(p.category)}</span>` : ''}${p.condition ? `<span class="badge">${esc(p.condition)}</span>` : ''}${p.sample ? '<span class="badge sample">예시 · 시연용 가상 데이터</span>' : ''}${(p.tags || []).map((t) => `<span class="badge">#${esc(t)}</span>`).join('')}`;
+  $('#name').textContent = p.name; $('#tagline').textContent = p.tagline;
+  const dupe = (p.description || '').trim() === (p.tagline || '').trim(); $('#desc').textContent = dupe ? '' : p.description; $('#desc').hidden = dupe;
   $('#safety').textContent = SAFETY[p.type] || SAFETY.project;
   const common = [['올린 분', p.seller || '익명'], ['추천', `♥ ${p.interest || 0} · 조회 ${p.views || 0}`]];
   if (p.type === 'home' && p.home) {
@@ -101,6 +102,8 @@ $('#interestBtn').onclick = async () => {
 };
 $('#cmtForm').onsubmit = async (e) => { e.preventDefault(); try { renderComments(await api(`/api/projects/${id}/comments`, Object.fromEntries(new FormData(e.target)))); e.target.reset(); toast('고마워요! 추천이 올라갔어요'); } catch (err) { toast(err.message); } };
 $('#inquiryBtn').onclick = () => $('#inqModal').classList.add('show');
+$('#shareBtn').onclick = () => share(`${p.name} · 바톤`, p.tagline, location.href.replace('&new=1', ''));
+if (new URLSearchParams(location.search).get('new')) setTimeout(() => { toast('글이 올라갔어요! 🔗 공유 버튼으로 알려 보세요'); }, 600);
 $$('[data-close]').forEach((b) => b.onclick = () => $$('.modal').forEach((m) => m.classList.remove('show')));
 $('#inqForm').onsubmit = async (e) => { e.preventDefault(); try { const d = await api(`/api/projects/${id}/inquiry`, Object.fromEntries(new FormData(e.target))); $('#inqModal').classList.remove('show'); e.target.reset(); $('#sellerContact').textContent = d.sellerContact; $('#doneModal').classList.add('show'); } catch (err) { toast(err.message); } };
 mountShell({ active: 'market', banner: false }).then(load);

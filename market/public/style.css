@@ -1,5 +1,6 @@
 /* ───────── 바톤 테마 변수: 색을 바꾸려면 여기만 ───────── */
 :root {
+  --chart: #e8650a;
   --bg: #fbf6ec; --panel: #ffffff; --panel2: #f3ecdd; --line: #e8dfcc;
   --ink: #1f1b16; --muted: #7a6f60; --accent: #ff7a1a; --accent2: #f5b942; --ok: #2f9e6a; --hot: #e4432b;
   --radius: 16px; --shadow: 0 6px 24px rgba(80, 50, 10, .08);
@@ -8,6 +9,7 @@
   --roof1: #ff8c42; --roof2: #4fb3bf; --stall: #c99a62; --sign: #fff6e5; --lan1: #ff5a4e; --lan2: #3d7bd9;
 }
 :root[data-theme="night"] {
+  --chart: #e8650a;
   --bg: #12131a; --panel: #1a1c26; --panel2: #232634; --line: #2d3140;
   --ink: #f3f1ea; --muted: #a39d90; --accent: #ff7a1a; --accent2: #ffc14d; --shadow: 0 8px 28px rgba(0, 0, 0, .35);
   /* 배너(밤): 야시장 */
@@ -221,3 +223,45 @@ footer .links { display: flex; gap: 8px; }
 .day.today { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent); }
 .day.today b { color: var(--accent); }
 @media (max-width: 640px) { .days { grid-template-columns: repeat(4, 1fr); } }
+
+
+/* ── 움직임·효과 ── */
+@media (prefers-reduced-motion: no-preference) {
+  main > section, main > .page-title, .detail { animation: rise .5s ease-out both; }
+  main > section:nth-child(2) { animation-delay: .05s; } main > section:nth-child(3) { animation-delay: .1s; } main > section:nth-child(4) { animation-delay: .15s; }
+  :root[data-theme="night"] .banner-art .lan ellipse:first-of-type { animation: glow 2.4s ease-in-out infinite; }
+}
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes glow { 0%, 100% { filter: drop-shadow(0 0 2px #ff9a5a); } 50% { filter: drop-shadow(0 0 9px #ffb36b); } }
+.card { will-change: transform; }
+.card:hover { transform: translateY(-3px); box-shadow: 0 14px 34px rgba(80, 50, 10, .14); }
+:root[data-theme="night"] .card:hover { box-shadow: 0 14px 34px rgba(0, 0, 0, .5); }
+.tool:hover .ic { transform: scale(1.12) rotate(-6deg); } .tool .ic { transition: transform .2s; }
+.btn.primary { transition: transform .12s, filter .12s; } .btn.primary:active { transform: scale(.97); }
+.word { position: relative; margin-top: 14px; border: 1px solid rgba(255,255,255,.4); background: rgba(0,0,0,.28); color: #fff; border-radius: 999px; padding: 6px 12px; font-size: 13px; backdrop-filter: blur(6px); }
+.word b { color: var(--accent2); }
+.word.open { background: rgba(0,0,0,.5); }
+.confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; }
+.confetti span { position: absolute; top: -40px; animation: fall 2.6s ease-in forwards; }
+@keyframes fall { to { transform: translateY(110vh) rotate(540deg); opacity: .2; } }
+.typing { background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent2) 25%, transparent), transparent); background-size: 200% 100%; animation: shimmer 1s linear infinite; }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.skeleton { height: 120px; border-radius: var(--radius); background: linear-gradient(90deg, var(--panel), var(--panel2), var(--panel)); background-size: 200% 100%; animation: shimmer 1.2s linear infinite; }
+.sharebtn { margin-left: auto; }
+
+/* ── 관리자 대시보드 차트 (단일 계열 막대: 가는 막대, 4px 둥근 끝, 2px 간격, 직접 라벨은 최대·마지막만) ── */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-bottom: 14px; }
+.kpi { background: var(--panel2); border-radius: 12px; padding: 10px 12px; }
+.kpi b { display: block; font-size: 22px; } .kpi span { font-size: 12px; color: var(--muted); }
+.chart { position: relative; height: 150px; display: grid; grid-auto-flow: column; align-items: end; gap: 2px; padding: 22px 0 22px; border-bottom: 1px solid var(--line); }
+.chart .bar { position: relative; background: var(--chart); border-radius: 4px 4px 0 0; min-height: 2px; cursor: default; }
+.chart .bar:hover { filter: brightness(1.15); }
+.chart .bar .lbl { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 11px; color: var(--ink); white-space: nowrap; }
+.chart .bar .dlabel { position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); font-size: 10px; color: var(--muted); white-space: nowrap; }
+.chart .bar .tip { display: none; position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg); font-size: 11px; padding: 4px 8px; border-radius: 6px; white-space: nowrap; z-index: 2; }
+.chart .bar:hover .tip { display: block; }
+.warnbox { background: #fff1cc; color: #7a4b00; border: 1px solid #f1d58a; border-radius: 12px; padding: 10px 14px; font-size: 13px; }
+:root[data-theme="night"] .warnbox { background: #3b2f12; color: var(--accent2); border-color: #5a4518; }
+.todo { display: flex; gap: 8px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.todo input { width: auto; margin-top: 4px; }
+.todo.done span { text-decoration: line-through; color: var(--muted); }

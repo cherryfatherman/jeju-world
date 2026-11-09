@@ -37,11 +37,34 @@
 
   <div id="panel" hidden>
     <div class="tabs">
-      <button data-tab="site" class="on">기본·배너</button><button data-tab="ticker">공지 띠</button><button data-tab="nav">메뉴·도구 상자</button><button data-tab="projects">프로젝트 관리</button><button data-tab="inbox">받은 편지함</button><button data-tab="threads">스레드 글</button>
+      <button data-tab="dash" class="on">📊 대시보드</button><button data-tab="site">기본·배너</button><button data-tab="ticker">공지 띠</button><button data-tab="jeju">제주 생활</button><button data-tab="nav">메뉴·도구 상자</button><button data-tab="projects">프로젝트 관리</button><button data-tab="inbox">받은 편지함</button><button data-tab="threads">스레드 글</button>
     </div>
 
+    <!-- 대시보드 -->
+    <div class="pane on" id="pane-dash"><div class="form">
+      <div id="pwWarn" hidden class="warnbox">⚠️ 관리자 비밀번호가 기본값(baton1234)이에요. 배포할 때 환경변수 <b>ADMIN_PASSWORD</b>로 꼭 바꾸세요.</div>
+      <div class="kpis" id="kpis"></div>
+      <b>최근 14일 방문</b><p class="help">페이지를 연 횟수예요. 개인정보는 모으지 않아요.</p>
+      <div class="chart" id="chart"></div>
+      <details style="margin-top:8px"><summary class="muted" style="cursor:pointer">표로 보기</summary><table id="chartTable" style="width:100%;font-size:13px;margin-top:6px"></table></details>
+      <hr style="border:0;border-top:1px solid var(--line);margin:10px 0">
+      <b>이번 주 운영 할 일</b><p class="help">체크하면 이 브라우저에 저장돼요. 자세한 계획은 저장소 docs/ops 폴더.</p>
+      <div id="todos"></div>
+    </div></div>
+    <!-- 제주 생활 -->
+    <div class="pane" id="pane-jeju"><div class="form">
+      <label>지역<input id="j-area" placeholder="제주시"></label>
+      <label>배출표 확인 여부<select id="j-verified"><option value="false">확인 필요 (⚠️ 표시)</option><option value="true">공식 안내로 확인함 (✅ 표시)</option></select></label>
+      <label>출처 문구<input id="j-source"></label>
+      <b>요일별 배출 품목</b>
+      <div class="row2" id="j-days"></div>
+      <label>공통 안내<textarea id="j-notes" style="min-height:80px"></textarea></label>
+      <b>생활 꿀팁</b><p class="help">제목 · 내용 · 확인됨 체크</p>
+      <div id="tipList"></div>
+      <button type="button" class="btn" id="addTip">＋ 꿀팁 추가</button>
+    </div></div>
     <!-- 기본·배너 -->
-    <div class="pane on" id="pane-site"><div class="form">
+    <div class="pane" id="pane-site"><div class="form">
       <div class="row2">
         <label>사이트 이름<input id="f-name"></label>
         <label>슬로건<input id="f-slogan"></label>
@@ -130,7 +153,38 @@ function fill() {
   v('#f-kicker', B.kicker); v('#f-title', B.title); v('#f-sub', B.sub); v('#f-primary', B.primaryLabel); v('#f-secondary', B.secondaryLabel);
   v('#f-footer', cfg.footer?.note || '');
   v('#t-enabled', String(T.enabled !== false)); v('#t-mode', T.mode || 'auto'); v('#t-title', T.title); v('#t-text', T.text); v('#t-url', T.url);
-  renderNav(); renderTools();
+  renderNav(); renderTools(); fillJeju(); loadDash();
+}
+const DAYS = ['월', '화', '수', '목', '금', '토', '일'];
+function fillJeju() {
+  const J = cfg.jeju || (cfg.jeju = { area: '제주시', waste: { days: {} }, tips: [] });
+  v('#j-area', J.area); v('#j-verified', String(!!J.waste?.verified)); v('#j-source', J.waste?.source); v('#j-notes', J.waste?.notes);
+  $('#j-days').replaceChildren(...DAYS.map((d) => { const l = document.createElement('label'); l.innerHTML = `${d}요일<input data-day="${d}" value="${esc((J.waste?.days || {})[d] || '')}">`; return l; }));
+  renderTips();
+}
+function renderTips() {
+  $('#tipList').replaceChildren(...(cfg.jeju.tips || []).map((t, i) => { const d = document.createElement('div'); d.className = 'item nav'; d.style.gridTemplateColumns = '1fr 2fr 70px 40px';
+    d.innerHTML = `<input value="${esc(t.title)}" placeholder="제목" data-k="title"><input value="${esc(t.body)}" placeholder="내용" data-k="body"><label style="flex-direction:row;align-items:center;gap:4px;font-size:11px"><input type="checkbox" style="width:auto" ${t.check ? 'checked' : ''}>확인됨</label><button type="button" class="del">✕</button>`;
+    d.querySelectorAll('input[data-k]').forEach((inp) => inp.oninput = () => { t[inp.dataset.k] = inp.value; }); d.querySelector('input[type=checkbox]').onchange = (e) => { t.check = e.target.checked; }; d.querySelector('.del').onclick = () => { cfg.jeju.tips.splice(i, 1); renderTips(); }; return d; }));
+}
+$('#addTip').onclick = () => { (cfg.jeju.tips = cfg.jeju.tips || []).push({ title: '', body: '', check: false }); renderTips(); };
+const TODOS = ['스레드에 오늘 글 1개 올리기 (스레드 글 탭에서 생성)', '받은 편지함 확인하고 문의에 답하기', '분리배출 요일표를 제주시 공식 안내와 대조하기', '집주인·공인중개사 1명에게 바톤 소개하기', '농가·소상공인 1곳에 물건 올리기 권하기', '해커톤 참가자에게 프로젝트 등록 링크 보내기', '예시 글을 실제 글로 바꾸기 (관리자 → 예시 숨기기)'];
+function renderTodos() {
+  let done = {}; try { done = JSON.parse(localStorage.getItem('todos') || '{}'); } catch {}
+  $('#todos').replaceChildren(...TODOS.map((t, i) => { const d = document.createElement('label'); d.className = 'todo' + (done[i] ? ' done' : ''); d.innerHTML = `<input type="checkbox" ${done[i] ? 'checked' : ''}><span>${esc(t)}</span>`; d.querySelector('input').onchange = (e) => { done[i] = e.target.checked; try { localStorage.setItem('todos', JSON.stringify(done)); } catch {} renderTodos(); }; return d; }));
+}
+async function loadDash() {
+  renderTodos();
+  const m = await api('/api/admin/metrics');
+  $('#pwWarn').hidden = !m.defaultPassword;
+  const T = m.totals;
+  $('#kpis').innerHTML = [[T.listings, '실제 글'], [T.samples, '예시 글'], [T.views, '글 조회'], [T.interest, '추천 ♥'], [T.inquiries, '구매 문의'], [T.waitlist, '알림 신청'], [T.comments, '한 줄 추천']].map(([n, l]) => `<div class="kpi"><b>${n}</b><span>${l}</span></div>`).join('');
+  const max = Math.max(1, ...m.days.map((d) => d.views)); const maxIdx = m.days.findIndex((d) => d.views === max);
+  $('#chart').replaceChildren(...m.days.map((d, i) => { const b = document.createElement('div'); b.className = 'bar'; b.style.height = `${Math.max(2, (d.views / max) * 100)}%`;
+    const label = (i === maxIdx && d.views) || i === m.days.length - 1 ? `<span class="lbl">${d.views}</span>` : '';
+    const day = i % 2 === 1 || i === m.days.length - 1 ? `<span class="dlabel">${d.day.slice(5).replace('-', '/')}</span>` : '';
+    b.innerHTML = `${label}${day}<span class="tip">${d.day} · ${d.views}회</span>`; return b; }));
+  $('#chartTable').innerHTML = '<tr><th style="text-align:left">날짜</th><th style="text-align:right">방문</th></tr>' + m.days.map((d) => `<tr><td>${d.day}</td><td style="text-align:right">${d.views}</td></tr>`).join('');
 }
 $('#c-accent').oninput = (e) => v('#f-accent', e.target.value); $('#c-accent2').oninput = (e) => v('#f-accent2', e.target.value);
 
@@ -156,6 +210,7 @@ $('#save').onclick = async () => {
   cfg.banner = { kicker: v('#f-kicker'), title: v('#f-title'), sub: v('#f-sub'), primaryLabel: v('#f-primary'), secondaryLabel: v('#f-secondary') };
   cfg.footer = { note: v('#f-footer') };
   cfg.ticker = { enabled: v('#t-enabled') === 'true', mode: v('#t-mode'), title: v('#t-title'), text: v('#t-text'), url: v('#t-url') };
+  cfg.jeju = { ...cfg.jeju, area: v('#j-area'), waste: { ...(cfg.jeju.waste || {}), verified: v('#j-verified') === 'true', source: v('#j-source'), notes: v('#j-notes'), days: Object.fromEntries($$('#j-days input').map((i) => [i.dataset.day, i.value])) }, tips: (cfg.jeju.tips || []).filter((t) => t.title || t.body) };
   try { await api('/api/config', cfg, 'PUT'); toast('저장했어요! 사이트에 바로 반영돼요 ✅'); } catch (err) { toast(err.message); }
 };
 

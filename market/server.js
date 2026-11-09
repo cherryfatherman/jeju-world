@@ -20,6 +20,21 @@ const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2
 const CONFIG_FILE = path.join(__dirname, 'config.json');
 const readConfig = () => JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'baton1234'; // 배포할 때 환경변수로 꼭 바꾸세요
+const DEFAULT_PW = !process.env.ADMIN_PASSWORD;
+// 아주 단순한 속도 제한: IP별 1분에 N회
+const hits = new Map();
+const limit = (n) => (req, res, next) => {
+  const key = `${req.ip}:${req.path}`; const now = Date.now();
+  const arr = (hits.get(key) || []).filter((t) => now - t < 60000);
+  if (arr.length >= n) return res.status(429).json({ error: '너무 자주 요청했어요. 잠시 후 다시 시도해 주세요.' });
+  arr.push(now); hits.set(key, arr); next();
+};
+setInterval(() => { const now = Date.now(); for (const [k, v] of hits) if (!v.some((t) => now - t < 60000)) hits.delete(k); }, 120000);
+// 방문 집계 (날짜별 페이지뷰, 개인정보 없음)
+function countVisit(page) {
+  const m = load('metrics.json', {}); const day = new Date().toISOString().slice(0, 10);
+  m[day] = m[day] || { views: 0, pages: {} }; m[day].views++; m[day].pages[page] = (m[day].pages[page] || 0) + 1; save('metrics.json', m);
+}
 const adminOnly = (req, res, next) => (req.get('x-admin-password') === ADMIN_PASSWORD ? next() : res.status(401).json({ error: '관리자 비밀번호가 틀려요.' }));
 
 const app = express();
@@ -28,7 +43,18 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // ---- 사이트 설정 (관리자 화면에서 수정) ----
 app.get('/api/config', (req, res) => res.json(readConfig()));
-app.post('/api/admin/login', (req, res) => (req.body.password === ADMIN_PASSWORD ? res.json({ ok: true }) : res.status(401).json({ error: '비밀번호가 틀려요.' })));
+app.post('/api/ping', limit(60), (req, res) => { countVisit(clean(req.body.page, 40) || '/'); res.json({ ok: true }); });
+app.get('/api/admin/metrics', adminOnly, (req, res) => {
+  const m = load('metrics.json', {}); const days = [];
+  for (let i = 13; i >= 0; i--) { const d = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10); days.push({ day: d, views: m[d]?.views || 0, pages: m[d]?.pages || {} }); }
+  const projects = load('projects.json', []);
+  res.json({ days, defaultPassword: DEFAULT_PW, totals: {
+    listings: projects.filter((p) => !p.sample && p.status === 'live').length, samples: projects.filter((p) => p.sample).length,
+    inquiries: load('inquiries.json', []).length, waitlist: load('waitlist.json', []).length, comments: load('comments.json', []).length,
+    interest: projects.reduce((a, p) => a + (p.interest || 0), 0), views: projects.reduce((a, p) => a + (p.views || 0), 0),
+  } });
+});
+app.post('/api/admin/login', limit(10), (req, res) => (req.body.password === ADMIN_PASSWORD ? res.json({ ok: true, defaultPassword: DEFAULT_PW }) : res.status(401).json({ error: '비밀번호가 틀려요.' })));
 app.put('/api/config', adminOnly, (req, res) => {
   const c = req.body;
   if (!c || typeof c !== 'object' || !c.site || !c.banner) return res.status(400).json({ error: '설정 형식이 맞지 않아요.' });
@@ -66,7 +92,7 @@ function publicProject(p) {
 }
 
 // ---- AI 소개글 생성 (판매 등록 1단계) ----
-app.post('/api/generate', async (req, res) => {
+app.post('/api/generate', limit(10), async (req, res) => {
   const type = TYPES.includes(req.body.type) ? req.body.type : 'project';
   const hint = clean(req.body.hint, 500);
   const photos = (Array.isArray(req.body.photos) ? req.body.photos : []).filter(isImg).slice(0, 6);
@@ -84,7 +110,7 @@ app.post('/api/generate', async (req, res) => {
 });
 
 // ---- 판매 등록 (2단계: 확인 후 게시) ----
-app.post('/api/projects', (req, res) => {
+app.post('/api/projects', limit(5), (req, res) => {
   const b = req.body || {};
   const type = TYPES.includes(b.type) ? b.type : 'project';
   const url = clean(b.url, 300);
@@ -109,7 +135,7 @@ app.post('/api/projects', (req, res) => {
     priceMin: Math.max(0, Number(b.priceMin) || 0),
     priceMax: Math.max(0, Number(b.priceMax) || 0),
     dealType: ['sell', 'cofounder', 'open'].includes(b.dealType) ? b.dealType : 'sell',
-    seller: clean(b.seller, 30) || '익명',
+    seller: clean(b.seller, 30) || (type === 'home' ? (b.ownerRole === 'agent' ? '공인중개사' : '집주인') : type === 'item' ? '이웃' : '익명'),
     contact,
     // 집 전용 (AI 추출 또는 직접 입력)
     home: type === 'home' ? {
@@ -130,7 +156,7 @@ app.post('/api/projects', (req, res) => {
 });
 
 // ---- 관심 등록 / 문의 ----
-app.post('/api/projects/:id/interest', (req, res) => {
+app.post('/api/projects/:id/interest', limit(20), (req, res) => {
   const list = load('projects.json', []);
   const p = list.find((x) => x.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'not found' });
@@ -138,7 +164,7 @@ app.post('/api/projects/:id/interest', (req, res) => {
   save('projects.json', list);
   res.json({ interest: p.interest });
 });
-app.post('/api/projects/:id/inquiry', (req, res) => {
+app.post('/api/projects/:id/inquiry', limit(5), (req, res) => {
   const list = load('projects.json', []);
   const p = list.find((x) => x.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'not found' });
@@ -161,7 +187,7 @@ app.post('/api/projects/:id/view', (req, res) => {
 });
 
 // ---- 사고 싶어요 / 팔고 싶어요 (검증용 관심 등록) ----
-app.post('/api/waitlist', (req, res) => {
+app.post('/api/waitlist', limit(5), (req, res) => {
   const role = ['buy', 'sell', 'both'].includes(req.body.role) ? req.body.role : 'both';
   const contact = clean(req.body.contact, 200);
   if (!contact) return res.status(400).json({ error: '연락처가 필요해요.' });
@@ -172,7 +198,7 @@ app.post('/api/waitlist', (req, res) => {
 });
 
 // ---- 제주 생활: 분리배출 ----
-app.post('/api/jeju/waste', async (req, res) => {
+app.post('/api/jeju/waste', limit(15), async (req, res) => {
   const question = clean(req.body.question, 200);
   if (!question) return res.status(400).json({ error: '무엇을 버리려는지 적어 주세요.' });
   const jeju = readConfig().jeju || {};
@@ -187,7 +213,7 @@ app.get('/api/winners', (req, res) => res.json(WINNERS));
 app.get('/api/projects/:id/comments', (req, res) => {
   res.json(load('comments.json', []).filter((c) => c.projectId === req.params.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
 });
-app.post('/api/projects/:id/comments', (req, res) => {
+app.post('/api/projects/:id/comments', limit(5), (req, res) => {
   const list = load('projects.json', []);
   const p = list.find((x) => x.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'not found' });
@@ -237,6 +263,7 @@ app.get('/api/threads-drafts', async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`바톤 실행 중: http://localhost:${PORT}`);
+  if (DEFAULT_PW) console.warn('⚠️  관리자 비밀번호가 기본값이에요. 배포 전에 ADMIN_PASSWORD 환경변수를 설정하세요.');
   refreshHackathons();
   setInterval(refreshHackathons, 6 * 60 * 60 * 1000); // 6시간마다 자동 갱신
 });
