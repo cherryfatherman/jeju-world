@@ -12,4 +12,5 @@
 ## 기술
 - 웹 3D: Three.js (`public/vendor`에 로컬 복사본)
 - 실시간 서버: Node.js + Express + ws (`server.js`)
-- 실행: `npm install` 후 `node server.js` → http://localhost:3000
+- 실행: `npm install` 후 `node server.js` → http://localhost:3000 (동네 지도: /map.html)
+- Windows 사용자: `start-windows.bat` 더블클릭 → 설치·실행·지도 열기를 한 번에
