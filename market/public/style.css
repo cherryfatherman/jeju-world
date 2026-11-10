@@ -377,3 +377,35 @@ footer .links a:hover { color: var(--ink); }
 .todo { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
 .todo input { width: 18px; margin-top: 3px; }
 .todo.done span { text-decoration: line-through; color: var(--ink-3); }
+
+
+/* ── 광고 (좌우 고정 / 본문 카드) ── */
+.ads { display: none; }
+.ad { position: relative; display: block; width: 160px; border-radius: var(--r-m); overflow: hidden; background: var(--surface); border: 1px solid var(--line); color: #fff; }
+.ad .adart { display: block; width: 100%; height: auto; }
+.ad .adlabel { position: absolute; bottom: 8px; right: 8px; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 6px; background: rgba(0,0,0,.35); color: #fff; }
+.ad .adtext { position: absolute; left: 0; right: 0; top: 0; padding: 16px 14px; display: grid; gap: 6px; }
+.ad .kicker { font-size: 11px; font-weight: 700; opacity: .95; }
+.ad h3 { font-size: 22px; line-height: 1.15; font-weight: 800; letter-spacing: -0.03em; text-shadow: 0 1px 2px rgba(0,0,0,.15); }
+.ad h3 em { font-style: normal; color: #fff6d6; }
+.ad .sub { font-size: 12px; line-height: 1.4; opacity: .95; }
+.ad .btn.sm { margin-top: 4px; justify-self: start; background: #fff; border-color: #fff; color: var(--ink); height: 30px; }
+.ad.orange .btn.sm { color: #c24d0a; }
+.ad.teal .btn.sm { color: #0f7f8c; }
+@media (min-width: 1440px) {
+  .ads { display: block; }
+  .ads .ad { position: fixed; top: 140px; z-index: 5; width: 160px; box-shadow: var(--shadow-float); }
+  .ads .ad.left { left: calc(50% - 540px - 184px); }
+  .ads .ad.right { right: calc(50% - 540px - 184px); }
+  .ads-inline { display: none; }
+}
+.ads-inline { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-top: 40px; }
+.ads-inline .ad { width: auto; display: grid; grid-template-columns: 112px 1fr; align-items: center; color: var(--ink); }
+.ads-inline .ad .adart { width: 112px; height: 100%; object-fit: cover; aspect-ratio: auto; }
+.ads-inline .ad .adtext { position: static; padding: 14px; color: var(--ink); }
+.ads-inline .ad h3 { font-size: 17px; text-shadow: none; }
+.ads-inline .ad h3 br { display: none; }
+.ads-inline .ad .kicker { color: var(--ink-3); }
+.ads-inline .ad .sub { color: var(--ink-2); }
+.ads-inline .ad .adlabel { background: var(--surface-2); color: var(--ink-3); }
+.ads-inline .ad .btn.sm { background: var(--surface-2); border-color: var(--line-strong); color: var(--ink); }

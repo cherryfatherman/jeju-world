@@ -158,5 +158,26 @@
    "ctaLabel": "수상작 도감 보기",
    "ctaHref": "./winners.html"
   }
- ]
+ ],
+ "ads": {
+  "enabled": true,
+  "left": {
+   "kicker": "제주특별자치도 · 청년",
+   "title": "제주\n청년사업\n들여다보기",
+   "sub": "창업·취업·주거·활동비 지원을 한눈에",
+   "cta": "자세히 보기",
+   "href": "https://www.jeju.go.kr",
+   "theme": "teal",
+   "label": "광고 · 예시"
+  },
+  "right": {
+   "kicker": "제주대학교 · 해커톤",
+   "title": "제주 AI\n부트캠프\n해커톤",
+   "sub": "11월 13일 발표 · 결과물은 바톤에",
+   "cta": "참가 안내",
+   "href": "https://jeju-ai-bootcamp-579712386214.asia-northeast3.run.app/",
+   "theme": "orange",
+   "label": "광고 · 예시"
+  }
+ }
 }

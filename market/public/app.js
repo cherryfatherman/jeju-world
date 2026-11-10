@@ -172,10 +172,39 @@ async function mountShell({ active, primary, sub, banner = false } = {}) {
   const up = document.createElement('button'); up.className = 'totop'; up.setAttribute('aria-label', '맨 위로'); up.innerHTML = icon('up'); up.onclick = () => scrollTo({ top: 0, behavior: 'smooth' }); document.body.append(up);
   addEventListener('scroll', () => up.classList.toggle('show', scrollY > 600), { passive: true });
 
+  // 광고: 넓은 화면은 좌우에 따라다니는 배너, 좁은 화면은 본문 끝 카드
+  mountAds(CONFIG.ads);
   const footer = document.createElement('footer');
   footer.innerHTML = `<div class="wrap"><div><b>${esc(S.name)}</b> · ${esc(S.slogan)}<br><span class="small">${esc(CONFIG.footer?.note || '')}</span></div><div class="links"><a href="${esc(S.threads)}" target="_blank" rel="noopener">스레드</a><a href="${esc(S.openchat)}">오픈채팅</a><a href="./admin.html">관리자</a></div></div>`;
   document.body.append(footer);
   return CONFIG;
+}
+
+/* 광고 배너 (디자인은 코드로 그림: 청록/주황 테마, 아이콘 패턴, 노트북 청년) */
+function adArt(theme) {
+  const c = theme === 'orange' ? ['#ff8a3d', '#ffb074', '#fff1e8'] : ['#1fa3b3', '#4fc3d0', '#e6f7f9'];
+  const icons = ['M2 7h16M2 12h12M2 17h8', 'M10 2v16M2 10h16', 'M10 3a7 7 0 1 0 0 14a7 7 0 0 0 0-14', 'M3 15l5-6 4 4 5-7', 'M4 4h12v12H4z', 'M10 2l2.4 5 5.6.8-4 3.9.9 5.6L10 14.6 5.1 17.3l.9-5.6-4-3.9 5.6-.8z'];
+  const pattern = Array.from({ length: 18 }, (_, i) => { const x = 14 + (i % 3) * 52 + (Math.floor(i / 3) % 2) * 20, y = 24 + Math.floor(i / 3) * 44; return `<g transform="translate(${x} ${y}) scale(.9)" stroke="#fff" stroke-opacity=".35" fill="none" stroke-width="1.6" stroke-linecap="round"><path d="${icons[i % icons.length]}"/></g>`; }).join('');
+  return `<svg viewBox="0 0 160 300" class="adart" aria-hidden="true"><defs><linearGradient id="adg-${theme}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c[0]}"/><stop offset="1" stop-color="${c[1]}"/></linearGradient></defs><rect width="160" height="300" fill="url(#adg-${theme})"/>${pattern}
+    <ellipse cx="80" cy="300" rx="110" ry="60" fill="${c[2]}" opacity=".95"/>
+    <g transform="translate(80 236)"><circle cx="0" cy="-34" r="16" fill="#f6d7bd"/><path d="M-16 -40 q16 -18 32 0 v-6 q-16 -14 -32 0z" fill="#2b2b2b"/><path d="M-26 6 q0 -26 26 -26 q26 0 26 26z" fill="${c[0]}"/><rect x="-30" y="2" width="60" height="6" rx="3" fill="#333"/><rect x="-28" y="-14" width="56" height="18" rx="3" fill="#fff" stroke="#333" stroke-width="2"/></g></svg>`;
+}
+function adCard(ad, side) {
+  const a = document.createElement('a'); a.className = `ad ${ad.theme || 'teal'} ${side}`; a.href = ad.href || '#'; a.target = '_blank'; a.rel = 'noopener sponsored';
+  a.innerHTML = `${adArt(ad.theme)}<span class="adlabel">${esc(ad.label || '광고')}</span><div class="adtext"><p class="kicker">${esc(ad.kicker || '')}</p><h3>${rich(ad.title || '')}</h3><p class="sub">${esc(ad.sub || '')}</p><span class="btn sm">${esc(ad.cta || '자세히')}</span></div>`;
+  return a;
+}
+function mountAds(ads) {
+  if (!ads || ads.enabled === false) return;
+  const wrap = document.createElement('div'); wrap.className = 'ads';
+  if (ads.left?.title) wrap.append(adCard(ads.left, 'left'));
+  if (ads.right?.title) wrap.append(adCard(ads.right, 'right'));
+  document.body.append(wrap);
+  // 좁은 화면: 본문 끝에 가로 카드로
+  const main = document.querySelector('main'); if (!main) return;
+  const inline = document.createElement('div'); inline.className = 'ads-inline';
+  if (ads.left?.title) inline.append(adCard(ads.left, 'inline')); if (ads.right?.title) inline.append(adCard(ads.right, 'inline'));
+  main.append(inline);
 }
 
 /* 알림 받기 모달 (홈·검색 등에서 호출) */

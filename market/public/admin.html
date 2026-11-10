@@ -37,7 +37,7 @@
 
   <div id="panel" hidden>
     <div class="tabs">
-      <button data-tab="dash" class="on">대시보드</button><button data-tab="site">기본·배너</button><button data-tab="ticker">공지 띠</button><button data-tab="carousel">배너 이미지</button><button data-tab="jeju">제주 생활</button><button data-tab="nav">메뉴·도구 상자</button><button data-tab="projects">프로젝트 관리</button><button data-tab="inbox">받은 편지함</button><button data-tab="threads">스레드 글</button>
+      <button data-tab="dash" class="on">대시보드</button><button data-tab="site">기본·배너</button><button data-tab="ticker">공지 띠</button><button data-tab="carousel">배너 이미지</button><button data-tab="ads">좌우 광고</button><button data-tab="jeju">제주 생활</button><button data-tab="nav">메뉴·도구 상자</button><button data-tab="projects">프로젝트 관리</button><button data-tab="inbox">받은 편지함</button><button data-tab="threads">스레드 글</button>
     </div>
 
     <!-- 대시보드 -->
@@ -97,6 +97,12 @@
       <p class="help">홈 상단 큰 배너 3장. 이미지는 가로로 긴 사진(권장 1600×600)이 좋아요. 올리면 자동으로 줄여요.</p>
       <div id="slideList"></div>
       <button type="button" class="btn" id="addSlide">＋ 배너 추가</button>
+    </div></div>
+    <!-- 좌우 광고 -->
+    <div class="pane" id="pane-ads"><div class="form">
+      <label>광고 표시<select id="ad-enabled"><option value="true">보이기</option><option value="false">숨기기</option></select></label>
+      <p class="help">넓은 화면에서는 좌우에 따라다니고, 휴대폰에서는 본문 끝에 카드로 보여요. 제목에서 줄바꿈은 엔터, 강조는 [대괄호].</p>
+      <div class="row2" id="adForms"></div>
     </div></div>
     <!-- 공지 띠 -->
     <div class="pane" id="pane-ticker"><div class="form">
@@ -159,7 +165,19 @@ function fill() {
   v('#f-kicker', B.kicker); v('#f-title', B.title); v('#f-sub', B.sub); v('#f-primary', B.primaryLabel); v('#f-secondary', B.secondaryLabel);
   v('#f-footer', cfg.footer?.note || '');
   v('#t-enabled', String(T.enabled !== false)); v('#t-mode', T.mode || 'auto'); v('#t-title', T.title); v('#t-text', T.text); v('#t-url', T.url);
-  renderNav(); renderTools(); fillJeju(); loadDash(); renderSlides();
+  renderNav(); renderTools(); fillJeju(); loadDash(); renderSlides(); renderAds();
+}
+function renderAds() {
+  cfg.ads = cfg.ads || { enabled: true, left: {}, right: {} };
+  v('#ad-enabled', String(cfg.ads.enabled !== false));
+  $('#adForms').replaceChildren(...['left', 'right'].map((side) => { const ad = cfg.ads[side] = cfg.ads[side] || {}; const d = document.createElement('div'); d.className = 'form';
+    d.innerHTML = `<h3>${side === 'left' ? '왼쪽' : '오른쪽'} 광고</h3>
+      <label>작은 글<input data-k="kicker" value="${esc(ad.kicker || '')}"></label>
+      <label>제목<textarea data-k="title" style="min-height:70px">${esc(ad.title || '')}</textarea></label>
+      <label>설명<input data-k="sub" value="${esc(ad.sub || '')}"></label>
+      <div class="row2"><label>버튼 글자<input data-k="cta" value="${esc(ad.cta || '')}"></label><label>링크<input data-k="href" value="${esc(ad.href || '')}"></label></div>
+      <div class="row2"><label>색<select data-k="theme"><option value="teal" ${ad.theme === 'teal' ? 'selected' : ''}>청록</option><option value="orange" ${ad.theme === 'orange' ? 'selected' : ''}>주황</option></select></label><label>표시 라벨<input data-k="label" value="${esc(ad.label || '광고')}"></label></div>`;
+    d.querySelectorAll('[data-k]').forEach((inp) => inp.oninput = inp.onchange = () => { ad[inp.dataset.k] = inp.value; }); return d; }));
 }
 // 사진 줄여서 업로드 → 경로 반환
 function shrinkFile(file, max = 1600) { return new Promise((res, rej) => { const img = new Image(); img.onload = () => { const k = Math.min(1, max / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(img.src); res(c.toDataURL('image/jpeg', 0.85)); }; img.onerror = rej; img.src = URL.createObjectURL(file); }); }
@@ -233,6 +251,7 @@ $('#save').onclick = async () => {
   cfg.banner = { kicker: v('#f-kicker'), title: v('#f-title'), sub: v('#f-sub'), primaryLabel: v('#f-primary'), secondaryLabel: v('#f-secondary') };
   cfg.footer = { note: v('#f-footer') };
   cfg.ticker = { enabled: v('#t-enabled') === 'true', mode: v('#t-mode'), title: v('#t-title'), text: v('#t-text'), url: v('#t-url') };
+  cfg.ads = { ...cfg.ads, enabled: v('#ad-enabled') === 'true' };
   cfg.jeju = { ...cfg.jeju, area: v('#j-area'), waste: { ...(cfg.jeju.waste || {}), verified: v('#j-verified') === 'true', source: v('#j-source'), notes: v('#j-notes'), days: Object.fromEntries($$('#j-days input').map((i) => [i.dataset.day, i.value])) }, tips: (cfg.jeju.tips || []).filter((t) => t.title || t.body) };
   try { await api('/api/config', cfg, 'PUT'); toast('저장했어요. 사이트에 바로 반영돼요'); } catch (err) { toast(err.message); }
 };
