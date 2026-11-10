@@ -100,7 +100,7 @@ header.top .acts { display: flex; align-items: center; gap: 6px; }
 @keyframes sway { 0%, 100% { transform: rotate(-2.5deg); } 50% { transform: rotate(2.5deg); } }
 @keyframes glow { 0%, 100% { filter: drop-shadow(0 0 2px #ff9a5a); } 50% { filter: drop-shadow(0 0 8px #ffb36b); } }
 :root:not([data-theme="night"]) .banner-art .stars { display: none; }
-@media (max-width: 560px) { .slide { min-height: 240px; } .slide .stext { padding: 20px 18px 18px; } .slide .sub { font-size: 14px; } }
+@media (max-width: 560px) { .slide { min-height: 260px; } .slide .stext { padding: 20px 18px 18px; } .slide .sub { font-size: 14px; } .slide::after { background: linear-gradient(180deg, rgba(255,255,255,.35) 0%, rgba(255,255,255,.9) 55%, rgba(255,255,255,.96) 100%); } }
 .textlink { font-weight: 600; color: var(--ink-2); display: inline-flex; align-items: center; gap: 4px; }
 .statline { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--ink-3); padding-block: 14px 4px; }
 .statline b { color: var(--ink); font-weight: 700; }
