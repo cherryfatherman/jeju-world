@@ -47,8 +47,8 @@ svg.ic { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-wid
 header.top { position: sticky; top: 0; z-index: 20; background: var(--surface); border-bottom: 1px solid var(--line); }
 header.top .bar { display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: 20px; height: 64px; }
 .logo { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 20px; letter-spacing: -0.03em; white-space: nowrap; }
-.logo .mark { width: 30px; height: 30px; border-radius: 10px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; }
-.logo .mark svg { width: 22px; height: 22px; }
+.logo .mark { width: 30px; height: 30px; display: grid; place-items: center; }
+.logo .mark svg { width: 30px; height: 30px; }
 nav.primary { display: flex; gap: 4px; }
 nav.primary a { position: relative; padding: 8px 10px; font-size: 17px; font-weight: 700; color: var(--ink-3); white-space: nowrap; }
 nav.primary a:hover { color: var(--ink); }

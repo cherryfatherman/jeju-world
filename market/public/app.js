@@ -166,13 +166,13 @@ async function mountShell({ active, primary, sub, banner = false } = {}) {
   CONFIG = await api('/api/config');
   const S = CONFIG.site;
   document.documentElement.dataset.theme = 'day'; applyColors(CONFIG.colors);
-  if (!$('link[rel=icon]')) { const l = document.createElement('link'); l.rel = 'icon'; l.href = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#ff6b1a"/><path d="M14 70c3-17 12-27 25-27s22 10 25 27z" fill="#fff" opacity=".55"/><path d="M36 70c3-22 15-36 27-36s24 14 27 36z" fill="#fff"/></svg>')}`; document.head.append(l); }
+  if (!$('link[rel=icon]')) { const l = document.createElement('link'); l.rel = 'icon'; l.href = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#fff"/><circle cx="50" cy="60" r="30" fill="#ff6b1a"/><path d="M50 32c0-9 9-15 20-13-2 10-10 15-20 13z" fill="#19b3a6"/><circle cx="50" cy="32" r="3.5" fill="#1b1915"/></svg>')}`; document.head.append(l); }
   for (const [k, v] of [['og:title', document.title], ['og:description', $('meta[name=description]')?.content || S.slogan], ['og:type', 'website'], ['og:site_name', S.name]]) { if (!$(`meta[property="${k}"]`)) { const m = document.createElement('meta'); m.setAttribute('property', k); m.content = v; document.head.append(m); } }
 
   const pkey = primary || ({ winners: 'project', market: 'market', jeju: 'jeju' }[active] || '');
   const header = document.createElement('header'); header.className = 'top';
   header.innerHTML = `<div class="wrap bar">
-      <a class="logo" href="./"><span class="mark"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M8 72c3-20 14-32 30-32s27 12 30 32z" fill="currentColor" opacity=".55"/><path d="M34 72c4-26 18-42 32-42s28 16 32 42z" fill="currentColor"/></svg></span>${esc(S.name)}</a>
+      <a class="logo" href="./"><span class="mark"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="58" r="32" fill="#ff6b1a"/><path d="M50 28c0-9 9-15 20-13-2 10-10 15-20 13z" fill="#19b3a6"/><circle cx="50" cy="28" r="3.6" fill="#1b1915"/></svg></span>${esc(S.name)}</a>
       <nav class="primary">${PRIMARY.map((p) => `<a href="${p.href}" class="${p.key === pkey ? 'on' : ''}">${p.label}</a>`).join('')}</nav>
       <form class="search" role="search" action="./search.html"><span class="sic">${icon('search')}</span><input name="q" placeholder="프로젝트, 해커톤, 집, 물건 검색" autocomplete="off" aria-label="검색"></form>
       <div class="acts"><a class="btn write" href="./sell.html">${icon('plus')}<span>올리기</span></a></div>
