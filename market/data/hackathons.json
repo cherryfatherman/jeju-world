@@ -1,5 +1,5 @@
 {
- "updatedAt": "2026-11-10T05:33:08.549Z",
+ "updatedAt": "2026-11-10T06:13:00.049Z",
  "items": [
   {
    "source": "local",
@@ -22,7 +22,7 @@
    "prize": "$67,500",
    "dates": "Oct 01 - Nov 12, 2026",
    "location": "Online",
-   "participants": 32506,
+   "participants": 32570,
    "themes": [
     "Low/No Code",
     "Machine Learning/AI",
@@ -37,7 +37,7 @@
    "prize": "$100,000",
    "dates": "Oct 30 - Dec 04, 2026",
    "location": "Online",
-   "participants": 11146,
+   "participants": 11162,
    "themes": [
     "Beginner Friendly",
     "Machine Learning/AI",
@@ -52,7 +52,7 @@
    "prize": "$1,000,000",
    "dates": "Sep 24 - Nov 18, 2026",
    "location": "Online",
-   "participants": 5636,
+   "participants": 5639,
    "themes": [
     "AR/VR",
     "Machine Learning/AI",
@@ -67,7 +67,7 @@
    "prize": "$120,000",
    "dates": "Oct 27 - Dec 22, 2026",
    "location": "Online",
-   "participants": 2545,
+   "participants": 2555,
    "themes": [
     "Machine Learning/AI",
     "Enterprise",
@@ -82,7 +82,7 @@
    "prize": "$46,000",
    "dates": "Oct 22 - Nov 16, 2026",
    "location": "Online",
-   "participants": 1942,
+   "participants": 1950,
    "themes": [
     "Lifehacks",
     "Machine Learning/AI",
@@ -97,7 +97,7 @@
    "prize": "$50,000",
    "dates": "Nov 02 - Dec 15, 2026",
    "location": "Online",
-   "participants": 1014,
+   "participants": 1020,
    "themes": [
     "IoT",
     "Machine Learning/AI",
@@ -112,7 +112,7 @@
    "prize": "$7,800",
    "dates": "Oct 20 - Dec 21, 2026",
    "location": "Online",
-   "participants": 988,
+   "participants": 987,
    "themes": [
     "Beginner Friendly",
     "Machine Learning/AI",
@@ -127,7 +127,7 @@
    "prize": "$300",
    "dates": "Oct 16 - Dec 04, 2026",
    "location": "Online",
-   "participants": 505,
+   "participants": 506,
    "themes": [
     "Beginner Friendly",
     "Open Ended"
@@ -141,7 +141,7 @@
    "prize": "$17,150",
    "dates": "Nov 08 - 15, 2026",
    "location": "Online",
-   "participants": 437,
+   "participants": 439,
    "themes": [
     "Beginner Friendly",
     "Low/No Code",
@@ -171,7 +171,7 @@
    "prize": "₹ 200,000",
    "dates": "Oct 17 - Nov 10, 2026",
    "location": "Online",
-   "participants": 266,
+   "participants": 267,
    "themes": [
     "Beginner Friendly",
     "Blockchain",
@@ -246,7 +246,7 @@
    "prize": "$28,000",
    "dates": "Nov 06 - 10, 2026",
    "location": "Online",
-   "participants": 192,
+   "participants": 193,
    "themes": [
     "Beginner Friendly",
     "Machine Learning/AI",
@@ -261,7 +261,7 @@
    "prize": "₹ 500,000",
    "dates": "Oct 16 - Nov 25, 2026",
    "location": "Online",
-   "participants": 165,
+   "participants": 168,
    "themes": [
     "Education",
     "Health",
@@ -336,7 +336,7 @@
    "prize": "$200,000",
    "dates": "Nov 04 - 11, 2026",
    "location": "VIT Bhopal University",
-   "participants": 53,
+   "participants": 54,
    "themes": [
     "Health",
     "Lifehacks",
@@ -366,7 +366,7 @@
    "prize": "$500",
    "dates": "Nov 08 - Dec 15, 2026",
    "location": "Online",
-   "participants": 28,
+   "participants": 29,
    "themes": [
     "Open Ended",
     "Beginner Friendly",

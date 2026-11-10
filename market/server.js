@@ -228,6 +228,39 @@ app.post('/api/jeju/waste', limit(15), async (req, res) => {
   res.json(await answerWaste({ question, rules: jeju.waste || {}, area: jeju.area || '제주시' }));
 });
 
+// ---- 제주 생활: 공공데이터 (제주특별자치도_쓰레기종류별배출현황, data.go.kr 15062868) ----
+// 인증키는 .env의 DATA_GO_KR_KEY. 하루 1번만 받아오고 data/wasteStats.json에 저장해 둔다 (키는 화면에 안 나간다).
+const WASTE_API = 'https://api.odcloud.kr/api/15062868/v1/uddi:c7b6745b-52bb-4c2e-8fb0-bd5a7aee2595';
+function normalizeWasteRows(rows) {
+  const years = []; const out = [];
+  for (const r of rows) {
+    const item = { city: r['행정시'], type: String(r['종류'] || '').replace('스티리폼', '스티로폼').replace(/\(.*\)$/, ''), tons: {}, recycle: {}, basis: r['데이터기준일자'] };
+    for (const [k, v] of Object.entries(r)) {
+      const m = /^(\d{4})년 (배출량|재활용률)/.exec(k); if (!m) continue;
+      if (!years.includes(m[1])) years.push(m[1]);
+      (m[2] === '배출량' ? item.tons : item.recycle)[m[1]] = Number(v) || 0;
+    }
+    out.push(item);
+  }
+  years.sort();
+  return { years, rows: out, basis: rows[0]?.['데이터기준일자'] || null };
+}
+async function refreshWasteStats() {
+  const key = process.env.DATA_GO_KR_KEY; if (!key) return;
+  try {
+    const r = await fetch(`${WASTE_API}?page=1&perPage=100&serviceKey=${encodeURIComponent(key)}`);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const d = await r.json(); if (!Array.isArray(d.data) || !d.data.length) throw new Error('empty');
+    save('wasteStats.json', { updatedAt: new Date().toISOString(), source: '제주특별자치도_쓰레기종류별배출현황 (공공데이터포털)', url: 'https://www.data.go.kr/data/15062868/openapi.do', ...normalizeWasteRows(d.data) });
+    console.log(`쓰레기 통계 ${d.data.length}줄 갱신`);
+  } catch (e) { console.error('waste stats refresh failed', e.message); }
+}
+app.get('/api/jeju/waste-data', (req, res) => {
+  const d = load('wasteStats.json', null);
+  if (!d) return res.status(404).json({ error: '아직 데이터가 없어요.' });
+  res.json(d);
+});
+
 // ---- 통합 검색 (장터 + 수상작 + 버리는 법) ----
 const { localWaste } = require('./lib/ai');
 app.get('/api/search', limit(60), (req, res) => {
@@ -304,5 +337,9 @@ app.listen(PORT, () => {
   console.log(`바톤 실행 중: http://localhost:${PORT}`);
   if (DEFAULT_PW) console.warn('⚠️  관리자 비밀번호가 기본값이에요. 배포 전에 ADMIN_PASSWORD 환경변수를 설정하세요.');
   refreshHackathons();
+  // 공공데이터: 캐시가 하루 넘게 지났을 때만 다시 받아온다
+  const ws = load('wasteStats.json', null);
+  if (!ws || Date.now() - new Date(ws.updatedAt).getTime() > 86400e3) refreshWasteStats();
+  setInterval(refreshWasteStats, 86400e3);
   setInterval(refreshHackathons, 6 * 60 * 60 * 1000); // 6시간마다 자동 갱신
 });

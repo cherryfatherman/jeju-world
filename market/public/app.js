@@ -13,7 +13,7 @@ let CONFIG = null;
 const PRIMARY = [
   { key: 'browse', label: '구경', href: './', subs: [['./', '추천', 'home'], ['./market.html?type=home', '집'], ['./market.html?type=item', '물건'], ['./market.html?type=project', '프로젝트'], ['./market.html#hackathons', '해커톤'], ['./winners.html', '수상작 도감', 'winners']] },
   { key: 'market', label: '장터', href: './market.html', subs: [['./market.html?type=home', '집', 'home'], ['./market.html?type=item', '물건', 'item'], ['./market.html?type=project', '프로젝트', 'project'], ['./market.html#hackathons', '해커톤']] },
-  { key: 'jeju', label: '제주생활', href: './jeju.html', subs: [['./jeju.html#waste', '이거 어디 버려요?'], ['./jeju.html#sec-days', '요일별 배출'], ['./jeju.html#sec-tips', '생활 꿀팁']] },
+  { key: 'jeju', label: '제주생활', href: './jeju.html', subs: [['./jeju.html#waste', '이거 어디 버려요?'], ['./jeju.html#sec-days', '요일별 배출'], ['./jeju.html#sec-stats', '배출 통계'], ['./jeju.html#sec-tips', '생활 꿀팁']] },
 ];
 
 const won = (n) => {

@@ -28,6 +28,13 @@
     <p class="note" id="wasteSource"></p>
   </section>
 
+  <section id="sec-stats" hidden>
+    <div class="sec-head"><h2>제주는 하루에 얼마나 버릴까</h2><div class="seg" id="cityPick" role="tablist"></div></div>
+    <p class="note" id="statsLead" style="margin:-6px 0 14px"></p>
+    <div class="hbars" id="hbars"></div>
+    <p class="note" id="statsSource" style="margin-top:12px"></p>
+  </section>
+
   <section id="sec-tips">
     <div class="sec-head"><h2>생활 꿀팁</h2><span class="more">바톤이 정리 · 유저가 보탬</span></div>
     <div class="list" id="tips"></div>
@@ -46,6 +53,27 @@ function renderWaste() {
   $('#wasteSource').innerHTML = `${W.verified ? '공식 안내로 확인됨' : '확인 필요'} · 출처: ${esc(W.source || '')}`;
   $('#tips').replaceChildren(...(J.tips || []).map((t) => { const d = document.createElement('div'); d.className = 'row'; d.innerHTML = `<div class="body"><b>${esc(t.title)}</b><p>${esc(t.body)}</p></div><div class="right">${t.check ? '<span class="badge">확인됨</span>' : '<span class="badge sample">확인 필요</span>'}</div>`; return d; }));
 }
+// 공공데이터: 종류별 하루 배출량(톤) 가로 막대 + 재활용률
+async function renderStats() {
+  let d; try { d = await api('/api/jeju/waste-data'); } catch { return; }
+  if (!d?.rows?.length) return;
+  const sec = $('#sec-stats'); sec.hidden = false;
+  const year = d.years[d.years.length - 1];
+  const cities = [...new Set(d.rows.map((r) => r.city))];
+  let city = (CFG.jeju?.area && cities.includes(CFG.jeju.area)) ? CFG.jeju.area : cities[0];
+  const draw = () => {
+    $$('#cityPick button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.city === city)));
+    const rows = d.rows.filter((r) => r.city === city).map((r) => ({ ...r, t: r.tons[year] || 0, rc: r.recycle[year] || 0 })).sort((a, b) => b.t - a.t);
+    const total = rows.reduce((s, r) => s + r.t, 0), max = rows[0]?.t || 1;
+    const top = rows[0];
+    $('#statsLead').textContent = `${year}년 ${city} 기준 하루 약 ${Math.round(total).toLocaleString()}톤. 가장 많은 건 ${top.type}(${top.t.toFixed(1)}톤)이에요.`;
+    $('#hbars').replaceChildren(...rows.map((r) => { const el = document.createElement('div'); el.className = 'hbar';
+      el.innerHTML = `<span class="lbl">${esc(r.type)}</span><div class="track"><div class="fill" style="width:${Math.max(1.5, r.t / max * 100)}%"></div></div><span class="val">${r.t.toFixed(1)}<small>톤</small></span><span class="rc" title="재활용률">${r.rc ? `재활용 ${r.rc}%` : ''}</span>`; return el; }));
+  };
+  $('#cityPick').replaceChildren(...cities.map((c) => { const b = document.createElement('button'); b.type = 'button'; b.role = 'tab'; b.dataset.city = c; b.textContent = c; b.onclick = () => { city = c; draw(); }; return b; }));
+  $('#statsSource').innerHTML = `출처: <a href="${esc(d.url)}" target="_blank" rel="noopener">${esc(d.source)}</a> · 데이터 기준일 ${esc(d.basis || '')} · 하루 평균 배출량(톤)과 재활용률 · 공공데이터포털 API로 매일 자동 갱신`;
+  draw();
+}
 $('#wasteForm').onsubmit = async (e) => {
   e.preventDefault();
   const q = new FormData(e.target).get('q').trim(); if (!q) return;
@@ -58,7 +86,7 @@ $('#wasteForm').onsubmit = async (e) => {
   btn.disabled = false; btn.textContent = 'AI에게 묻기';
 };
 $$('[data-q]').forEach((b) => b.onclick = () => { $('#wasteForm [name=q]').value = b.dataset.q; $('#wasteForm').requestSubmit(); });
-mountShell({ active: 'jeju', primary: 'jeju' }).then((c) => { CFG = c; renderWaste(); });
+mountShell({ active: 'jeju', primary: 'jeju' }).then((c) => { CFG = c; renderWaste(); renderStats(); });
 </script>
 </body>
 </html>
