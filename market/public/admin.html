@@ -28,7 +28,7 @@
 </head>
 <body>
 <main class="wrap" style="max-width:860px">
-  <div class="page-title"><h1>⚙️ 관리자</h1><p>문구·색·메뉴·공지를 여기서 고치면 사이트에 바로 반영돼요. 코드는 만질 필요 없어요.</p></div>
+  <div class="page-title"><h1>관리자</h1><p>문구·색·메뉴·공지를 여기서 고치면 사이트에 바로 반영돼요. 코드는 만질 필요 없어요.</p></div>
 
   <form class="form" id="login">
     <label>관리자 비밀번호<input name="password" type="password" required placeholder="기본값은 README에 적혀 있어요"></label>
@@ -37,12 +37,12 @@
 
   <div id="panel" hidden>
     <div class="tabs">
-      <button data-tab="dash" class="on">📊 대시보드</button><button data-tab="site">기본·배너</button><button data-tab="ticker">공지 띠</button><button data-tab="jeju">제주 생활</button><button data-tab="nav">메뉴·도구 상자</button><button data-tab="projects">프로젝트 관리</button><button data-tab="inbox">받은 편지함</button><button data-tab="threads">스레드 글</button>
+      <button data-tab="dash" class="on">대시보드</button><button data-tab="site">기본·배너</button><button data-tab="ticker">공지 띠</button><button data-tab="jeju">제주 생활</button><button data-tab="nav">메뉴·도구 상자</button><button data-tab="projects">프로젝트 관리</button><button data-tab="inbox">받은 편지함</button><button data-tab="threads">스레드 글</button>
     </div>
 
     <!-- 대시보드 -->
     <div class="pane on" id="pane-dash"><div class="form">
-      <div id="pwWarn" hidden class="warnbox">⚠️ 관리자 비밀번호가 기본값(baton1234)이에요. 배포할 때 환경변수 <b>ADMIN_PASSWORD</b>로 꼭 바꾸세요.</div>
+      <div id="pwWarn" hidden class="warnbox">관리자 비밀번호가 기본값(baton1234)이에요. 배포할 때 환경변수 <b>ADMIN_PASSWORD</b>로 꼭 바꾸세요.</div>
       <div class="kpis" id="kpis"></div>
       <b>최근 14일 방문</b><p class="help">페이지를 연 횟수예요. 개인정보는 모으지 않아요.</p>
       <div class="chart" id="chart"></div>
@@ -121,11 +121,11 @@
     <!-- 스레드 글 -->
     <div class="pane" id="pane-threads"><div class="form">
       <p class="note">오늘 올릴 스레드 글 초안이에요. 복사해서 붙여넣기만 하세요. (AI 키가 있으면 AI가, 없으면 기본 문장으로 만들어요)</p>
-      <button type="button" class="btn primary" id="genThreads">✨ 오늘 글 3개 만들기</button>
+      <button type="button" class="btn primary" id="genThreads">오늘 글 3개 만들기</button>
       <div id="threadsOut"></div>
     </div></div>
 
-    <div class="savebar"><a class="btn" href="./" target="_blank">사이트 보기 ↗</a><button class="btn primary big" id="save">💾 저장하고 반영</button></div>
+    <div class="savebar"><a class="btn" href="./" target="_blank">사이트 보기 ↗</a><button class="btn primary big" id="save">저장하고 반영</button></div>
   </div>
 </main>
 
@@ -211,7 +211,7 @@ $('#save').onclick = async () => {
   cfg.footer = { note: v('#f-footer') };
   cfg.ticker = { enabled: v('#t-enabled') === 'true', mode: v('#t-mode'), title: v('#t-title'), text: v('#t-text'), url: v('#t-url') };
   cfg.jeju = { ...cfg.jeju, area: v('#j-area'), waste: { ...(cfg.jeju.waste || {}), verified: v('#j-verified') === 'true', source: v('#j-source'), notes: v('#j-notes'), days: Object.fromEntries($$('#j-days input').map((i) => [i.dataset.day, i.value])) }, tips: (cfg.jeju.tips || []).filter((t) => t.title || t.body) };
-  try { await api('/api/config', cfg, 'PUT'); toast('저장했어요! 사이트에 바로 반영돼요 ✅'); } catch (err) { toast(err.message); }
+  try { await api('/api/config', cfg, 'PUT'); toast('저장했어요. 사이트에 바로 반영돼요'); } catch (err) { toast(err.message); }
 };
 
 async function loadProjects() {
@@ -231,7 +231,7 @@ async function loadInbox() {
 $('#genThreads').onclick = async () => {
   $('#genThreads').disabled = true; $('#genThreads').innerHTML = '<span class="spinner"></span> 만드는 중…';
   try { const d = await api('/api/threads-drafts'); $('#threadsOut').innerHTML = `<p class="muted">${d.ai ? '✨ AI 작성' : 'ℹ️ 기본 문장 (AI 키 없음)'}</p>` + d.posts.map((p) => `<div class="trow"><div class="grow" style="white-space:pre-line">${esc(p)}</div><button class="btn" onclick="navigator.clipboard.writeText(this.previousElementSibling.textContent);toast('복사했어요')">복사</button></div>`).join(''); } catch (err) { toast(err.message); }
-  $('#genThreads').disabled = false; $('#genThreads').textContent = '✨ 오늘 글 3개 만들기';
+  $('#genThreads').disabled = false; $('#genThreads').textContent = '오늘 글 3개 만들기';
 };
 </script>
 </body>

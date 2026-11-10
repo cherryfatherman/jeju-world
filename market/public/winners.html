@@ -10,8 +10,8 @@
 </head>
 <body>
 <main class="wrap">
-  <div class="page-title"><h1>🏆 수상작 <em>도감</em></h1><p>해외 해커톤에서 상을 받은 프로젝트들이에요. "이런 불편을 이렇게 풀었구나"를 보고, 한국판·제주판을 만들어 보세요. 출처: Devpost.</p></div>
-  <div class="search"><input id="q" placeholder="검색: restaurant, elderly, travel, 교육…"><button class="btn" id="shuffle">🎲 아무거나</button></div>
+  <div class="page-title"><h1>수상작 <em>도감</em></h1><p>해외 해커톤에서 상을 받은 프로젝트들이에요. "이런 불편을 이렇게 풀었구나"를 보고, 한국판·제주판을 만들어 보세요. 출처: Devpost.</p></div>
+  <div class="search"><input id="q" placeholder="검색: restaurant, elderly, travel, 교육…"><button class="btn" id="shuffle">아무거나</button></div>
   <div class="chips" id="chips"></div>
   <div class="sec-head"><span class="more" id="count"></span></div>
   <div class="list" id="list"></div>
@@ -29,13 +29,13 @@ function render() {
   const list = filtered();
   $('#count').textContent = `${list.length}개 · 좋아요 많은 순`;
   $('#list').replaceChildren(...list.slice(0, shown).map((w) => { const d = document.createElement('div'); d.className = 'row';
-    d.innerHTML = `<span class="ic" style="font-size:22px">${EMOJI[w.category] || '🧩'}</span><div class="body"><b>${esc(w.name)}</b><p>${esc(w.tagline)}</p><div class="meta" style="margin-top:6px"><span class="badge">${esc(w.category)}</span>${w.themes.map((t) => `<span class="badge">#${esc(t)}</span>`).join('')}</div></div><div class="right"><span class="pill">♥ ${w.likes}</span><a class="btn" style="padding:6px 10px;font-size:12px" href="${esc(w.url)}" target="_blank" rel="noopener">원문 ↗</a></div>`; return d; }));
+    d.innerHTML = `<div class="body"><b>${esc(w.name)}</b><p>${esc(w.tagline)}</p><div class="meta" style="margin-top:6px"><span class="badge">${esc(w.category)}</span>${w.themes.map((t) => `<span class="badge">#${esc(t)}</span>`).join('')}</div></div><div class="right"><span class="pill">추천 ${w.likes}</span><a class="btn sm" href="${esc(w.url)}" target="_blank" rel="noopener">원문</a></div>`; return d; }));
   $('#more').style.display = list.length > shown ? '' : 'none';
 }
 async function load() {
   all = await api('/api/winners');
   const cats = ['전체', ...Object.keys(EMOJI).filter((c) => all.some((w) => w.category === c))];
-  $('#chips').replaceChildren(...cats.map((c) => { const b = document.createElement('button'); b.className = 'chip' + (c === cat ? ' on' : ''); b.textContent = c === '전체' ? '전체' : `${EMOJI[c]} ${c}`; b.onclick = () => { cat = c; shown = 40; $$('.chip').forEach((x) => x.classList.toggle('on', x === b)); render(); }; return b; }));
+  $('#chips').replaceChildren(...cats.map((c) => { const b = document.createElement('button'); b.className = 'chip' + (c === cat ? ' on' : ''); b.textContent = c; b.onclick = () => { cat = c; shown = 40; $$('.chip').forEach((x) => x.classList.toggle('on', x === b)); render(); }; return b; }));
   render();
 }
 $('#q').oninput = (e) => { q = e.target.value; shown = 40; render(); };

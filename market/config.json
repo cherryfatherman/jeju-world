@@ -8,11 +8,11 @@
   "showSamples": true
  },
  "banner": {
-  "kicker": "🍊 제주 생활 장터 · 집 · 물건 · 프로젝트",
-  "title": "사진만 올리면\n글은 [AI가 써 드려요]",
-  "sub": "방을 내놓을 때, 안 쓰는 물건을 팔 때, 해커톤 프로젝트를 넘길 때. 사진·서류·주소만 올리면 바톤의 AI가 [30초 만에] 정리된 글을 만들어요.",
-  "primaryLabel": "✨ 30초 만에 올리기",
-  "secondaryLabel": "👀 새 글 알림 받기"
+  "kicker": "제주 생활 장터 · 집 · 물건 · 프로젝트",
+  "title": "사진만 올리면\n글은 [AI가 씁니다]",
+  "sub": "방을 내놓을 때, 안 쓰는 물건을 팔 때, 해커톤 프로젝트를 넘길 때. 사진·서류·주소만 올리면 [30초 만에] 정리된 글이 완성돼요.",
+  "primaryLabel": "30초 만에 올리기",
+  "secondaryLabel": "새 글 알림 받기"
  },
  "ticker": {
   "enabled": true,
@@ -35,8 +35,7 @@
   {
    "label": "제주 생활",
    "href": "./jeju.html",
-   "key": "jeju",
-   "badge": "NEW"
+   "key": "jeju"
   },
   {
    "label": "수상작 도감",
@@ -46,66 +45,59 @@
   {
    "label": "올리기",
    "href": "./sell.html",
-   "key": "sell",
-   "badge": "AI"
+   "key": "sell"
   }
  ],
  "tools": [
   {
-   "icon": "🏠",
+   "icon": "home",
    "label": "집 올리기",
-   "sub": "서류 사진 → 면적·층 자동",
+   "sub": "서류 사진으로 면적·층 자동",
    "href": "./sell.html?type=home",
-   "badge": "AI",
-   "hot": true
+   "badge": "AI"
   },
   {
-   "icon": "📦",
+   "icon": "box",
    "label": "물건 올리기",
-   "sub": "사진 → 제목·가격 자동",
+   "sub": "사진으로 제목·가격 자동",
    "href": "./sell.html?type=item",
    "badge": "AI"
   },
   {
-   "icon": "🧩",
+   "icon": "puzzle",
    "label": "프로젝트 넘기기",
    "sub": "해커톤 결과물의 다음 주인",
    "href": "./sell.html?type=project"
   },
   {
-   "icon": "🗑️",
+   "icon": "trash",
    "label": "이거 어디 버려요?",
    "sub": "제주 분리배출 AI",
    "href": "./jeju.html#waste",
-   "badge": "NEW"
+   "group": "jeju"
   },
   {
-   "icon": "🏆",
-   "label": "수상작 도감",
-   "sub": "해외 해커톤 수상작 289",
-   "href": "./winners.html"
+   "icon": "calendar",
+   "label": "요일별 배출표",
+   "sub": "오늘 버릴 수 있는 것",
+   "href": "./jeju.html",
+   "group": "jeju"
   },
   {
-   "icon": "📅",
-   "label": "해커톤 일정",
-   "sub": "자동 수집",
-   "href": "./market.html#hackathons"
-  },
-  {
-   "icon": "🌦️",
+   "icon": "cloud",
    "label": "오늘의 제주",
    "sub": "날씨·공항·배출 요일 브리핑",
    "href": "",
-   "badge": "곧",
-   "soon": true
+   "badge": "준비 중",
+   "soon": true,
+   "group": "jeju"
   }
  ],
  "colors": {
-  "accent": "#ff7a1a",
-  "accent2": "#f5b942"
+  "accent": "#ff6b1a"
  },
  "footer": {
-  "note": "해커톤 일정·수상작 도감 출처: Devpost · \"예시\" 표시 글은 시연용 가상 데이터 · AI가 쓴 글과 추출 정보는 원본을 꼭 확인하세요"
+  "note": "해커톤 일정·수상작 도감 출처: Devpost · \"예시\" 글은 시연용 가상 데이터 · AI가 쓴 글과 추출 정보는 원본을 꼭 확인하세요"
  },
  "jeju": {
   "area": "제주시",

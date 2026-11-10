@@ -2,56 +2,64 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>바톤 · 사진만 올리면 글은 AI가 써 드려요</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>바톤 · 사진만 올리면 글은 AI가 씁니다</title>
 <meta name="description" content="제주 생활 장터 바톤. 집·물건·해커톤 프로젝트를 사진·서류·주소만으로 30초 만에 올려요.">
 <link rel="stylesheet" href="./style.css">
 <script src="./app.js"></script>
 </head>
 <body>
 <main class="wrap">
+  <div class="statline" id="statline"></div>
   <div id="ticker"></div>
 
   <section>
-    <div class="sec-head"><h2>🧰 도구 상자</h2><span class="more">로그인 없이 바로 써요</span></div>
-    <div class="tools" id="tools"></div>
-  </section>
-
-  <section><div class="stats" id="stats"></div></section>
-
-  <section>
-    <div class="sec-head"><h2>🏠 새로 나온 집</h2><a class="more" href="./market.html?type=home">전체 보기 →</a></div>
-    <div class="grid" id="homes"><div class="skeleton"></div><div class="skeleton"></div></div>
+    <div class="sec-head"><h2>지금 올리기</h2><span class="more">로그인 없이 30초</span></div>
+    <div class="tools" id="toolsPrimary"></div>
   </section>
 
   <section>
-    <div class="sec-head"><h2>📦 새로 나온 물건</h2><a class="more" href="./market.html?type=item">전체 보기 →</a></div>
-    <div class="grid" id="items"><div class="skeleton"></div><div class="skeleton"></div></div>
+    <div class="sec-head"><h2>새로 나온 집</h2><a class="more" href="./market.html?type=home">전체 보기</a></div>
+    <div class="grid" id="homes"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
   </section>
 
   <section>
-    <div class="sec-head"><h2>🔥 이번 주 추천 순위</h2><span class="more">추천 ♥ 수 기준 · 전체 장터</span></div>
+    <div class="sec-head"><h2>새로 나온 물건</h2><a class="more" href="./market.html?type=item">전체 보기</a></div>
+    <div class="grid" id="items"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>제주 생활</h2><a class="more" href="./jeju.html">전체 보기</a></div>
+    <div class="tools secondary" id="toolsSecondary"></div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>이번 주 많이 본 글</h2><span class="more">추천 수 기준</span></div>
     <div class="rank" id="rankList"></div>
   </section>
 
   <section>
-    <div class="sec-head"><h2>🧩 다음 주인을 찾는 프로젝트</h2><a class="more" href="./market.html?type=project">전체 보기 →</a></div>
+    <div class="sec-head"><h2>다음 주인을 찾는 프로젝트</h2><a class="more" href="./market.html?type=project">전체 보기</a></div>
     <div class="grid" id="projects"></div>
   </section>
 </main>
 
 <script>
 let CFG;
+function toolEl(t) {
+  const a = document.createElement('a'); a.className = 'tool' + (t.soon ? ' soon' : ''); a.href = t.soon || !t.href ? '#' : t.href;
+  if (t.soon || !t.href) a.onclick = (e) => { e.preventDefault(); toast('준비 중이에요'); };
+  a.innerHTML = `<span class="ic">${icon(t.icon)}</span><span>${esc(t.label)}<small>${esc(t.sub || '')}</small></span>${t.badge ? `<i class="bd">${esc(t.badge)}</i>` : ''}`;
+  return a;
+}
 function renderTools() {
-  $('#tools').replaceChildren(...(CFG.tools || []).map((t) => { const a = document.createElement('a'); a.className = 'tool' + (t.soon ? ' soon' : ''); a.href = t.soon || !t.href ? '#' : t.href;
-    if (t.soon || !t.href) a.onclick = (e) => { e.preventDefault(); toast('준비 중이에요!'); };
-    a.innerHTML = `<span class="ic">${esc(t.icon)}</span><span>${esc(t.label)}<small>${esc(t.sub || '')}</small></span>${t.badge ? `<i class="bd ${t.hot ? 'hot' : ''}">${esc(t.badge)}</i>` : ''}`; return a; }));
+  const tools = CFG.tools || [];
+  $('#toolsPrimary').replaceChildren(...tools.filter((t) => t.group !== 'jeju').slice(0, 3).map(toolEl));
+  $('#toolsSecondary').replaceChildren(...tools.filter((t) => t.group === 'jeju').map(toolEl));
 }
 async function loadStats() {
   const s = await api('/api/stats');
-  const rows = [[s.homes, '집'], [s.items, '물건'], [s.projects, '프로젝트'], [s.interest, '추천 ♥'], [s.hackathons, '열린 해커톤'], [s.winners, '도감 수상작']];
-  $('#stats').innerHTML = rows.map(([n, l]) => `<div class="stat"><b>0</b><span>${l}</span></div>`).join('');
-  $$('#stats b').forEach((b, i) => countUp(b, rows[i][0] ?? 0));
+  $('#statline').innerHTML = [[s.homes, '집'], [s.items, '물건'], [s.projects, '프로젝트'], [s.winners, '수상작 도감'], [s.hackathons, '열린 해커톤']].map(([n, l]) => `<span><b>${(n ?? 0).toLocaleString('ko-KR')}</b> ${l}</span>`).join('');
 }
 document.addEventListener('stats:refresh', loadStats);
 async function load() {
@@ -60,15 +68,15 @@ async function load() {
   $('#homes').replaceChildren(...by('home').slice(0, 3).map(listingCard));
   $('#items').replaceChildren(...by('item').slice(0, 3).map(listingCard));
   $('#projects').replaceChildren(...by('project').slice(0, 3).map(listingCard));
-  for (const [id, label] of [['#homes', '집'], ['#items', '물건'], ['#projects', '프로젝트']]) if (!$(id).children.length) $(id).innerHTML = `<div class="empty">아직 올라온 ${label}이 없어요. <a href="./sell.html" style="color:var(--accent)">첫 글을 올려 보세요</a></div>`;
+  for (const [id, label, t] of [['#homes', '집', 'home'], ['#items', '물건', 'item'], ['#projects', '프로젝트', 'project']]) if (!$(id).children.length) $(id).innerHTML = `<div class="empty">아직 올라온 ${label}이 없어요. <a href="./sell.html?type=${t}">첫 글을 올려 보세요</a></div>`;
   const top = all.slice().sort((a, b) => (b.interest || 0) - (a.interest || 0)).slice(0, 5);
   $('#rankList').replaceChildren(...top.map((p, i) => { const a = document.createElement('a'); a.href = `./project.html?id=${p.id}`;
-    a.innerHTML = `<span class="n ${i === 0 ? 'top' : ''}">${i + 1}</span><div style="min-width:0"><b>${TYPE_ICON[p.type] || ''} ${esc(p.name)}</b><small>${esc(p.tagline)}</small></div><div class="right"><span class="cmt">💬 ${p.comments || 0}</span><span class="pill">♥ 추천 ${p.interest || 0}</span></div>`; return a; }));
+    a.innerHTML = `<span class="n ${i === 0 ? 'top' : ''}">${i + 1}</span><div style="min-width:0"><b>${esc(p.name)}</b><small>${esc(TYPE_LABEL[p.type])} · ${esc(p.tagline)}</small></div><div class="right"><span class="cmt">댓글 ${p.comments || 0}</span><span class="pill">추천 ${p.interest || 0}</span></div>`; return a; }));
   loadStats();
   const h = await api('/api/hackathons'); const items = h.items || [];
   const T = CFG.ticker || {}; let t = null;
   if (T.enabled !== false) t = T.mode === 'custom' ? { title: T.title, dates: T.text, url: T.url } : (items.find((x) => x.source === 'local') || items[0]);
-  if (t && t.title) $('#ticker').innerHTML = `<div class="ticker"><span class="ic">📣</span><div><b>${esc(t.title)}</b><small>${esc(t.dates || '')}${t.location ? ` · ${esc(t.location)}` : ''}${T.mode === 'custom' ? '' : ' — 끝나면 결과물을 바톤에 올려 주세요'}</small></div>${t.url ? `<a href="${esc(t.url)}" target="_blank" rel="noopener">바로가기 →</a>` : ''}</div>`;
+  if (t && t.title) $('#ticker').innerHTML = `<div class="ticker"><span class="dot"></span><div><b>${esc(t.title)}</b><small>${esc(t.dates || '')}${t.location ? ` · ${esc(t.location)}` : ''}${T.mode === 'custom' ? '' : ' · 끝나면 결과물을 바톤에 올려 주세요'}</small></div>${t.url ? `<a href="${esc(t.url)}" target="_blank" rel="noopener">바로가기</a>` : ''}</div>`;
 }
 mountShell({ active: 'home' }).then((c) => { CFG = c; renderTools(); load(); });
 </script>

@@ -11,7 +11,7 @@
 <main class="wrap" style="max-width:760px">
   <div class="page-title"><h1><em>30초</em>면 돼요</h1><p>사진·서류·주소만 올리면 AI가 글을 써 드려요. 확인하고 고치기만 하면 끝.</p></div>
   <div class="typetabs" id="typetabs">
-    <button data-t="home">🏠 집</button><button data-t="item">📦 물건</button><button data-t="project">🧩 프로젝트</button>
+    <button data-t="home">집</button><button data-t="item">물건</button><button data-t="project">프로젝트</button>
   </div>
   <div class="steps"><span class="on" id="st1">1 올리기</span><span id="st2">2 AI 초안 확인</span><span id="st3">3 게시</span></div>
 
@@ -23,7 +23,7 @@
       <div class="thumbs" id="homeThumbs"></div>
       <label style="margin-top:10px">서류 사진 (건축물대장·등기부등본, 최대 3장) <span class="help">AI가 면적·층·용도·준공연도를 읽어요. 분석에만 쓰고 저장하지 않아요.</span><input type="file" accept="image/*" multiple id="homeDocs"></label>
       <div class="thumbs" id="docThumbs"></div>
-      <p class="note">⚠️ 소유자 이름·주민등록번호·상세 번지는 <b>가리고</b> 올려 주세요.</p>
+      <p class="note">소유자 이름·주민등록번호·상세 번지는 <b>가리고</b> 올려 주세요.</p>
     </div>
     <!-- 물건 -->
     <div data-for="item" hidden>
@@ -35,7 +35,7 @@
       <label>서비스 주소 (배포된 사이트, 데모, GitHub 등)<input name="url" type="url" placeholder="https://..."></label>
     </div>
     <label>메모 (선택) — AI에게 알려줄 것<textarea name="hint" style="min-height:80px" id="hint"></textarea></label>
-    <button class="btn primary big" id="genBtn">✨ AI로 글 만들기</button>
+    <button class="btn primary big" id="genBtn">AI로 글 만들기</button>
     <p class="note" id="hintNote"></p>
   </form>
 
@@ -98,7 +98,7 @@
       <label>연락처 (문의한 사람에게만 보여요)<input name="contact" required maxlength="200" placeholder="이메일 또는 카카오 오픈채팅 링크"></label>
     </div>
     <input type="hidden" name="url"><input type="hidden" name="type">
-    <div class="actions" style="justify-content:space-between"><button type="button" class="btn" id="backBtn">← 다시 올리기</button><button class="btn primary big">🏃 바톤에 올리기</button></div>
+    <div class="actions" style="justify-content:space-between"><button type="button" class="btn" id="backBtn">← 다시 올리기</button><button class="btn primary big">바톤에 올리기</button></div>
     <p class="note">올리면 바로 공개돼요. 연락처는 문의한 사람에게만 보여요. AI가 쓴 내용은 꼭 확인하고 고쳐 주세요. 글을 내리고 싶으면 아래 오픈채팅이나 관리자에게 알려주세요.</p>
   </form>
 </main>
@@ -176,15 +176,15 @@ $('#step1').onsubmit = async (e) => {
       f.dong.value = d.dong || ''; f.use.value = d.use || ''; f.areaM2.value = d.areaM2 || ''; $('#areaM2').dispatchEvent(new Event('input'));
       f.floor.value = d.floor || ''; f.builtYear.value = d.builtYear || ''; f.rooms.value = d.rooms || ''; f.options.value = (d.options || []).join(', ');
       f.homeDeal.value = ['매매', '전세', '월세', '단기'].includes(d.dealType) ? d.dealType : '월세'; f.extractedFrom.value = d.extractedFrom || ''; priceUI();
-      $('#extractNote').textContent = d.ai ? (d.extractedFrom ? `✨ ${d.extractedFrom}에서 읽은 값이에요 (신뢰도 ${d.confidence}). 원본과 꼭 대조해 주세요.` : '✨ 서류를 읽지 못했어요. 면적·층·용도를 직접 입력해 주세요.') : '';
+      $('#extractNote').textContent = d.ai ? (d.extractedFrom ? `${d.extractedFrom}에서 읽은 값이에요 (신뢰도 ${d.confidence}). 원본과 꼭 대조해 주세요.` : '서류를 읽지 못했어요. 면적·층·용도를 직접 입력해 주세요.') : '';
     }
     if (type === 'item') { $('#itemCat').value = d.category || '기타'; f.condition.value = d.condition || '사용감 있음'; }
     if (type === 'project') { $('#projCat').value = d.category || '기타'; }
     if (type !== 'home') { f.priceMin.value = d.priceMin || ''; f.priceMax.value = d.priceMax || ''; $('#priceReason').textContent = d.priceReason ? `AI 가격 근거: ${d.priceReason}` : ''; }
     draftMeta = { priceReason: d.priceReason, nextSteps: d.nextSteps };
-    $('#aiNote').textContent = d.ai ? '✨ AI가 쓴 초안이에요. 틀린 부분은 고쳐 주세요. 과장된 표현은 거래 신뢰를 떨어뜨려요.' : `ℹ️ ${d.note || '기본 초안이에요. 내용을 채워 주세요.'}`;
+    $('#aiNote').textContent = d.ai ? 'AI가 쓴 초안이에요. 틀린 부분은 고쳐 주세요. 과장된 표현은 거래 신뢰를 떨어뜨려요.' : (d.note || '기본 초안이에요. 내용을 채워 주세요.');
   } catch (err) { toast(err.message); }
-  btn.disabled = false; btn.textContent = '✨ AI로 글 만들기';
+  btn.disabled = false; btn.textContent = 'AI로 글 만들기';
 };
 $('#backBtn').onclick = () => setStep(1);
 $('#step2').onsubmit = async (e) => {
@@ -196,7 +196,7 @@ $('#step2').onsubmit = async (e) => {
   if (type === 'item') { fd.stage = 'users'; fd.dealType = 'sell'; }
   Object.assign(fd, draftMeta);
   const btn = e.target.querySelector('.primary'); btn.disabled = true;
-  try { const d = await api('/api/projects', fd); setStep(3); confetti(); toast('올라갔어요! 🍊'); setTimeout(() => { location.href = `./project.html?id=${d.id}&new=1`; }, 900); } catch (err) { btn.disabled = false; toast(err.message); }
+  try { const d = await api('/api/projects', fd); setStep(3); confetti(); toast('올라갔어요'); setTimeout(() => { location.href = `./project.html?id=${d.id}&new=1`; }, 900); } catch (err) { btn.disabled = false; toast(err.message); }
 };
 mountShell({ active: 'sell', banner: false }).then(() => setType(type));
 </script>
