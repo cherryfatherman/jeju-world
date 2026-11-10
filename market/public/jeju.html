@@ -28,6 +28,11 @@
     <p class="note" id="wasteSource"></p>
   </section>
 
+  <section id="sec-guides">
+    <div class="sec-head"><h2>제주 생활 가이드</h2><span class="more">글 하나가 한 가지 답</span></div>
+    <div class="ggrid" id="guides"></div>
+  </section>
+
   <section id="sec-tips">
     <div class="sec-head"><h2>생활 꿀팁</h2><span class="more">바톤이 정리 · 유저가 보탬</span></div>
     <div class="list" id="tips"></div>
@@ -58,7 +63,7 @@ $('#wasteForm').onsubmit = async (e) => {
   btn.disabled = false; btn.textContent = 'AI에게 묻기';
 };
 $$('[data-q]').forEach((b) => b.onclick = () => { $('#wasteForm [name=q]').value = b.dataset.q; $('#wasteForm').requestSubmit(); });
-mountShell({ active: 'jeju', primary: 'jeju' }).then((c) => { CFG = c; renderWaste(); });
+mountShell({ active: 'jeju', primary: 'jeju' }).then((c) => { CFG = c; renderWaste(); api('/api/guides').then((g) => $('#guides').replaceChildren(...g.map(guideCard))); });
 </script>
 </body>
 </html>

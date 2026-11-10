@@ -37,7 +37,7 @@
 
   <div id="panel" hidden>
     <div class="tabs">
-      <button data-tab="dash" class="on">대시보드</button><button data-tab="site">기본·배너</button><button data-tab="ticker">공지 띠</button><button data-tab="carousel">배너 이미지</button><button data-tab="ads">좌우 광고</button><button data-tab="jeju">제주 생활</button><button data-tab="nav">메뉴·도구 상자</button><button data-tab="projects">프로젝트 관리</button><button data-tab="inbox">받은 편지함</button><button data-tab="threads">스레드 글</button>
+      <button data-tab="dash" class="on">대시보드</button><button data-tab="site">기본·배너</button><button data-tab="ticker">공지 띠</button><button data-tab="carousel">배너 이미지</button><button data-tab="ads">좌우 광고</button><button data-tab="guides">생활 가이드</button><button data-tab="jeju">제주 생활</button><button data-tab="nav">메뉴·도구 상자</button><button data-tab="projects">프로젝트 관리</button><button data-tab="inbox">받은 편지함</button><button data-tab="threads">스레드 글</button>
     </div>
 
     <!-- 대시보드 -->
@@ -104,6 +104,14 @@
       <p class="help">넓은 화면에서는 좌우에 따라다니고, 휴대폰에서는 본문 끝에 카드로 보여요. 제목에서 줄바꿈은 엔터, 강조는 [대괄호].</p>
       <div class="row2" id="adForms"></div>
     </div></div>
+    <!-- 생활 가이드 -->
+    <div class="pane" id="pane-guides">
+      <div class="form" style="margin-bottom:14px">
+        <p class="help">글 하나가 독립 페이지(guide.html?id=...)예요. 본문은 간단한 서식: <code>## 제목</code>, <code>- 목록</code>, <code>1. 목록</code>, <code>**굵게**</code>, <code>[글자](주소)</code>, <code>&gt; 메모</code>. 공식 안내와 대조한 뒤 '확인됨'으로 바꾸고 확인일을 적어 주세요.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button" id="gAdd">＋ 새 가이드</button><button class="btn primary" type="button" id="gSave">가이드 저장</button></div>
+      </div>
+      <div class="glist" id="glist"></div>
+    </div>
     <!-- 공지 띠 -->
     <div class="pane" id="pane-ticker"><div class="form">
       <label>공지 띠<select id="t-enabled"><option value="true">보이기</option><option value="false">숨기기</option></select></label>
@@ -165,8 +173,35 @@ function fill() {
   v('#f-kicker', B.kicker); v('#f-title', B.title); v('#f-sub', B.sub); v('#f-primary', B.primaryLabel); v('#f-secondary', B.secondaryLabel);
   v('#f-footer', cfg.footer?.note || '');
   v('#t-enabled', String(T.enabled !== false)); v('#t-mode', T.mode || 'auto'); v('#t-title', T.title); v('#t-text', T.text); v('#t-url', T.url);
-  renderNav(); renderTools(); fillJeju(); loadDash(); renderSlides(); renderAds();
+  renderNav(); renderTools(); fillJeju(); loadDash(); renderSlides(); renderAds(); loadGuides();
 }
+let GUIDES = [];
+async function loadGuides() { try { GUIDES = await api('/api/admin/guides'); } catch { GUIDES = []; } renderGuides(); }
+function renderGuides() {
+  $('#glist').replaceChildren(...GUIDES.map((g, idx) => {
+    const d = document.createElement('details');
+    d.innerHTML = `<summary>${esc(g.title || '(제목 없음)')}<small>${g.hidden ? '숨김 · ' : ''}${g.verified ? '확인됨' : '확인 필요'} · ${esc(g.lastChecked || '')}</small></summary><div class="form">
+      <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap"><img src="${esc(g.image || '')}" alt="" style="width:240px;aspect-ratio:3/2;object-fit:cover;border-radius:10px;background:var(--surface-2)"><div style="flex:1;min-width:220px;display:grid;gap:8px"><label>대표 이미지 바꾸기<input type="file" accept="image/*"></label><label>또는 이미지 주소<input data-k="image" value="${esc(g.image || '')}" placeholder="https://..."></label></div></div>
+      <div class="row2"><label>제목<input data-k="title" value="${esc(g.title || '')}"></label><label>주소 이름(영문·숫자·-)<input data-k="id" value="${esc(g.id || '')}"></label></div>
+      <label>한 줄 요약<input data-k="summary" value="${esc(g.summary || '')}"></label>
+      <div class="row2"><label>분류<input data-k="tag" value="${esc(g.tag || '')}" placeholder="정착 · 쓰레기 · 집 · 교통 · 건강 · 생활"></label><label>마지막 확인일<input data-k="lastChecked" type="date" value="${esc(g.lastChecked || '')}"></label></div>
+      <div class="row2"><label>상태<select data-k="verified"><option value="false" ${!g.verified ? 'selected' : ''}>확인 필요 (초안)</option><option value="true" ${g.verified ? 'selected' : ''}>공식 안내로 확인됨</option></select></label><label>표시<select data-k="hidden"><option value="false" ${!g.hidden ? 'selected' : ''}>보이기</option><option value="true" ${g.hidden ? 'selected' : ''}>숨기기</option></select></label></div>
+      <label>본문<textarea data-k="body" style="min-height:260px;font-family:ui-monospace,monospace;font-size:13px">${esc(g.body || '')}</textarea></label>
+      <label>출처 (한 줄에 하나: 이름 | 주소)<textarea data-k="sources" style="min-height:70px">${esc((g.sources || []).map((s) => `${s.label} | ${s.url}`).join('\n'))}</textarea></label>
+      <div style="display:flex;gap:8px"><button class="btn sm" type="button" data-up>위로</button><button class="btn sm" type="button" data-down>아래로</button><button class="btn sm" type="button" data-del style="margin-left:auto;color:var(--danger)">삭제</button></div>
+    </div>`;
+    d.querySelectorAll('[data-k]').forEach((inp) => inp.oninput = inp.onchange = () => { const k = inp.dataset.k, val = inp.value;
+      if (k === 'verified' || k === 'hidden') g[k] = val === 'true'; else if (k === 'sources') g.sources = val.split('\n').map((l) => l.split('|').map((x) => x.trim())).filter((p) => p[0] && p[1]).map(([label, url]) => ({ label, url })); else g[k] = val;
+      if (k === 'image') d.querySelector('img').src = val; });
+    d.querySelector('input[type=file]').onchange = async (e) => { const f = e.target.files[0]; if (!f) return; try { g.image = await upload(f, 1600); d.querySelector('img').src = g.image; d.querySelector('[data-k=image]').value = g.image; toast('이미지를 올렸어요. 가이드 저장을 눌러 반영하세요'); } catch (err) { toast(err.message); } };
+    d.querySelector('[data-up]').onclick = () => { if (idx > 0) { [GUIDES[idx - 1], GUIDES[idx]] = [GUIDES[idx], GUIDES[idx - 1]]; renderGuides(); } };
+    d.querySelector('[data-down]').onclick = () => { if (idx < GUIDES.length - 1) { [GUIDES[idx + 1], GUIDES[idx]] = [GUIDES[idx], GUIDES[idx + 1]]; renderGuides(); } };
+    d.querySelector('[data-del]').onclick = () => { if (confirm(`'${g.title}' 가이드를 삭제할까요?`)) { GUIDES.splice(idx, 1); renderGuides(); } };
+    return d;
+  }));
+}
+$('#gAdd').onclick = () => { GUIDES.unshift({ id: `guide-${Date.now().toString(36)}`, title: '', summary: '', tag: '생활', image: '', verified: false, hidden: false, lastChecked: new Date().toISOString().slice(0, 10), body: '## 제목\n- 내용', sources: [] }); renderGuides(); $('#glist details').open = true; };
+$('#gSave').onclick = async () => { try { const r = await api('/api/admin/guides', GUIDES, 'PUT'); toast(`가이드 ${r.count}개를 저장했어요`); loadGuides(); } catch (err) { toast(err.message); } };
 function renderAds() {
   cfg.ads = cfg.ads || { enabled: true, left: {}, right: {} };
   v('#ad-enabled', String(cfg.ads.enabled !== false));

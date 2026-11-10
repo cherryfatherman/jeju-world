@@ -220,6 +220,29 @@ app.post('/api/waitlist', limit(5), (req, res) => {
   res.json({ ok: true, count: all.length });
 });
 
+// ---- 제주 생활 가이드 (글 하나 = 독립 정보 페이지, 관리자에서 편집) ----
+const guideSummary = ({ id, title, summary, image, tag, verified, lastChecked }) => ({ id, title, summary, image, tag, verified, lastChecked });
+app.get('/api/guides', (req, res) => res.json(load('guides.json', []).filter((g) => g.hidden !== true).map(guideSummary)));
+app.get('/api/guides/:id', (req, res) => {
+  const g = load('guides.json', []).find((x) => x.id === req.params.id && x.hidden !== true);
+  g ? res.json(g) : res.status(404).json({ error: '가이드가 없어요.' });
+});
+app.get('/api/admin/guides', adminOnly, (req, res) => res.json(load('guides.json', [])));
+app.put('/api/admin/guides', adminOnly, (req, res) => {
+  const list = Array.isArray(req.body) ? req.body : [];
+  const seen = new Set();
+  const cleaned = list.map((g) => ({
+    id: clean(g.id, 40).toLowerCase().replace(/[^a-z0-9-]/g, '-') || newId(),
+    title: clean(g.title, 80), summary: clean(g.summary, 160), tag: clean(g.tag, 12),
+    image: isImg(g.image) ? g.image : '',
+    verified: g.verified === true, hidden: g.hidden === true, lastChecked: clean(g.lastChecked, 10),
+    body: clean(g.body, 20000),
+    sources: (Array.isArray(g.sources) ? g.sources : []).map((s) => ({ label: clean(s.label, 60), url: clean(s.url, 300) })).filter((s) => s.label && isUrl(s.url)).slice(0, 10),
+  })).filter((g) => g.title && !seen.has(g.id) && seen.add(g.id));
+  save('guides.json', cleaned);
+  res.json({ ok: true, count: cleaned.length });
+});
+
 // ---- 제주 생활: 분리배출 ----
 app.post('/api/jeju/waste', limit(15), async (req, res) => {
   const question = clean(req.body.question, 200);

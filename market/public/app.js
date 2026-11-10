@@ -13,7 +13,7 @@ let CONFIG = null;
 const PRIMARY = [
   { key: 'browse', label: '구경', href: './', subs: [['./', '추천', 'home'], ['./market.html?type=home', '집'], ['./market.html?type=item', '물건'], ['./market.html?type=project', '프로젝트'], ['./market.html#hackathons', '해커톤'], ['./winners.html', '수상작 도감', 'winners']] },
   { key: 'market', label: '장터', href: './market.html', subs: [['./market.html?type=home', '집', 'home'], ['./market.html?type=item', '물건', 'item'], ['./market.html?type=project', '프로젝트', 'project'], ['./market.html#hackathons', '해커톤']] },
-  { key: 'jeju', label: '제주생활', href: './jeju.html', subs: [['./jeju.html#waste', '이거 어디 버려요?'], ['./jeju.html#sec-days', '요일별 배출'], ['./jeju.html#sec-tips', '생활 꿀팁']] },
+  { key: 'jeju', label: '제주생활', href: './jeju.html', subs: [['./jeju.html#waste', '이거 어디 버려요?'], ['./jeju.html#sec-days', '요일별 배출'], ['./jeju.html#sec-guides', '생활 가이드'], ['./jeju.html#sec-tips', '생활 꿀팁']] },
 ];
 
 const won = (n) => {
@@ -104,6 +104,31 @@ function photoCard(p) {
     <div class="pmeta"><span class="price">${esc(listPrice(p))}</span><span>추천 ${p.interest || 0} · 댓글 ${p.comments || 0}</span></div>`;
   a.querySelector('.save').onclick = async (e) => { e.preventDefault(); e.stopPropagation(); if (localStorage.getItem('int-' + p.id)) return toast('이미 추천했어요'); try { const d = await api(`/api/projects/${p.id}/interest`, {}); localStorage.setItem('int-' + p.id, '1'); e.currentTarget.classList.add('on'); toast(`추천했어요 · ${d.interest}`); } catch (err) { toast(err.message); } };
   return a;
+}
+
+/* 가이드 카드 */
+function guideCard(g) {
+  const a = document.createElement('a'); a.className = 'gcard'; a.href = `./guide.html?id=${encodeURIComponent(g.id)}`;
+  a.innerHTML = `<div class="gimg">${g.image ? `<img src="${esc(g.image)}" alt="" loading="lazy">` : ''}<span class="gtag">${esc(g.tag || '가이드')}</span></div><b>${esc(g.title)}</b><p>${esc(g.summary || '')}</p><small>${g.verified ? '<span style="color:var(--ok)">확인됨</span>' : '확인 필요'} · ${esc(g.lastChecked || '')}</small>`;
+  return a;
+}
+/* 아주 작은 마크다운: ## 제목, - 목록, 1. 목록, **굵게**, [글](주소), > 메모, 빈 줄 = 문단 */
+function md(src) {
+  const inline = (s) => esc(s).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (m, t, u) => /^(https?:\/\/|\.\/|#)/.test(u) ? `<a href="${u}"${u.startsWith('http') ? ' target="_blank" rel="noopener"' : ''}>${t}</a>` : t);
+  const out = []; let list = null;
+  const flush = () => { if (list) { out.push(`<${list.tag}>${list.items.map((i) => `<li>${i}</li>`).join('')}</${list.tag}>`); list = null; } };
+  for (const raw of String(src).split('\n')) {
+    const line = raw.trimEnd();
+    let m;
+    if ((m = /^##\s+(.*)/.exec(line))) { flush(); out.push(`<h2>${inline(m[1])}</h2>`); }
+    else if ((m = /^###\s+(.*)/.exec(line))) { flush(); out.push(`<h3>${inline(m[1])}</h3>`); }
+    else if ((m = /^[-*]\s+(.*)/.exec(line))) { if (!list || list.tag !== 'ul') { flush(); list = { tag: 'ul', items: [] }; } list.items.push(inline(m[1])); }
+    else if ((m = /^\d+\.\s+(.*)/.exec(line))) { if (!list || list.tag !== 'ol') { flush(); list = { tag: 'ol', items: [] }; } list.items.push(inline(m[1])); }
+    else if ((m = /^>\s?(.*)/.exec(line))) { flush(); out.push(`<blockquote>${inline(m[1])}</blockquote>`); }
+    else if (!line.trim()) { flush(); }
+    else { flush(); out.push(`<p>${inline(line)}</p>`); }
+  }
+  flush(); return out.join('');
 }
 
 const JEJU_WORDS = [['혼저옵서예', '어서 오세요'], ['폭삭 속았수다', '정말 수고하셨습니다'], ['맨도롱 또똣', '따뜻하게, 알맞게 따끈한'], ['감수광', '가십니까?'], ['왕 봥 갑서', '와서 보고 가세요'], ['고맙수다', '고맙습니다'], ['놀멍 쉬멍', '놀면서 쉬면서'], ['도르멍', '빨리, 서둘러서'], ['하영', '많이'], ['지꺼지다', '기쁘다, 신나다'], ['소랑햄수다', '사랑합니다'], ['또시 봅주', '다시 봐요'], ['무사', '왜'], ['어떵 살암수과', '어떻게 지내세요?'], ['촘말로', '정말로']];

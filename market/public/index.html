@@ -4,90 +4,71 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>바톤 · 제주 생활 장터</title>
-<meta name="description" content="제주 생활 장터 바톤. 집·물건·해커톤 프로젝트를 사진·서류·주소만으로 30초 만에 올려요.">
+<meta name="description" content="제주 생활에 바로 필요한 정보와 장터. 집·물건·프로젝트는 사진만 올리면 AI가 글을 써요.">
 <link rel="stylesheet" href="./style.css">
 <script src="./app.js"></script>
 </head>
 <body>
 <main class="wrap">
-  <!-- 배너 캐러셀 -->
+  <!-- 배너 (기본 1장, 관리자에서 추가 가능) -->
   <div class="carousel" id="carousel" aria-roledescription="carousel">
     <div class="slides" id="slides"></div>
     <div class="dots" id="dots"></div>
   </div>
 
-  <div class="statline" id="statline"></div>
+  <!-- 오늘 바로 필요한 것: 누르면 바로 답이 나오는 곳으로 -->
+  <section class="today">
+    <div class="sec-head"><h2>오늘 바로 필요한 것</h2><span class="more" id="todayLabel"></span></div>
+    <div class="quick" id="quick"></div>
+  </section>
 
-  <!-- 빠른 메뉴 (오늘의집 아이콘 메뉴 줄) -->
-  <div class="quick" id="quick"></div>
-
+  <!-- 제주 생활 가이드: 글 하나가 독립 정보 페이지 -->
   <section>
-    <div class="sec-head"><h2>새로 올라온 글</h2><a class="more" href="./market.html">전체 보기</a></div>
+    <div class="sec-head"><h2>제주 생활 가이드</h2><a class="more" href="./jeju.html#sec-guides">전체 보기</a></div>
+    <div class="ggrid" id="guides"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+  </section>
+
+  <!-- 장터는 한 줄만. 나머지는 장터 탭으로 -->
+  <section>
+    <div class="sec-head"><h2>장터에 새로 올라온 글</h2><a class="more" href="./market.html">장터 전체 보기</a></div>
     <div class="pgrid" id="feed"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
-  </section>
-
-  <section>
-    <div class="sec-head"><h2>이번 주 많이 본 글</h2><span class="more">추천 수 기준</span></div>
-    <div class="rank" id="rankList"></div>
-  </section>
-
-  <section>
-    <div class="sec-head"><h2>집</h2><a class="more" href="./market.html?type=home">전체 보기</a></div>
-    <div class="grid" id="homes"></div>
-  </section>
-
-  <section>
-    <div class="sec-head"><h2>물건</h2><a class="more" href="./market.html?type=item">전체 보기</a></div>
-    <div class="grid" id="items"></div>
-  </section>
-
-  <section>
-    <div class="sec-head"><h2>다음 주인을 찾는 프로젝트</h2><a class="more" href="./market.html?type=project">전체 보기</a></div>
-    <div class="grid" id="projects"></div>
-  </section>
-
-  <section>
-    <div class="sec-head"><h2>지금 열려 있는 해커톤</h2><a class="more" href="./market.html#hackathons">전체 보기</a></div>
-    <div class="hack" id="hackList"></div>
+    <p class="note" style="margin-top:14px">집·물건·프로젝트 모두 사진만 올리면 글은 AI가 써요. <a href="./sell.html">30초 만에 올리기</a></p>
   </section>
 </main>
 
 <script>
 let CFG;
+const DAYS = ['월', '화', '수', '목', '금', '토', '일'];
 const SLIDES = (c) => (c.carousel || []).map((s, i) => ({ image: s.image, kicker: s.kicker, title: s.title, sub: s.sub, cta: [s.ctaLabel, s.ctaHref], link: i === 0 ? [c.banner.secondaryLabel, '#want'] : null }));
 function renderCarousel() {
   const slides = SLIDES(CFG); let i = 0, timer;
   $('#slides').innerHTML = slides.map((s) => `<article class="slide" style="${s.image ? `background-image:url('${esc(s.image)}')` : ''}"><div class="stext"><p class="kicker">${esc(s.kicker)}</p><h1>${rich(s.title)}</h1><p class="sub">${rich(s.sub).replace(/<em>/g, '<b>').replace(/<\/em>/g, '</b>')}</p><div class="cta"><a class="btn primary" href="${esc(s.cta[1])}">${esc(s.cta[0])}</a>${s.link ? `<a class="textlink" href="${esc(s.link[1])}">${esc(s.link[0])} ${icon('arrow')}</a>` : ''}</div></div></article>`).join('');
-  $('#dots').innerHTML = slides.map((_, k) => `<button aria-label="${k + 1}번 배너" class="${k === 0 ? 'on' : ''}"></button>`).join('');
+  $('#dots').innerHTML = slides.length > 1 ? slides.map((_, k) => `<button aria-label="${k + 1}번 배너" class="${k === 0 ? 'on' : ''}"></button>`).join('') : '';
   const go = (k) => { i = (k + slides.length) % slides.length; $('#slides').style.transform = `translateX(-${i * 100}%)`; $$('#dots button').forEach((b, n) => b.classList.toggle('on', n === i)); };
   $$('#dots button').forEach((b, k) => b.onclick = () => { go(k); restart(); });
-  const restart = () => { clearInterval(timer); if (!matchMedia('(prefers-reduced-motion: reduce)').matches) timer = setInterval(() => go(i + 1), 6000); };
+  const restart = () => { clearInterval(timer); if (slides.length > 1 && !matchMedia('(prefers-reduced-motion: reduce)').matches) timer = setInterval(() => go(i + 1), 6000); };
   restart();
   let sx = null; const el = $('#carousel');
-  el.addEventListener('pointerdown', (e) => { sx = e.clientX; }); el.addEventListener('pointerup', (e) => { if (sx === null) return; const dx = e.clientX - sx; if (Math.abs(dx) > 40) { go(i + (dx < 0 ? 1 : -1)); restart(); } sx = null; });
+  el.addEventListener('pointerdown', (e) => { sx = e.clientX; }); el.addEventListener('pointerup', (e) => { if (sx === null || slides.length < 2) return; const dx = e.clientX - sx; if (Math.abs(dx) > 40) { go(i + (dx < 0 ? 1 : -1)); restart(); } sx = null; });
   const want = mountWaitlist(); $$('a[href="#want"]').forEach((a) => a.onclick = (e) => { e.preventDefault(); want.classList.add('show'); });
 }
 function renderQuick() {
-  $('#quick').replaceChildren(...(CFG.tools || []).map((t) => { const a = document.createElement('a'); a.href = t.soon || !t.href ? '#' : t.href; a.className = t.soon ? 'soon' : ''; if (t.soon || !t.href) a.onclick = (e) => { e.preventDefault(); toast('준비 중이에요'); }; a.innerHTML = `<span class="qic">${icon(t.icon)}</span><span>${esc(t.label)}</span>`; return a; }));
+  const todayIdx = (new Date().getDay() + 6) % 7, today = DAYS[todayIdx];
+  const todayItems = ((CFG.jeju?.waste?.days || {})[today] || '').split(/,\s*/).filter(Boolean);
+  $('#todayLabel').textContent = `${today}요일 · ${CFG.jeju?.area || '제주시'}`;
+  $('#quick').replaceChildren(...(CFG.tools || []).map((t) => {
+    const a = document.createElement('a'); a.href = t.soon || !t.href ? '#' : t.href; a.className = t.soon ? 'soon' : '';
+    if (t.soon || !t.href) a.onclick = (e) => { e.preventDefault(); toast('준비 중이에요'); };
+    // '오늘 버릴 수 있는 것' 타일은 설명 자리에 오늘 품목을 바로 보여준다
+    const sub = t.key === 'today' ? (todayItems.join(' · ') || '요일표 보기') : (t.sub || '');
+    a.innerHTML = `<span class="qic">${icon(t.icon)}</span><span class="ql">${esc(t.label)}</span>${sub ? `<small>${esc(sub)}</small>` : ''}`; return a;
+  }));
 }
-async function loadStats() {
-  const s = await api('/api/stats');
-  $('#statline').innerHTML = [[s.homes, '집'], [s.items, '물건'], [s.projects, '프로젝트'], [s.winners, '수상작'], [s.hackathons, '열린 해커톤']].map(([n, l]) => `<span><b>${(n ?? 0).toLocaleString('ko-KR')}</b> ${l}</span>`).join('');
-}
-document.addEventListener('stats:refresh', loadStats);
 async function load() {
-  const all = await api('/api/projects');
-  const by = (t) => all.filter((p) => p.type === t);
-  $('#feed').replaceChildren(...all.slice(0, 8).map(photoCard));
-  $('#homes').replaceChildren(...by('home').slice(0, 4).map(listingCard));
-  $('#items').replaceChildren(...by('item').slice(0, 4).map(listingCard));
-  $('#projects').replaceChildren(...by('project').slice(0, 4).map(listingCard));
-  for (const [id, label, t] of [['#homes', '집', 'home'], ['#items', '물건', 'item'], ['#projects', '프로젝트', 'project']]) if (!$(id).children.length) $(id).innerHTML = `<div class="empty">아직 올라온 ${label}이 없어요. <a href="./sell.html?type=${t}">첫 글을 올려 보세요</a></div>`;
-  const top = all.slice().sort((a, b) => (b.interest || 0) - (a.interest || 0)).slice(0, 5);
-  $('#rankList').replaceChildren(...top.map((p, i) => { const a = document.createElement('a'); a.href = `./project.html?id=${p.id}`; a.innerHTML = `<span class="n ${i === 0 ? 'top' : ''}">${i + 1}</span><div style="min-width:0"><b>${esc(p.name)}</b><small>${esc(TYPE_LABEL[p.type])} · ${esc(p.tagline)}</small></div><div class="right"><span class="cmt">댓글 ${p.comments || 0}</span><span class="pill">추천 ${p.interest || 0}</span></div>`; return a; }));
-  loadStats();
-  const h = await api('/api/hackathons');
-  $('#hackList').replaceChildren(...(h.items || []).slice(0, 4).map((x) => { const a = document.createElement('a'); a.href = x.url; a.target = '_blank'; a.rel = 'noopener'; a.innerHTML = `<span class="src ${x.source}">${x.source === 'local' ? '국내 · 직접 등록' : 'Devpost'}</span><b>${esc(x.title)}</b><span class="d">${esc(x.dates || '')} · ${esc(x.location || '')}${x.participants ? ` · ${x.participants.toLocaleString()}명 참가` : ''}</span><span class="p">${x.prize ? `상금 ${esc(x.prize)}` : ''}</span>`; return a; }));
+  const [guides, all] = await Promise.all([api('/api/guides'), api('/api/projects')]);
+  $('#guides').replaceChildren(...guides.slice(0, 8).map(guideCard));
+  $('#feed').replaceChildren(...all.slice(0, 4).map(photoCard));
+  if (!all.length) $('#feed').innerHTML = '<div class="empty">아직 올라온 글이 없어요. <a href="./sell.html">첫 글을 올려 보세요</a></div>';
 }
 mountShell({ active: 'home', primary: 'browse', sub: 'home' }).then((c) => { CFG = c; renderCarousel(); renderQuick(); load(); });
 </script>

@@ -50,47 +50,55 @@
  ],
  "tools": [
   {
-   "icon": "home",
-   "label": "집 올리기",
-   "sub": "서류 사진으로 면적·층 자동",
-   "href": "./sell.html?type=home",
-   "badge": "AI"
-  },
-  {
-   "icon": "box",
-   "label": "물건 올리기",
-   "sub": "사진으로 제목·가격 자동",
-   "href": "./sell.html?type=item",
-   "badge": "AI"
-  },
-  {
-   "icon": "puzzle",
-   "label": "프로젝트 넘기기",
-   "sub": "해커톤 결과물의 다음 주인",
-   "href": "./sell.html?type=project"
+   "icon": "calendar",
+   "key": "today",
+   "label": "오늘 버릴 수 있는 것",
+   "sub": "",
+   "href": "./jeju.html#sec-days"
   },
   {
    "icon": "trash",
    "label": "이거 어디 버려요?",
-   "sub": "제주 분리배출 AI",
-   "href": "./jeju.html#waste",
-   "group": "jeju"
+   "sub": "AI가 바로 답해요",
+   "href": "./jeju.html#waste"
   },
   {
-   "icon": "calendar",
-   "label": "요일별 배출표",
-   "sub": "오늘 버릴 수 있는 것",
-   "href": "./jeju.html",
-   "group": "jeju"
+   "icon": "box",
+   "label": "대형폐기물 신고",
+   "sub": "소파·침대·가전",
+   "href": "./guide.html?id=bulky-waste"
+  },
+  {
+   "icon": "leaf",
+   "label": "재활용도움센터",
+   "sub": "요일 상관없이",
+   "href": "./guide.html?id=recycle-center"
   },
   {
    "icon": "cloud",
-   "label": "오늘의 제주",
-   "sub": "날씨·공항·배출 요일 브리핑",
-   "href": "",
-   "badge": "준비 중",
-   "soon": true,
-   "group": "jeju"
+   "label": "항공 결항 확인",
+   "sub": "바람·태풍 때",
+   "href": "./guide.html?id=flight-delay"
+  },
+  {
+   "icon": "heart",
+   "label": "야간 응급·약국",
+   "sub": "밤에 아플 때",
+   "href": "./guide.html?id=emergency"
+  },
+  {
+   "icon": "home",
+   "label": "집 올리기",
+   "sub": "서류 사진이면 끝",
+   "href": "./sell.html?type=home",
+   "badge": "AI"
+  },
+  {
+   "icon": "plus",
+   "label": "물건 올리기",
+   "sub": "사진이면 끝",
+   "href": "./sell.html?type=item",
+   "badge": "AI"
   }
  ],
  "colors": {
@@ -138,25 +146,9 @@
    "image": "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=1600&h=600&fit=crop&q=80&auto=format",
    "kicker": "제주 생활 장터 · 집 · 물건 · 프로젝트",
    "title": "사진만 올리면\n글은 [AI가 씁니다]",
-   "sub": "사진·서류·주소만 올리면 30초 만에 정리된 글이 완성돼요.",
+   "sub": "집·물건·프로젝트, 사진·서류·주소만 올리면 30초 만에 글이 완성돼요.",
    "ctaLabel": "30초 만에 올리기",
    "ctaHref": "./sell.html"
-  },
-  {
-   "image": "https://images.pexels.com/photos/7218566/pexels-photo-7218566.jpeg?auto=compress&cs=tinysrgb&w=1600&h=600&fit=crop",
-   "kicker": "제주 생활",
-   "title": "이거 어디 버려요?\n[AI가 바로 알려드려요]",
-   "sub": "아이스팩, 깨진 유리, 건전지. 오늘 버릴 수 있는지까지.",
-   "ctaLabel": "물어보기",
-   "ctaHref": "./jeju.html#waste"
-  },
-  {
-   "image": "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1600&h=600&fit=crop&q=80&auto=format",
-   "kicker": "해커톤",
-   "title": "해커톤이 끝나도\n[프로젝트는 끝나지 않게]",
-   "sub": "멈춘 프로젝트를 다음 주인에게. 해외 수상작 도감 289개.",
-   "ctaLabel": "수상작 도감 보기",
-   "ctaHref": "./winners.html"
   }
  ],
  "ads": {
