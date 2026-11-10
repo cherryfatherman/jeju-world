@@ -6,8 +6,8 @@
   "status": "live",
   "sample": true,
   "photos": [
-   "https://picsum.photos/seed/jeju-room-1/1200/900",
-   "https://picsum.photos/seed/jeju-room-2/1200/900"
+   "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&h=900&fit=crop&q=80&auto=format",
+   "https://images.unsplash.com/photo-1586105251261-72a756497a11?w=1200&h=900&fit=crop&q=80&auto=format"
   ],
   "name": "아라동 투룸, 제주대 도보 10분 (예시)",
   "tagline": "2층 남향, 2026년 2월까지 단기 가능",
@@ -46,7 +46,7 @@
   "seller": "집주인",
   "contact": "example-owner@example.com",
   "interest": 19,
-  "views": 419
+  "views": 420
  },
  {
   "id": "i01",
@@ -55,7 +55,8 @@
   "status": "live",
   "sample": true,
   "photos": [
-   "https://picsum.photos/seed/jeju-tangerine/1200/900"
+   "https://images.unsplash.com/photo-1557800636-894a64c1696f?w=1200&h=900&fit=crop&q=80&auto=format",
+   "https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=1200&h=900&fit=crop&q=80&auto=format"
   ],
   "name": "노지 감귤 10kg, 직접 땄어요 (예시)",
   "tagline": "서귀포 과수원, 당일 수확 · 제주시 직거래",
@@ -85,7 +86,8 @@
   "status": "live",
   "sample": true,
   "photos": [
-   "https://picsum.photos/seed/jeju-goods/1200/900"
+   "https://images.pexels.com/photos/4246120/pexels-photo-4246120.jpeg?auto=compress&cs=tinysrgb&w=1200&h=900&fit=crop",
+   "https://images.pexels.com/photos/7464230/pexels-photo-7464230.jpeg?auto=compress&cs=tinysrgb&w=1200&h=900&fit=crop"
   ],
   "name": "한달살기 끝나서 정리해요: 전기포트+선풍기+행거 (예시)",
   "tagline": "3개 세트, 11월 말까지 가져가실 분",
@@ -135,7 +137,7 @@
   "views": 310,
   "type": "project",
   "photos": [
-   "https://picsum.photos/seed/baton-proj-1/1200/900"
+   "https://images.pexels.com/photos/3952068/pexels-photo-3952068.jpeg?auto=compress&cs=tinysrgb&w=1200&h=900&fit=crop"
   ]
  },
  {
@@ -165,7 +167,7 @@
   "views": 220,
   "type": "project",
   "photos": [
-   "https://picsum.photos/seed/baton-proj-2/1200/900"
+   "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200&h=900&fit=crop&q=80&auto=format"
   ]
  },
  {
@@ -195,7 +197,7 @@
   "views": 540,
   "type": "project",
   "photos": [
-   "https://picsum.photos/seed/baton-proj-3/1200/900"
+   "https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?w=1200&h=900&fit=crop&q=80&auto=format"
   ]
  },
  {
@@ -225,7 +227,7 @@
   "views": 180,
   "type": "project",
   "photos": [
-   "https://picsum.photos/seed/baton-proj-4/1200/900"
+   "https://images.unsplash.com/photo-1533900298318-6b8da08a523e?w=1200&h=900&fit=crop&q=80&auto=format"
   ]
  },
  {
@@ -255,7 +257,7 @@
   "views": 150,
   "type": "project",
   "photos": [
-   "https://picsum.photos/seed/baton-proj-5/1200/900"
+   "https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=1200&h=900&fit=crop&q=80&auto=format"
   ]
  },
  {
@@ -285,7 +287,7 @@
   "views": 260,
   "type": "project",
   "photos": [
-   "https://picsum.photos/seed/baton-proj-6/1200/900"
+   "https://images.pexels.com/photos/2440021/pexels-photo-2440021.jpeg?auto=compress&cs=tinysrgb&w=1200&h=900&fit=crop"
   ]
  }
 ]
