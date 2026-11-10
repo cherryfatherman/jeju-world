@@ -1,5 +1,5 @@
 {
- "updatedAt": "2026-11-10T04:24:48.693Z",
+ "updatedAt": "2026-11-10T05:11:50.949Z",
  "items": [
   {
    "source": "local",
@@ -22,7 +22,7 @@
    "prize": "$67,500",
    "dates": "Oct 01 - Nov 12, 2026",
    "location": "Online",
-   "participants": 32447,
+   "participants": 32484,
    "themes": [
     "Low/No Code",
     "Machine Learning/AI",
@@ -37,7 +37,7 @@
    "prize": "$100,000",
    "dates": "Oct 30 - Dec 04, 2026",
    "location": "Online",
-   "participants": 11105,
+   "participants": 11134,
    "themes": [
     "Beginner Friendly",
     "Machine Learning/AI",
@@ -52,7 +52,7 @@
    "prize": "$1,000,000",
    "dates": "Sep 24 - Nov 18, 2026",
    "location": "Online",
-   "participants": 5631,
+   "participants": 5634,
    "themes": [
     "AR/VR",
     "Machine Learning/AI",
@@ -67,7 +67,7 @@
    "prize": "$120,000",
    "dates": "Oct 27 - Dec 22, 2026",
    "location": "Online",
-   "participants": 2537,
+   "participants": 2540,
    "themes": [
     "Machine Learning/AI",
     "Enterprise",
@@ -82,7 +82,7 @@
    "prize": "$46,000",
    "dates": "Oct 22 - Nov 16, 2026",
    "location": "Online",
-   "participants": 1936,
+   "participants": 1940,
    "themes": [
     "Lifehacks",
     "Machine Learning/AI",
@@ -97,7 +97,7 @@
    "prize": "$50,000",
    "dates": "Nov 02 - Dec 15, 2026",
    "location": "Online",
-   "participants": 1010,
+   "participants": 1014,
    "themes": [
     "IoT",
     "Machine Learning/AI",
@@ -112,7 +112,7 @@
    "prize": "$7,800",
    "dates": "Oct 20 - Dec 21, 2026",
    "location": "Online",
-   "participants": 987,
+   "participants": 988,
    "themes": [
     "Beginner Friendly",
     "Machine Learning/AI",
@@ -141,7 +141,7 @@
    "prize": "$17,150",
    "dates": "Nov 08 - 15, 2026",
    "location": "Online",
-   "participants": 431,
+   "participants": 436,
    "themes": [
     "Beginner Friendly",
     "Low/No Code",
@@ -201,7 +201,7 @@
    "prize": "$64,000",
    "dates": "Nov 02 - Dec 11, 2026",
    "location": "Online",
-   "participants": 242,
+   "participants": 245,
    "themes": [
     "Machine Learning/AI",
     "Productivity",
@@ -231,7 +231,7 @@
    "prize": "$900",
    "dates": "Oct 26 - Nov 20, 2026",
    "location": "Online",
-   "participants": 212,
+   "participants": 213,
    "themes": [
     "Blockchain",
     "Fintech",
@@ -261,7 +261,7 @@
    "prize": "₹ 500,000",
    "dates": "Oct 16 - Nov 25, 2026",
    "location": "Online",
-   "participants": 163,
+   "participants": 164,
    "themes": [
     "Education",
     "Health",
@@ -276,7 +276,7 @@
    "prize": "$1,750",
    "dates": "Oct 26 - Nov 10, 2026",
    "location": "Online",
-   "participants": 145,
+   "participants": 146,
    "themes": [
     "E-commerce/Retail",
     "Fintech",
@@ -306,7 +306,7 @@
    "prize": "$4,500",
    "dates": "Nov 07 - Dec 07, 2026",
    "location": "Online",
-   "participants": 111,
+   "participants": 113,
    "themes": [
     "Beginner Friendly",
     "Open Ended",
@@ -321,7 +321,7 @@
    "prize": "$CAD 1,400",
    "dates": "Nov 01 - 14, 2026",
    "location": "Online",
-   "participants": 66,
+   "participants": 67,
    "themes": [
     "Design",
     "Health",
@@ -376,6 +376,20 @@
   },
   {
    "source": "devpost",
+   "title": "Blockchain Innovation Challenge powered by Stellar",
+   "url": "https://blockchain-stellar-ic.devpost.com/",
+   "prize": "$CAD 15,000",
+   "dates": "Nov 06 - 13, 2026",
+   "location": "Velocity, Innovation Arena",
+   "participants": 22,
+   "themes": [
+    "Blockchain",
+    "Fintech"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
    "title": "HackOut! 2027",
    "url": "https://hackout-branchout.devpost.com/",
    "prize": "$3,000",
@@ -386,20 +400,6 @@
     "Quantum",
     "Beginner Friendly",
     "Social Good"
-   ],
-   "status": "open"
-  },
-  {
-   "source": "devpost",
-   "title": "Blockchain Innovation Challenge powered by Stellar",
-   "url": "https://blockchain-stellar-ic.devpost.com/",
-   "prize": "$CAD 15,000",
-   "dates": "Nov 06 - 13, 2026",
-   "location": "Velocity, Innovation Arena",
-   "participants": 21,
-   "themes": [
-    "Blockchain",
-    "Fintech"
    ],
    "status": "open"
   },

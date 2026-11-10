@@ -219,4 +219,4 @@ JSON으로만: {"posts":["글1","글2","글3"]}`;
   }
 }
 
-module.exports = { generateListing, generateHome, generateItem, answerWaste, generateThreadsPosts, CATEGORIES, ITEM_CATEGORIES };
+module.exports = { generateListing, generateHome, generateItem, answerWaste, localWaste, generateThreadsPosts, CATEGORIES, ITEM_CATEGORIES };

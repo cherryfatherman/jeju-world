@@ -198,7 +198,7 @@ $('#step2').onsubmit = async (e) => {
   const btn = e.target.querySelector('.primary'); btn.disabled = true;
   try { const d = await api('/api/projects', fd); setStep(3); confetti(); toast('올라갔어요'); setTimeout(() => { location.href = `./project.html?id=${d.id}&new=1`; }, 900); } catch (err) { btn.disabled = false; toast(err.message); }
 };
-mountShell({ active: 'sell', banner: false }).then(() => setType(type));
+mountShell({ active: 'sell' }).then(() => setType(type));
 </script>
 </body>
 </html>

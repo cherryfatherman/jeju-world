@@ -131,7 +131,7 @@
 
 <script>
 let cfg;
-mountShell({ active: 'admin', banner: false }).then((c) => { cfg = c; if (sessionStorage.getItem('adminpw')) enter(); });
+mountShell({ active: 'admin' }).then((c) => { cfg = c; if (sessionStorage.getItem('adminpw')) enter(); });
 const v = (id, val) => { const el = $(id); if (val !== undefined) el.value = val ?? ''; return el.value; };
 
 $('#login').onsubmit = async (e) => {

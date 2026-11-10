@@ -211,6 +211,22 @@ app.post('/api/jeju/waste', limit(15), async (req, res) => {
   res.json(await answerWaste({ question, rules: jeju.waste || {}, area: jeju.area || '제주시' }));
 });
 
+// ---- 통합 검색 (장터 + 수상작 + 버리는 법) ----
+const { localWaste } = require('./lib/ai');
+app.get('/api/search', limit(60), (req, res) => {
+  const q = clean(req.query.q, 60).toLowerCase();
+  if (!q) return res.json({ listings: [], winners: [], waste: null });
+  const words = q.split(/\s+/).filter(Boolean);
+  const hit = (txt) => words.every((w) => txt.toLowerCase().includes(w));
+  const showSamples = readConfig().site.showSamples !== false;
+  const listings = load('projects.json', []).filter((p) => p.status === 'live' && (showSamples || !p.sample))
+    .filter((p) => hit([p.name, p.tagline, p.description, p.category, (p.tags || []).join(' '), p.home?.dong || ''].join(' '))).slice(0, 24).map(publicProject);
+  const winners = load('winners.json', []).filter((w) => hit([w.name, w.tagline, w.category, (w.themes || []).join(' ')].join(' '))).slice(0, 40);
+  const jeju = readConfig().jeju || {};
+  const waste = /버리|배출|분리|쓰레기|재활용/.test(q) || words.length <= 2 ? localWaste(q, { ...(jeju.waste || {}), area: jeju.area || '제주시' }) : null;
+  res.json({ listings, winners, waste });
+});
+
 // ---- 수상작 도감 ----
 const WINNERS = load('winners.json', []);
 app.get('/api/winners', (req, res) => res.json(WINNERS));

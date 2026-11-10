@@ -14,7 +14,7 @@
     <button data-t="home">집</button><button data-t="item">물건</button><button data-t="project">프로젝트</button>
   </div>
   <div class="chips" id="chips"></div>
-  <div class="sec-head"><span class="more" id="count"></span><a class="btn primary" id="addBtn" href="./sell.html" style="margin-left:auto">올리기</a></div>
+  <div class="sec-head"><span class="more" id="count"></span><div class="sortbar" id="sort"><button data-s="new" class="on">최신순</button><button data-s="hot">추천순</button></div><a class="btn primary sm" id="addBtn" href="./sell.html">올리기</a></div>
   <div class="grid" id="grid"></div>
 
   <section id="hackathons">
@@ -24,9 +24,9 @@
   </section>
 </main>
 <script>
-let all = [], type = new URLSearchParams(location.search).get('type') || 'home', cat = '전체';
+let all = [], type = new URLSearchParams(location.search).get('type') || 'home', cat = '전체', sort = 'new';
 function render() {
-  const list = all.filter((p) => p.type === type && (cat === '전체' || p.category === cat));
+  const list = all.filter((p) => p.type === type && (cat === '전체' || p.category === cat)).sort((a, b) => sort === 'hot' ? (b.interest || 0) - (a.interest || 0) : b.createdAt.localeCompare(a.createdAt));
   $$('#typetabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === type));
   $('#addBtn').href = `./sell.html?type=${type}`;
   const cats = ['전체', ...new Set(all.filter((p) => p.type === type).map((p) => p.category))];
@@ -35,8 +35,9 @@ function render() {
   if (!list.length) $('#grid').innerHTML = '<div class="empty">아직 올라온 글이 없어요. 첫 번째로 올려 보세요!</div>';
   $('#count').textContent = `${list.length}개`;
 }
-$$('#typetabs button').forEach((b) => b.onclick = () => { type = b.dataset.t; cat = '전체'; history.replaceState(null, '', `?type=${type}`); render(); });
-mountShell({ active: 'market', banner: false }).then(async () => {
+$$('#sort button').forEach((b) => b.onclick = () => { sort = b.dataset.s; $$('#sort button').forEach((x) => x.classList.toggle('on', x === b)); render(); });
+$$('#typetabs button').forEach((b) => b.onclick = () => { type = b.dataset.t; cat = '전체'; history.replaceState(null, '', `?type=${type}`); render(); $$('.subnav a').forEach((a) => a.classList.toggle('on', a.getAttribute('href').includes(`type=${type}`))); });
+mountShell({ active: 'market', primary: 'market', sub: type }).then(async () => {
   all = await api('/api/projects'); render();
   const h = await api('/api/hackathons'); const items = h.items || [];
   $('#hackUpdated').textContent = h.updatedAt ? `자동 수집 · ${new Date(h.updatedAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: 'numeric' })}` : '수집 중…';

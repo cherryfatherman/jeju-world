@@ -109,7 +109,7 @@ $('#shareBtn').onclick = () => share(`${p.name} · 바톤`, p.tagline, location.
 if (new URLSearchParams(location.search).get('new')) setTimeout(() => { toast('글이 올라갔어요. 공유 버튼으로 알려 보세요'); }, 600);
 $$('[data-close]').forEach((b) => b.onclick = () => $$('.modal').forEach((m) => m.classList.remove('show')));
 $('#inqForm').onsubmit = async (e) => { e.preventDefault(); try { const d = await api(`/api/projects/${id}/inquiry`, Object.fromEntries(new FormData(e.target))); $('#inqModal').classList.remove('show'); e.target.reset(); $('#sellerContact').textContent = d.sellerContact; $('#doneModal').classList.add('show'); } catch (err) { toast(err.message); } };
-mountShell({ active: 'market', banner: false }).then(load);
+mountShell({ active: 'market', primary: 'market' }).then(load);
 </script>
 </body>
 </html>

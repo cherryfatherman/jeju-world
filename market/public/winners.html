@@ -18,7 +18,7 @@
   <div style="text-align:center;margin-top:16px"><button class="btn" id="more">더 보기</button></div>
 </main>
 <script>
-mountShell({ active: 'winners', banner: false });
+mountShell({ active: 'winners', primary: 'browse' });
 let all = [], cat = '전체', q = '', shown = 40;
 const EMOJI = { '헬스·웰빙': '🩺', '교육': '📚', '지역·로컬': '🏘️', '커머스·소상공인': '🛍️', '생산성·업무': '🧑‍💻', '환경·농업': '🌱', '여행·관광': '✈️', '미디어·크리에이터': '🎬', '부동산·주거': '🏠', '기타': '🧩' };
 function filtered() {

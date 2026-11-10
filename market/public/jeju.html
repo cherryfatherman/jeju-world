@@ -21,14 +21,14 @@
     </form>
   </section>
 
-  <section>
+  <section id="sec-days">
     <div class="sec-head"><h2>요일별 배출 (클린하우스)</h2><span class="more" id="today"></span></div>
     <div class="days" id="days"></div>
     <p class="note" id="wasteNote" style="margin-top:10px"></p>
     <p class="note" id="wasteSource"></p>
   </section>
 
-  <section>
+  <section id="sec-tips">
     <div class="sec-head"><h2>생활 꿀팁</h2><span class="more">바톤이 정리 · 유저가 보탬</span></div>
     <div class="list" id="tips"></div>
   </section>
@@ -58,7 +58,7 @@ $('#wasteForm').onsubmit = async (e) => {
   btn.disabled = false; btn.textContent = 'AI에게 묻기';
 };
 $$('[data-q]').forEach((b) => b.onclick = () => { $('#wasteForm [name=q]').value = b.dataset.q; $('#wasteForm').requestSubmit(); });
-mountShell({ active: 'jeju', banner: false }).then((c) => { CFG = c; renderWaste(); });
+mountShell({ active: 'jeju', primary: 'jeju' }).then((c) => { CFG = c; renderWaste(); });
 </script>
 </body>
 </html>
