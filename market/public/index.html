@@ -54,14 +54,10 @@
 
 <script>
 let CFG;
-const SLIDES = (c) => [
-  { cls: 'brand', art: true, kicker: c.banner.kicker, title: c.banner.title, sub: c.banner.sub, cta: [c.banner.primaryLabel, './sell.html'], link: [c.banner.secondaryLabel, '#want'] },
-  { cls: 'tone2', kicker: '제주 생활', title: '이거 어디 버려요?\n[AI가 바로 알려드려요]', sub: '아이스팩, 깨진 유리, 건전지. 제주시 요일별 배출표 기준으로 오늘 버릴 수 있는지까지.', cta: ['물어보기', './jeju.html#waste'] },
-  { cls: 'tone3', kicker: '해커톤', title: '해커톤이 끝나도\n[프로젝트는 끝나지 않게]', sub: '발표가 끝나면 멈추는 프로젝트를 다음 주인에게. 해외 수상작 도감 289개도 함께.', cta: ['수상작 도감 보기', './winners.html'] },
-];
+const SLIDES = (c) => (c.carousel || []).map((s, i) => ({ image: s.image, kicker: s.kicker, title: s.title, sub: s.sub, cta: [s.ctaLabel, s.ctaHref], link: i === 0 ? [c.banner.secondaryLabel, '#want'] : null }));
 function renderCarousel() {
   const slides = SLIDES(CFG); let i = 0, timer;
-  $('#slides').innerHTML = slides.map((s) => `<article class="slide ${s.cls}">${s.art ? bannerSVG() : ''}<div class="stext"><p class="kicker">${esc(s.kicker)}</p><h1>${rich(s.title)}</h1><p class="sub">${rich(s.sub).replace(/<em>/g, '<b>').replace(/<\/em>/g, '</b>')}</p><div class="cta"><a class="btn primary" href="${esc(s.cta[1])}">${esc(s.cta[0])}</a>${s.link ? `<a class="textlink" href="${esc(s.link[1])}">${esc(s.link[0])} ${icon('arrow')}</a>` : ''}</div></div></article>`).join('');
+  $('#slides').innerHTML = slides.map((s) => `<article class="slide" style="${s.image ? `background-image:url('${esc(s.image)}')` : ''}"><div class="stext"><p class="kicker">${esc(s.kicker)}</p><h1>${rich(s.title)}</h1><p class="sub">${rich(s.sub).replace(/<em>/g, '<b>').replace(/<\/em>/g, '</b>')}</p><div class="cta"><a class="btn primary" href="${esc(s.cta[1])}">${esc(s.cta[0])}</a>${s.link ? `<a class="textlink" href="${esc(s.link[1])}">${esc(s.link[0])} ${icon('arrow')}</a>` : ''}</div></div></article>`).join('');
   $('#dots').innerHTML = slides.map((_, k) => `<button aria-label="${k + 1}번 배너" class="${k === 0 ? 'on' : ''}"></button>`).join('');
   const go = (k) => { i = (k + slides.length) % slides.length; $('#slides').style.transform = `translateX(-${i * 100}%)`; $$('#dots button').forEach((b, n) => b.classList.toggle('on', n === i)); };
   $$('#dots button').forEach((b, k) => b.onclick = () => { go(k); restart(); });

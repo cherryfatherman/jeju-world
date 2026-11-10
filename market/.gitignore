@@ -4,3 +4,4 @@ data/waitlist.json
 data/comments.json
 data/metrics.json
 .env
+data/uploads/

@@ -5,7 +5,10 @@
   "createdAt": "2026-11-09T08:00:00.000Z",
   "status": "live",
   "sample": true,
-  "photos": [],
+  "photos": [
+   "https://picsum.photos/seed/jeju-room-1/1200/900",
+   "https://picsum.photos/seed/jeju-room-2/1200/900"
+  ],
   "name": "아라동 투룸, 제주대 도보 10분 (예시)",
   "tagline": "2층 남향, 2026년 2월까지 단기 가능",
   "description": "[서류 기준] 다가구주택 2층, 전용 42.3㎡(약 12.8평), 2011년 준공. 2룸 1욕실.\n\n[사진 기준] 남향이라 오후 채광이 좋고, 에어컨·세탁기·붙박이장이 있습니다. 벽지 상태 양호.\n\n제주대 정문까지 도보 10분, 편의점 1분. 한달살기·학기 단기 임대 모두 가능합니다.",
@@ -51,7 +54,9 @@
   "createdAt": "2026-11-08T14:00:00.000Z",
   "status": "live",
   "sample": true,
-  "photos": [],
+  "photos": [
+   "https://picsum.photos/seed/jeju-tangerine/1200/900"
+  ],
   "name": "노지 감귤 10kg, 직접 땄어요 (예시)",
   "tagline": "서귀포 과수원, 당일 수확 · 제주시 직거래",
   "description": "어제 딴 노지 감귤입니다. 크기는 섞여 있고(소~중), 당도는 11~12브릭스 정도예요. 흠과는 뺐습니다.\n\n10kg 박스 기준이고, 제주시 아라동·이도동 직거래 가능. 택배는 착불.",
@@ -79,7 +84,9 @@
   "createdAt": "2026-11-07T10:00:00.000Z",
   "status": "live",
   "sample": true,
-  "photos": [],
+  "photos": [
+   "https://picsum.photos/seed/jeju-goods/1200/900"
+  ],
   "name": "한달살기 끝나서 정리해요: 전기포트+선풍기+행거 (예시)",
   "tagline": "3개 세트, 11월 말까지 가져가실 분",
   "description": "한달살기 마치고 서울 올라가요. 전기포트(1.7L, 2개월 사용), 선풍기(14인치), 조립식 행거 세트입니다. 모두 정상 작동.\n\n11월 30일 전에 연동에서 직접 가져가실 분. 따로따로도 가능.",
@@ -126,7 +133,10 @@
   "contact": "example-seller-1@example.com",
   "interest": 23,
   "views": 310,
-  "type": "project"
+  "type": "project",
+  "photos": [
+   "https://picsum.photos/seed/baton-proj-1/1200/900"
+  ]
  },
  {
   "id": "s02",
@@ -153,7 +163,10 @@
   "contact": "example-seller-2@example.com",
   "interest": 17,
   "views": 220,
-  "type": "project"
+  "type": "project",
+  "photos": [
+   "https://picsum.photos/seed/baton-proj-2/1200/900"
+  ]
  },
  {
   "id": "s03",
@@ -180,7 +193,10 @@
   "contact": "example-seller-3@example.com",
   "interest": 31,
   "views": 540,
-  "type": "project"
+  "type": "project",
+  "photos": [
+   "https://picsum.photos/seed/baton-proj-3/1200/900"
+  ]
  },
  {
   "id": "s04",
@@ -207,7 +223,10 @@
   "contact": "example-seller-4@example.com",
   "interest": 12,
   "views": 180,
-  "type": "project"
+  "type": "project",
+  "photos": [
+   "https://picsum.photos/seed/baton-proj-4/1200/900"
+  ]
  },
  {
   "id": "s05",
@@ -234,7 +253,10 @@
   "contact": "example-seller-5@example.com",
   "interest": 9,
   "views": 150,
-  "type": "project"
+  "type": "project",
+  "photos": [
+   "https://picsum.photos/seed/baton-proj-5/1200/900"
+  ]
  },
  {
   "id": "s06",
@@ -261,6 +283,9 @@
   "contact": "example-seller-6@example.com",
   "interest": 14,
   "views": 260,
-  "type": "project"
+  "type": "project",
+  "photos": [
+   "https://picsum.photos/seed/baton-proj-6/1200/900"
+  ]
  }
 ]

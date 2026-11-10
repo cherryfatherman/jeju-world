@@ -140,7 +140,7 @@ function bannerSVG() {
 async function mountShell({ active, primary, sub, banner = false } = {}) {
   CONFIG = await api('/api/config');
   const S = CONFIG.site;
-  initTheme(S.defaultTheme); applyColors(CONFIG.colors);
+  document.documentElement.dataset.theme = 'day'; applyColors(CONFIG.colors);
   if (!$('link[rel=icon]')) { const l = document.createElement('link'); l.rel = 'icon'; l.href = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#ff6b1a"/><path d="M30 72l14-28 12 10 14-20" stroke="#fff" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>')}`; document.head.append(l); }
   for (const [k, v] of [['og:title', document.title], ['og:description', $('meta[name=description]')?.content || S.slogan], ['og:type', 'website'], ['og:site_name', S.name]]) { if (!$(`meta[property="${k}"]`)) { const m = document.createElement('meta'); m.setAttribute('property', k); m.content = v; document.head.append(m); } }
 
@@ -150,9 +150,8 @@ async function mountShell({ active, primary, sub, banner = false } = {}) {
       <a class="logo" href="./"><span class="mark">${icon('run')}</span>${esc(S.name)}</a>
       <nav class="primary">${PRIMARY.map((p) => `<a href="${p.href}" class="${p.key === pkey ? 'on' : ''}">${p.label}</a>`).join('')}</nav>
       <form class="search" role="search" action="./search.html"><span class="sic">${icon('search')}</span><input name="q" placeholder="집, 물건, 프로젝트, 버리는 법 검색" autocomplete="off" aria-label="검색"></form>
-      <div class="acts"><button class="themeBtn" aria-label="낮·밤 바꾸기">${themeIcon()}</button><a class="btn write" href="./sell.html">${icon('plus')}<span>올리기</span></a></div>
+      <div class="acts"><a class="btn write" href="./sell.html">${icon('plus')}<span>올리기</span></a></div>
     </div>`;
-  header.querySelector('.themeBtn').onclick = toggleTheme;
   document.body.prepend(header);
   // 보조 탭
   const P = PRIMARY.find((p) => p.key === pkey);

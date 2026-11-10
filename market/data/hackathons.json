@@ -1,5 +1,5 @@
 {
- "updatedAt": "2026-11-10T05:11:50.949Z",
+ "updatedAt": "2026-11-10T05:21:33.730Z",
  "items": [
   {
    "source": "local",
@@ -22,7 +22,7 @@
    "prize": "$67,500",
    "dates": "Oct 01 - Nov 12, 2026",
    "location": "Online",
-   "participants": 32484,
+   "participants": 32496,
    "themes": [
     "Low/No Code",
     "Machine Learning/AI",
@@ -37,7 +37,7 @@
    "prize": "$100,000",
    "dates": "Oct 30 - Dec 04, 2026",
    "location": "Online",
-   "participants": 11134,
+   "participants": 11141,
    "themes": [
     "Beginner Friendly",
     "Machine Learning/AI",
@@ -52,7 +52,7 @@
    "prize": "$1,000,000",
    "dates": "Sep 24 - Nov 18, 2026",
    "location": "Online",
-   "participants": 5634,
+   "participants": 5635,
    "themes": [
     "AR/VR",
     "Machine Learning/AI",
@@ -67,7 +67,7 @@
    "prize": "$120,000",
    "dates": "Oct 27 - Dec 22, 2026",
    "location": "Online",
-   "participants": 2540,
+   "participants": 2541,
    "themes": [
     "Machine Learning/AI",
     "Enterprise",
@@ -186,7 +186,7 @@
    "prize": "$480",
    "dates": "Nov 01 - 10, 2026",
    "location": "Online",
-   "participants": 249,
+   "participants": 250,
    "themes": [
     "Machine Learning/AI",
     "Open Ended",
@@ -261,7 +261,7 @@
    "prize": "₹ 500,000",
    "dates": "Oct 16 - Nov 25, 2026",
    "location": "Online",
-   "participants": 164,
+   "participants": 165,
    "themes": [
     "Education",
     "Health",

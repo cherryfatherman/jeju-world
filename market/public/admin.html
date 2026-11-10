@@ -37,7 +37,7 @@
 
   <div id="panel" hidden>
     <div class="tabs">
-      <button data-tab="dash" class="on">대시보드</button><button data-tab="site">기본·배너</button><button data-tab="ticker">공지 띠</button><button data-tab="jeju">제주 생활</button><button data-tab="nav">메뉴·도구 상자</button><button data-tab="projects">프로젝트 관리</button><button data-tab="inbox">받은 편지함</button><button data-tab="threads">스레드 글</button>
+      <button data-tab="dash" class="on">대시보드</button><button data-tab="site">기본·배너</button><button data-tab="ticker">공지 띠</button><button data-tab="carousel">배너 이미지</button><button data-tab="jeju">제주 생활</button><button data-tab="nav">메뉴·도구 상자</button><button data-tab="projects">프로젝트 관리</button><button data-tab="inbox">받은 편지함</button><button data-tab="threads">스레드 글</button>
     </div>
 
     <!-- 대시보드 -->
@@ -92,6 +92,12 @@
       <label>푸터 안내문<input id="f-footer"></label>
     </div></div>
 
+    <!-- 배너 캐러셀 -->
+    <div class="pane" id="pane-carousel"><div class="form">
+      <p class="help">홈 상단 큰 배너 3장. 이미지는 가로로 긴 사진(권장 1600×600)이 좋아요. 올리면 자동으로 줄여요.</p>
+      <div id="slideList"></div>
+      <button type="button" class="btn" id="addSlide">＋ 배너 추가</button>
+    </div></div>
     <!-- 공지 띠 -->
     <div class="pane" id="pane-ticker"><div class="form">
       <label>공지 띠<select id="t-enabled"><option value="true">보이기</option><option value="false">숨기기</option></select></label>
@@ -153,8 +159,25 @@ function fill() {
   v('#f-kicker', B.kicker); v('#f-title', B.title); v('#f-sub', B.sub); v('#f-primary', B.primaryLabel); v('#f-secondary', B.secondaryLabel);
   v('#f-footer', cfg.footer?.note || '');
   v('#t-enabled', String(T.enabled !== false)); v('#t-mode', T.mode || 'auto'); v('#t-title', T.title); v('#t-text', T.text); v('#t-url', T.url);
-  renderNav(); renderTools(); fillJeju(); loadDash();
+  renderNav(); renderTools(); fillJeju(); loadDash(); renderSlides();
 }
+// 사진 줄여서 업로드 → 경로 반환
+function shrinkFile(file, max = 1600) { return new Promise((res, rej) => { const img = new Image(); img.onload = () => { const k = Math.min(1, max / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(img.src); res(c.toDataURL('image/jpeg', 0.85)); }; img.onerror = rej; img.src = URL.createObjectURL(file); }); }
+async function upload(file, max) { const dataUrl = await shrinkFile(file, max); const d = await api('/api/admin/upload', { dataUrl }); return d.url; }
+function renderSlides() {
+  cfg.carousel = cfg.carousel || [];
+  $('#slideList').replaceChildren(...cfg.carousel.map((s, i) => { const d = document.createElement('div'); d.className = 'form'; d.style.marginBottom = '10px';
+    d.innerHTML = `<div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap"><img src="${esc(s.image || '')}" alt="" style="width:240px;aspect-ratio:8/3;object-fit:cover;border-radius:10px;background:var(--surface-2)"><div style="flex:1;min-width:200px;display:grid;gap:8px"><label>이미지 바꾸기<input type="file" accept="image/*"></label><label>작은 글<input data-k="kicker" value="${esc(s.kicker || '')}"></label></div></div>
+      <label>제목 <span class="help">강조할 말은 [대괄호], 줄바꿈은 엔터</span><textarea data-k="title" style="min-height:60px">${esc(s.title || '')}</textarea></label>
+      <label>설명<input data-k="sub" value="${esc(s.sub || '')}"></label>
+      <div class="row2"><label>버튼 글자<input data-k="ctaLabel" value="${esc(s.ctaLabel || '')}"></label><label>버튼 링크<input data-k="ctaHref" value="${esc(s.ctaHref || '')}"></label></div>
+      <div class="actions"><button type="button" class="btn sm del">이 배너 삭제</button></div>`;
+    d.querySelectorAll('[data-k]').forEach((inp) => inp.oninput = () => { s[inp.dataset.k] = inp.value; });
+    d.querySelector('input[type=file]').onchange = async (e) => { const f = e.target.files[0]; if (!f) return; try { s.image = await upload(f, 1600); d.querySelector('img').src = s.image; toast('이미지를 올렸어요. 저장을 눌러 반영하세요'); } catch (err) { toast(err.message); } };
+    d.querySelector('.del').onclick = () => { cfg.carousel.splice(i, 1); renderSlides(); };
+    return d; }));
+}
+$('#addSlide').onclick = () => { cfg.carousel.push({ image: '', kicker: '', title: '', sub: '', ctaLabel: '자세히', ctaHref: './' }); renderSlides(); };
 const DAYS = ['월', '화', '수', '목', '금', '토', '일'];
 function fillJeju() {
   const J = cfg.jeju || (cfg.jeju = { area: '제주시', waste: { days: {} }, tips: [] });
@@ -217,8 +240,15 @@ $('#save').onclick = async () => {
 async function loadProjects() {
   const list = await api('/api/admin/projects');
   $('#projList').replaceChildren(...list.map((p) => { const d = document.createElement('div'); d.className = 'trow';
-    d.innerHTML = `<div class="grow"><b>${esc(p.name)}</b> ${p.sample ? '<span class="badge sample">예시</span>' : ''} <span class="badge">${p.status === 'live' ? '공개' : '숨김'}</span><div class="muted">${esc(p.tagline)} · ♥ ${p.interest || 0} · 연락처 ${esc(p.contact)}</div></div><a class="btn" href="./project.html?id=${p.id}" target="_blank">보기</a><button class="btn" data-a="toggle">${p.status === 'live' ? '숨기기' : '공개'}</button><button class="btn" data-a="delete" style="color:var(--hot)">삭제</button>`;
-    d.querySelectorAll('[data-a]').forEach((b) => b.onclick = async () => { if (b.dataset.a === 'delete' && !confirm(`"${p.name}"을(를) 정말 삭제할까요?`)) return; await api(`/api/admin/projects/${p.id}`, { action: b.dataset.a }); loadProjects(); }); return d; }));
+    d.innerHTML = `<div class="grow"><b>${esc(p.name)}</b> ${p.sample ? '<span class="badge sample">예시</span>' : ''} <span class="badge">${p.status === 'live' ? '공개' : '숨김'}</span><div class="muted">${esc(p.tagline)} · 추천 ${p.interest || 0} · 연락처 ${esc(p.contact)}</div>
+      <div class="thumbs" style="margin-top:8px">${(p.photos || []).map((src, i) => `<div class="thumb"><img src="${esc(src)}" alt=""><button type="button" data-rm="${i}">✕</button></div>`).join('')}<label class="thumb" style="display:grid;place-items:center;border:1px dashed var(--line-strong);border-radius:8px;cursor:pointer;font-size:12px;color:var(--ink-3)">＋ 사진<input type="file" accept="image/*" multiple hidden></label></div>
+      <div style="display:flex;gap:6px;margin-top:8px"><input class="urlIn" placeholder="사진 주소(https://…)를 붙여넣어도 돼요" style="min-height:36px;padding:6px 10px;font-size:13px"><button type="button" class="btn sm addUrl">추가</button></div></div>
+      <a class="btn sm" href="./project.html?id=${p.id}" target="_blank">보기</a><button class="btn sm" data-a="toggle">${p.status === 'live' ? '숨기기' : '공개'}</button><button class="btn sm" data-a="delete" style="color:var(--danger)">삭제</button>`;
+    d.querySelectorAll('[data-a]').forEach((b) => b.onclick = async () => { if (b.dataset.a === 'delete' && !confirm(`"${p.name}"을(를) 정말 삭제할까요?`)) return; await api(`/api/admin/projects/${p.id}`, { action: b.dataset.a }); loadProjects(); });
+    d.querySelectorAll('[data-rm]').forEach((b) => b.onclick = async () => { const photos = (p.photos || []).filter((_, i) => i !== Number(b.dataset.rm)); await api(`/api/admin/projects/${p.id}`, { photos }, 'PUT'); loadProjects(); });
+    d.querySelector('.addUrl').onclick = async () => { const u = d.querySelector('.urlIn').value.trim(); if (!/^https:\/\//.test(u)) return toast('https:// 로 시작하는 주소를 넣어 주세요'); await api(`/api/admin/projects/${p.id}`, { photos: [...(p.photos || []), u].slice(0, 8) }, 'PUT'); loadProjects(); };
+    d.querySelector('input[type=file]').onchange = async (e) => { try { const urls = []; for (const f of [...e.target.files].slice(0, 8)) urls.push(await upload(f, 1200)); await api(`/api/admin/projects/${p.id}`, { photos: [...(p.photos || []), ...urls].slice(0, 8) }, 'PUT'); toast('사진을 올렸어요'); loadProjects(); } catch (err) { toast(err.message); } };
+    return d; }));
 }
 async function loadInbox() {
   const d = await api('/api/admin/inbox');

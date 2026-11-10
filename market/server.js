@@ -19,7 +19,14 @@ const load = (n, fallback) => { try { return JSON.parse(fs.readFileSync(file(n),
 const save = (n, v) => fs.writeFileSync(file(n), JSON.stringify(v, null, 1));
 const clean = (s, max) => String(s ?? '').replace(/[\u0000-\u0008\u000b-\u001f]/g, '').trim().slice(0, max); // 줄바꿈(\n)·탭은 남긴다
 const isUrl = (s) => /^https?:\/\/[^\s]+$/i.test(s);
-const isImg = (s) => typeof s === 'string' && s.length < 2_500_000 && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(s);
+const isDataImg = (s) => typeof s === 'string' && s.length < 2_500_000 && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(s);
+const isImg = (s) => isDataImg(s) || (typeof s === 'string' && (/^\/uploads\/[A-Za-z0-9._-]+\.(jpg|jpeg|png|webp)$/.test(s) || /^https:\/\/[^\s"'<>]{8,300}$/.test(s)));
+// 업로드: data URL을 파일로 저장하고 /uploads/... 경로를 돌려준다
+function saveUpload(dataUrl) {
+  const m = /^data:image\/(jpeg|png|webp);base64,(.+)$/.exec(dataUrl); if (!m) return null;
+  const name = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}.${m[1] === 'jpeg' ? 'jpg' : m[1]}`;
+  fs.writeFileSync(path.join(UPLOADS, name), Buffer.from(m[2], 'base64')); return `/uploads/${name}`;
+}
 const TYPES = ['project', 'home', 'item'];
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
@@ -46,6 +53,8 @@ const adminOnly = (req, res, next) => (req.get('x-admin-password') === ADMIN_PAS
 const app = express();
 app.use(express.json({ limit: '25mb' })); // 사진 업로드(base64) 때문에 넉넉히
 app.use(express.static(path.join(__dirname, 'public')));
+const UPLOADS = path.join(DATA, 'uploads'); fs.mkdirSync(UPLOADS, { recursive: true });
+app.use('/uploads', express.static(UPLOADS));
 
 // ---- 사이트 설정 (관리자 화면에서 수정) ----
 app.get('/api/config', (req, res) => res.json(readConfig()));
@@ -77,6 +86,14 @@ app.post('/api/admin/projects/:id', adminOnly, (req, res) => {
   if (req.body.action === 'delete') list.splice(list.indexOf(p), 1);
   save('projects.json', list);
   res.json({ ok: true });
+});
+app.post('/api/admin/upload', adminOnly, (req, res) => { const url = saveUpload(req.body.dataUrl); url ? res.json({ url }) : res.status(400).json({ error: '이미지 형식이 맞지 않아요.' }); });
+app.put('/api/admin/projects/:id', adminOnly, (req, res) => {
+  const list = load('projects.json', []); const p = list.find((x) => x.id === req.params.id);
+  if (!p) return res.status(404).json({ error: 'not found' });
+  if (Array.isArray(req.body.photos)) p.photos = req.body.photos.filter(isImg).slice(0, 8);
+  for (const k of ['name', 'tagline', 'description']) if (typeof req.body[k] === 'string') p[k] = clean(req.body[k], k === 'description' ? 1500 : 80);
+  save('projects.json', list); res.json({ ok: true, photos: p.photos });
 });
 app.get('/api/admin/inbox', adminOnly, (req, res) => res.json({ inquiries: load('inquiries.json', []), waitlist: load('waitlist.json', []), comments: load('comments.json', []) }));
 
@@ -129,7 +146,7 @@ app.post('/api/projects', limit(5), (req, res) => {
     type,
     createdAt: new Date().toISOString(),
     status: 'live',
-    photos: (Array.isArray(b.photos) ? b.photos : []).filter(isImg).slice(0, 6),
+    photos: (Array.isArray(b.photos) ? b.photos : []).filter(isImg).slice(0, 6).map((s) => (isDataImg(s) ? saveUpload(s) || s : s)),
     name: clean(b.name, 40) || (type === 'home' ? '이름 없는 집' : type === 'item' ? '이름 없는 물건' : '이름 없는 프로젝트'),
     tagline: clean(b.tagline, 80),
     description: clean(b.description, 1500),

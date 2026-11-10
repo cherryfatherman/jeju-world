@@ -2,7 +2,7 @@
  "site": {
   "name": "바톤",
   "slogan": "올리기 귀찮은 것, AI가 30초 만에",
-  "defaultTheme": "auto",
+  "defaultTheme": "day",
   "threads": "https://www.threads.net/",
   "openchat": "#",
   "showSamples": true
@@ -132,5 +132,31 @@
     "check": false
    }
   ]
- }
+ },
+ "carousel": [
+  {
+   "image": "https://picsum.photos/seed/baton-banner-1/1600/600",
+   "kicker": "제주 생활 장터 · 집 · 물건 · 프로젝트",
+   "title": "사진만 올리면\n글은 [AI가 씁니다]",
+   "sub": "사진·서류·주소만 올리면 30초 만에 정리된 글이 완성돼요.",
+   "ctaLabel": "30초 만에 올리기",
+   "ctaHref": "./sell.html"
+  },
+  {
+   "image": "https://picsum.photos/seed/baton-banner-2/1600/600",
+   "kicker": "제주 생활",
+   "title": "이거 어디 버려요?\n[AI가 바로 알려드려요]",
+   "sub": "아이스팩, 깨진 유리, 건전지. 오늘 버릴 수 있는지까지.",
+   "ctaLabel": "물어보기",
+   "ctaHref": "./jeju.html#waste"
+  },
+  {
+   "image": "https://picsum.photos/seed/baton-banner-3/1600/600",
+   "kicker": "해커톤",
+   "title": "해커톤이 끝나도\n[프로젝트는 끝나지 않게]",
+   "sub": "멈춘 프로젝트를 다음 주인에게. 해외 수상작 도감 289개.",
+   "ctaLabel": "수상작 도감 보기",
+   "ctaHref": "./winners.html"
+  }
+ ]
 }
