@@ -1,17 +1,17 @@
 {
  "site": {
-  "name": "바톤",
-  "slogan": "올리기 귀찮은 것, AI가 30초 만에",
+  "name": "탐라도감",
+  "slogan": "제주의 프로젝트·집·물건을 모으는 도감",
   "defaultTheme": "day",
   "threads": "https://www.threads.net/",
   "openchat": "#",
   "showSamples": true
  },
  "banner": {
-  "kicker": "제주 생활 장터 · 집 · 물건 · 프로젝트",
-  "title": "사진만 올리면\n글은 [AI가 씁니다]",
-  "sub": "방을 내놓을 때, 안 쓰는 물건을 팔 때, 해커톤 프로젝트를 넘길 때. 사진·서류·주소만 올리면 [30초 만에] 정리된 글이 완성돼요.",
-  "primaryLabel": "30초 만에 올리기",
+  "kicker": "제주 창업자들의 도감",
+  "title": "멈춘 프로젝트,\n[다음 주인]을 찾습니다",
+  "sub": "해커톤 결과물도, 집도, 물건도. 사진만 올리면 글은 [AI가 30초 만에] 써요.",
+  "primaryLabel": "프로젝트 넘기기",
   "secondaryLabel": "새 글 알림 받기"
  },
  "ticker": {
@@ -28,19 +28,19 @@
    "key": "home"
   },
   {
+   "label": "프로젝트",
+   "href": "./market.html?type=project",
+   "key": "project"
+  },
+  {
    "label": "장터",
-   "href": "./market.html",
+   "href": "./market.html?type=home",
    "key": "market"
   },
   {
-   "label": "제주 생활",
+   "label": "제주살이",
    "href": "./jeju.html",
    "key": "jeju"
-  },
-  {
-   "label": "수상작 도감",
-   "href": "./winners.html",
-   "key": "winners"
   },
   {
    "label": "올리기",
@@ -102,10 +102,11 @@
   }
  ],
  "colors": {
-  "accent": "#ff6b1a"
+  "accent": "#ff6b1a",
+  "accent2": "#19b3a6"
  },
  "footer": {
-  "note": "해커톤 일정·수상작 도감 출처: Devpost · 사진: Unsplash·Pexels(무료 라이선스) · \"예시\" 글은 시연용 가상 데이터 · AI가 쓴 글과 추출 정보는 원본을 꼭 확인하세요"
+  "note": "해커톤 일정·수상작 도감 출처: Devpost · 사진: Unsplash·Pexels(무료 라이선스) · \"예시\" 글은 시연용 가상 데이터 · 창업 지원 링크는 각 기관 공식 사이트로 연결되며 공고 내용은 기관에서 확인하세요 · AI가 쓴 글과 추출 정보는 원본을 꼭 확인하세요"
  },
  "jeju": {
   "area": "제주시",
@@ -136,19 +137,19 @@
    },
    {
     "title": "한달살기 집 구하기",
-    "body": "오일장신문, 제주 한달살기 카페, 바톤 집 장터에서 찾고, 계약 전 건축물대장으로 용도·불법 여부를 꼭 확인하세요.",
+    "body": "오일장신문, 제주 한달살기 카페, 탐라도감 집 장터에서 찾고, 계약 전 건축물대장으로 용도·불법 여부를 꼭 확인하세요.",
     "check": false
    }
   ]
  },
  "carousel": [
   {
-   "image": "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=1600&h=600&fit=crop&q=80&auto=format",
-   "kicker": "제주 생활 장터 · 집 · 물건 · 프로젝트",
-   "title": "사진만 올리면\n글은 [AI가 씁니다]",
-   "sub": "집·물건·프로젝트, 사진·서류·주소만 올리면 30초 만에 글이 완성돼요.",
-   "ctaLabel": "30초 만에 올리기",
-   "ctaHref": "./sell.html"
+   "image": "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1600&h=600&fit=crop&q=80&auto=format",
+   "kicker": "제주 창업자들의 도감",
+   "title": "멈춘 프로젝트,\n[다음 주인]을 찾습니다",
+   "sub": "해커톤 결과물도, 집도, 물건도. 사진만 올리면 글은 AI가 30초 만에 써요.",
+   "ctaLabel": "프로젝트 넘기기",
+   "ctaHref": "./sell.html?type=project"
   }
  ],
  "ads": {
@@ -165,11 +166,31 @@
   "right": {
    "kicker": "제주대학교 · 해커톤",
    "title": "제주 AI\n부트캠프\n해커톤",
-   "sub": "11월 13일 발표 · 결과물은 바톤에",
+   "sub": "11월 13일 발표 · 결과물은 탐라도감에",
    "cta": "참가 안내",
    "href": "https://jeju-ai-bootcamp-579712386214.asia-northeast3.run.app/",
    "theme": "orange",
    "label": "광고 · 예시"
   }
- }
+ },
+ "support": [
+  {
+   "org": "제주창조경제혁신센터",
+   "title": "창업 지원 프로그램·입주 공고",
+   "sub": "예비·초기 창업자 보육, 투자 연계",
+   "href": "https://ccei.creativekorea.or.kr/jeju/"
+  },
+  {
+   "org": "제주테크노파크",
+   "title": "기술창업·기업 지원 사업",
+   "sub": "시제품 제작, R&D, 판로 지원",
+   "href": "https://www.jejutp.or.kr/"
+  },
+  {
+   "org": "제주특별자치도",
+   "title": "청년 창업·주거·활동 지원",
+   "sub": "도 단위 청년 정책 한눈에",
+   "href": "https://www.jeju.go.kr/"
+  }
+ ]
 }

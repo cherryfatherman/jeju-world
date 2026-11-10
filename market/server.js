@@ -1,4 +1,4 @@
-// 바톤(Baton) 서버: AI로 만든 서비스·해커톤 프로젝트 거래 장터
+// 탐라도감 서버: AI로 만든 서비스·해커톤 프로젝트 거래 장터
 // DB 없이 data/*.json 파일에 저장한다 (1차 버전).
 const path = require('path');
 const fs = require('fs');
@@ -357,7 +357,7 @@ app.get('/api/threads-drafts', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`바톤 실행 중: http://localhost:${PORT}`);
+  console.log(`탐라도감 실행 중: http://localhost:${PORT}`);
   if (DEFAULT_PW) console.warn('⚠️  관리자 비밀번호가 기본값이에요. 배포 전에 ADMIN_PASSWORD 환경변수를 설정하세요.');
   refreshHackathons();
   // 공공데이터: 캐시가 하루 넘게 지났을 때만 다시 받아온다

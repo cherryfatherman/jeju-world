@@ -62,7 +62,7 @@ async function peek(url) {
 }
 async function generateListing({ url, hint }) {
   const page = await peek(url);
-  const prompt = `당신은 "바톤"(AI로 만든 작은 서비스와 해커톤 프로젝트를 다음 주인에게 넘기는 장터)의 등록 도우미입니다.
+  const prompt = `당신은 "탐라도감"(AI로 만든 작은 서비스와 해커톤 프로젝트를 다음 주인에게 넘기는 장터)의 등록 도우미입니다.
 아래 정보로 판매 등록 글을 한국어로 작성하세요. 과장하지 말고, 모르는 것은 지어내지 마세요.
 [서비스 주소] ${url}
 [페이지 제목] ${page.title}
@@ -96,7 +96,7 @@ function fallbackListing(url, page, hint) {
 
 /* ───────── 집 (사진 + 서류) ───────── */
 async function generateHome({ photos = [], docs = [], hint }) {
-  const prompt = `당신은 제주 지역 생활 장터 "바톤"의 집(방·집·상가) 등록 도우미입니다.
+  const prompt = `당신은 제주 지역 생활 장터 "탐라도감"의 집(방·집·상가) 등록 도우미입니다.
 첨부 이미지 중 앞 ${docs.length}장은 서류(건축물대장, 등기부등본 등)이고, 나머지 ${photos.length}장은 집 사진입니다.
 서류에서 읽을 수 있는 사실만 추출하세요. 읽을 수 없으면 null로 두세요. 절대 추측해서 채우지 마세요.
 개인정보(소유자 이름, 주민등록번호, 상세 번지)는 추출하지 마세요. 사진으로는 상태·분위기·옵션만 설명하세요.
@@ -122,7 +122,7 @@ function normalizeHome(o) {
 
 /* ───────── 물건 (사진) ───────── */
 async function generateItem({ photos = [], hint }) {
-  const prompt = `당신은 제주 지역 생활 장터 "바톤"의 중고·농산물 등록 도우미입니다. 첨부 사진 ${photos.length}장과 메모를 보고 판매 글을 쓰세요.
+  const prompt = `당신은 제주 지역 생활 장터 "탐라도감"의 중고·농산물 등록 도우미입니다. 첨부 사진 ${photos.length}장과 메모를 보고 판매 글을 쓰세요.
 보이는 것만 설명하고 브랜드·모델은 확실할 때만 쓰세요. 가격은 한국 중고 시세 기준의 대략 범위입니다.
 [판매자 메모] ${hint || '(없음)'}
 JSON으로만: {"name":"제목 30자 이내","tagline":"한 줄 소개 40자 이내","description":"설명 150~300자(상태, 구성품, 사용감, 거래 방법 제안)","category":"${ITEM_CATEGORIES.join(' | ')} 중 하나","condition":"새상품 | 거의 새것 | 사용감 있음 | 고장·부품용 중 하나","priceMin":숫자(원),"priceMax":숫자(원),"priceReason":"가격 근거 한 문장","tags":["태그 3~5개"]}`;
@@ -202,9 +202,9 @@ JSON으로만: {"answer":"3~5문장, 쉬운 말","canToday":true|false|null,"nex
 async function generateThreadsPosts({ projects, hackathons }) {
   const top = projects.slice().sort((a, b) => (b.interest || 0) - (a.interest || 0)).slice(0, 3);
   const soon = hackathons.slice(0, 3);
-  const prompt = `당신은 "바톤(Baton)" 운영자입니다. 바톤은 사진·서류·주소를 올리면 AI가 30초 만에 글을 써주는 제주 생활 장터(집·물건·프로젝트)입니다.
+  const prompt = `당신은 "탐라도감" 운영자입니다. 탐라도감은 사진·서류·주소를 올리면 AI가 30초 만에 글을 써주는 제주 생활 장터(집·물건·프로젝트)입니다.
 스레드(Threads)에 올릴 한국어 글 3개. 각 280자 이내, 친근하고 담백하게, 해시태그 2개 이하, 이모지 1~2개.
-1번: 이번 주 관심 많은 글 소개  2번: 곧 열리는 해커톤 알림  3번: 오일장신문처럼 글 쓰기 귀찮던 경험 + 바톤 소개
+1번: 이번 주 관심 많은 글 소개  2번: 곧 열리는 해커톤 알림  3번: 오일장신문처럼 글 쓰기 귀찮던 경험 + 탐라도감 소개
 [관심 많은 글] ${JSON.stringify(top.map((p) => ({ name: p.name, tagline: p.tagline, interest: p.interest })))}
 [곧 열리는 해커톤] ${JSON.stringify(soon.map((h) => ({ title: h.title, dates: h.dates, prize: h.prize })))}
 JSON으로만: {"posts":["글1","글2","글3"]}`;
@@ -212,9 +212,9 @@ JSON으로만: {"posts":["글1","글2","글3"]}`;
   catch {
     const p = top[0], h = soon[0];
     return { ai: false, posts: [
-      p ? `이번 주 바톤에서 가장 관심을 받은 글: ${p.name} — ${p.tagline} 👀 #바톤 #제주` : '바톤에 첫 글이 올라오길 기다리고 있어요 👀 #바톤',
-      h ? `곧 열리는 해커톤 🔔 ${h.title} (${h.dates}${h.prize ? `, 상금 ${h.prize}` : ''}). 끝나면 결과물을 바톤에 올려 주세요. #해커톤` : '이번 주 해커톤 일정은 바톤에서 확인하세요 🔔',
-      '방 내놓을 때 글 쓰기 귀찮으셨죠? 바톤은 사진이랑 서류만 올리면 AI가 30초 만에 글을 써줘요 🍊 #바톤 #제주',
+      p ? `이번 주 탐라도감에서 가장 관심을 받은 글: ${p.name} — ${p.tagline} 👀 #탐라도감 #제주` : '탐라도감에 첫 글이 올라오길 기다리고 있어요 👀 #탐라도감',
+      h ? `곧 열리는 해커톤 🔔 ${h.title} (${h.dates}${h.prize ? `, 상금 ${h.prize}` : ''}). 끝나면 결과물을 탐라도감에 올려 주세요. #해커톤` : '이번 주 해커톤 일정은 탐라도감에서 확인하세요 🔔',
+      '방 내놓을 때 글 쓰기 귀찮으셨죠? 탐라도감은 사진이랑 서류만 올리면 AI가 30초 만에 글을 써줘요 🍊 #탐라도감 #제주',
     ] };
   }
 }

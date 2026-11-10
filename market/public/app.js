@@ -1,4 +1,4 @@
-/* 바톤 공통 틀 v3 (오늘의집식 구조): 상단(로고·큰 메뉴·검색·올리기) · 보조 탭 · 모바일 하단 탭 · 푸터
+/* 탐라도감 공통 틀 v3 (오늘의집식 구조): 상단(로고·큰 메뉴·검색·올리기) · 보조 탭 · 모바일 하단 탭 · 푸터
    문구·메뉴는 /admin.html 에서 고친다. 디자인 원칙: docs/design/principles.md */
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -9,11 +9,11 @@ const TYPE_LABEL = { home: '집', item: '물건', project: '프로젝트' };
 const TYPE_ICON = { home: 'home', item: 'box', project: 'puzzle' };
 let CONFIG = null;
 
-// 큰 메뉴 3개와 각 메뉴의 보조 탭 (오늘의집: 집구경 · 쇼핑 · 인테리어/생활 → 바톤: 구경 · 장터 · 제주생활)
+// 큰 메뉴 3개와 각 메뉴의 보조 탭 (오늘의집: 집구경 · 쇼핑 · 인테리어/생활 → 탐라도감: 구경 · 장터 · 제주생활)
 const PRIMARY = [
-  { key: 'browse', label: '구경', href: './', subs: [['./', '추천', 'home'], ['./market.html?type=home', '집'], ['./market.html?type=item', '물건'], ['./market.html?type=project', '프로젝트'], ['./market.html#hackathons', '해커톤'], ['./winners.html', '수상작 도감', 'winners']] },
-  { key: 'market', label: '장터', href: './market.html', subs: [['./market.html?type=home', '집', 'home'], ['./market.html?type=item', '물건', 'item'], ['./market.html?type=project', '프로젝트', 'project'], ['./market.html#hackathons', '해커톤']] },
-  { key: 'jeju', label: '제주생활', href: './jeju.html', subs: [['./jeju.html#waste', '이거 어디 버려요?'], ['./jeju.html#sec-days', '요일별 배출'], ['./jeju.html#sec-guides', '생활 가이드'], ['./jeju.html#sec-tips', '생활 꿀팁']] },
+  { key: 'project', label: '프로젝트', href: './market.html?type=project', subs: [['./market.html?type=project', '넘길 프로젝트', 'project'], ['./market.html#hackathons', '열린 해커톤'], ['./winners.html', '수상작 도감', 'winners']] },
+  { key: 'market', label: '장터', href: './market.html?type=home', subs: [['./market.html?type=home', '집', 'home'], ['./market.html?type=item', '물건', 'item']] },
+  { key: 'jeju', label: '제주살이', href: './jeju.html', subs: [['./jeju.html#waste', '이거 어디 버려요?'], ['./jeju.html#sec-days', '요일별 배출'], ['./jeju.html#sec-guides', '생활 가이드'], ['./jeju.html#sec-tips', '생활 꿀팁']] },
 ];
 
 const won = (n) => {
@@ -153,7 +153,7 @@ function initTheme(defaultTheme) {
 }
 const themeIcon = () => (document.documentElement.dataset.theme === 'night' ? icon('sun') : icon('moon'));
 function toggleTheme() { const t = document.documentElement.dataset.theme === 'night' ? 'day' : 'night'; document.documentElement.dataset.theme = t; try { localStorage.setItem('theme', t); } catch {} $$('.themeBtn').forEach((b) => (b.innerHTML = themeIcon())); }
-function applyColors(c) { if (!c) return; const r = document.documentElement.style; if (c.accent) r.setProperty('--accent', c.accent); }
+function applyColors(c) { if (!c) return; const r = document.documentElement.style; if (c.accent) r.setProperty('--accent', c.accent); if (c.accent2) r.setProperty('--accent-2', c.accent2); }
 
 /* 배너 배경(캐러셀 1장용): 능선·바다·달·등불, 저채도 */
 function bannerSVG() {
@@ -166,15 +166,15 @@ async function mountShell({ active, primary, sub, banner = false } = {}) {
   CONFIG = await api('/api/config');
   const S = CONFIG.site;
   document.documentElement.dataset.theme = 'day'; applyColors(CONFIG.colors);
-  if (!$('link[rel=icon]')) { const l = document.createElement('link'); l.rel = 'icon'; l.href = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#ff6b1a"/><path d="M30 72l14-28 12 10 14-20" stroke="#fff" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>')}`; document.head.append(l); }
+  if (!$('link[rel=icon]')) { const l = document.createElement('link'); l.rel = 'icon'; l.href = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#ff6b1a"/><rect x="18" y="22" width="64" height="56" rx="14" fill="none" stroke="#fff" stroke-width="8"/><path d="M30 62c6-12 15-18 24-18 7 0 12 4 16 9" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round"/><circle cx="62" cy="38" r="5" fill="#fff"/></svg>')}`; document.head.append(l); }
   for (const [k, v] of [['og:title', document.title], ['og:description', $('meta[name=description]')?.content || S.slogan], ['og:type', 'website'], ['og:site_name', S.name]]) { if (!$(`meta[property="${k}"]`)) { const m = document.createElement('meta'); m.setAttribute('property', k); m.content = v; document.head.append(m); } }
 
-  const pkey = primary || ({ home: 'browse', winners: 'browse', market: 'market', jeju: 'jeju' }[active] || '');
+  const pkey = primary || ({ winners: 'project', market: 'market', jeju: 'jeju' }[active] || '');
   const header = document.createElement('header'); header.className = 'top';
   header.innerHTML = `<div class="wrap bar">
-      <a class="logo" href="./"><span class="mark">${icon('run')}</span>${esc(S.name)}</a>
+      <a class="logo" href="./"><span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="4"/><path d="M6.5 15.5c1.6-3.2 4-4.8 6.5-4.8 2 0 3.5 1 4.5 2.6"/><circle cx="15.5" cy="8.5" r="1.2" fill="currentColor" stroke="none"/></svg></span>${esc(S.name)}</a>
       <nav class="primary">${PRIMARY.map((p) => `<a href="${p.href}" class="${p.key === pkey ? 'on' : ''}">${p.label}</a>`).join('')}</nav>
-      <form class="search" role="search" action="./search.html"><span class="sic">${icon('search')}</span><input name="q" placeholder="집, 물건, 프로젝트, 버리는 법 검색" autocomplete="off" aria-label="검색"></form>
+      <form class="search" role="search" action="./search.html"><span class="sic">${icon('search')}</span><input name="q" placeholder="프로젝트, 해커톤, 집, 물건 검색" autocomplete="off" aria-label="검색"></form>
       <div class="acts"><a class="btn write" href="./sell.html">${icon('plus')}<span>올리기</span></a></div>
     </div>`;
   document.body.prepend(header);
@@ -190,7 +190,7 @@ async function mountShell({ active, primary, sub, banner = false } = {}) {
 
   // 모바일 하단 탭 (홈 · 장터 · 올리기 · 제주생활 · 도감)
   const tabs = document.createElement('nav'); tabs.className = 'tabbar';
-  const t = [['./', 'home', '홈', 'home'], ['./market.html', 'grid', '장터', 'market'], ['./sell.html', 'plus', '올리기', 'sell'], ['./jeju.html', 'leaf', '제주생활', 'jeju'], ['./winners.html', 'trophy', '도감', 'winners']];
+  const t = [['./', 'home', '홈', 'home'], ['./market.html?type=project', 'puzzle', '프로젝트', 'project'], ['./sell.html', 'plus', '올리기', 'sell'], ['./market.html?type=home', 'grid', '장터', 'market'], ['./jeju.html', 'leaf', '제주살이', 'jeju']];
   tabs.innerHTML = t.map(([href, ic, label, key]) => `<a href="${href}" class="${key === 'sell' ? 'write' : ''} ${key === active ? 'on' : ''}">${icon(ic)}<span>${label}</span></a>`).join('');
   document.body.append(tabs);
   // 맨 위로

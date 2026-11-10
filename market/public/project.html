@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>바톤</title>
+<title>탐라도감</title>
 <link rel="stylesheet" href="./style.css">
 <script src="./app.js"></script>
 </head>
@@ -58,7 +58,7 @@
 <script>
 const id = new URLSearchParams(location.search).get('id');
 let p;
-const SAFETY = { home: '바톤은 직접 연결만 해드려요. 계약 전 건축물대장·등기부등본 원본을 확인하고, 보증금은 반드시 집주인 명의 계좌로 보내세요.', item: '바톤은 직접 연결만 해드려요. 직거래는 사람 많은 곳에서, 선입금은 피하세요.', project: '바톤 1차 버전은 판매자와 직접 연결만 해드려요. 결제와 안전거래는 준비 중이에요. 금전 거래 전에 서비스 상태와 매출을 꼭 직접 확인하세요.' };
+const SAFETY = { home: '탐라도감은 직접 연결만 해드려요. 계약 전 건축물대장·등기부등본 원본을 확인하고, 보증금은 반드시 집주인 명의 계좌로 보내세요.', item: '탐라도감은 직접 연결만 해드려요. 직거래는 사람 많은 곳에서, 선입금은 피하세요.', project: '탐라도감 1차 버전은 판매자와 직접 연결만 해드려요. 결제와 안전거래는 준비 중이에요. 금전 거래 전에 서비스 상태와 매출을 꼭 직접 확인하세요.' };
 function renderComments(list) {
   $('#comments').replaceChildren(...list.map((c) => { const d = document.createElement('div'); d.className = 'comment'; d.innerHTML = `<b>${esc(c.name || '익명')}</b>${esc(c.text)}<small>${new Date(c.createdAt).toLocaleDateString('ko-KR')}</small>`; return d; }));
   if (!list.length) $('#comments').innerHTML = '<p class="note">아직 추천이 없어요. 첫 한마디를 남겨 주세요.</p>';
@@ -67,7 +67,7 @@ const dl = (rows) => rows.filter(([, v]) => v).map(([k, v]) => `<dt>${k}</dt><dd
 async function load() {
   try { p = await api(`/api/projects/${encodeURIComponent(id)}`); } catch { $('#notfound').hidden = false; return; }
   fetch(`/api/projects/${id}/view`, { method: 'POST' });
-  document.title = `${p.name} · 바톤`;
+  document.title = `${p.name} · 탐라도감`;
   $('#detail').hidden = false;
   // 휴대폰 하단 고정 바
   if (!$('.mobilebar')) { const mb = document.createElement('div'); mb.className = 'mobilebar'; mb.innerHTML = `<span class="price" id="mPrice"></span><button class="btn primary" id="mInquiry">문의하기</button>`; document.body.append(mb); mb.querySelector('#mInquiry').onclick = () => $('#inqModal').classList.add('show'); }
@@ -105,11 +105,11 @@ $('#interestBtn').onclick = async () => {
 };
 $('#cmtForm').onsubmit = async (e) => { e.preventDefault(); try { renderComments(await api(`/api/projects/${id}/comments`, Object.fromEntries(new FormData(e.target)))); e.target.reset(); toast('고마워요! 추천이 올라갔어요'); } catch (err) { toast(err.message); } };
 $('#inquiryBtn').onclick = () => $('#inqModal').classList.add('show');
-$('#shareBtn').onclick = () => share(`${p.name} · 바톤`, p.tagline, location.href.replace('&new=1', ''));
+$('#shareBtn').onclick = () => share(`${p.name} · 탐라도감`, p.tagline, location.href.replace('&new=1', ''));
 if (new URLSearchParams(location.search).get('new')) setTimeout(() => { toast('글이 올라갔어요. 공유 버튼으로 알려 보세요'); }, 600);
 $$('[data-close]').forEach((b) => b.onclick = () => $$('.modal').forEach((m) => m.classList.remove('show')));
 $('#inqForm').onsubmit = async (e) => { e.preventDefault(); try { const d = await api(`/api/projects/${id}/inquiry`, Object.fromEntries(new FormData(e.target))); $('#inqModal').classList.remove('show'); e.target.reset(); $('#sellerContact').textContent = d.sellerContact; $('#doneModal').classList.add('show'); } catch (err) { toast(err.message); } };
-mountShell({ active: 'market', primary: 'market' }).then(load);
+mountShell({ active: 'market' }).then(load);
 </script>
 </body>
 </html>

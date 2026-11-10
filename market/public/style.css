@@ -15,6 +15,7 @@
   /* 밤 배너 전용 */
   --sky1: #cfe6f6; --sky2: #f6efe4; --mtn1: #b9cdb6; --mtn2: #8fae92; --sea: #a9cfe2; --moon: #fff3c4; --lan1: #ff6b1a; --lan2: #3e6fd8; --glow: 0;
   --chart: #e8650a;
+  --accent-2: #19b3a6;
   /* 글꼴 */
   --font: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
   /* 간격·모서리 */
@@ -46,8 +47,8 @@ svg.ic { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-wid
 header.top { position: sticky; top: 0; z-index: 20; background: var(--surface); border-bottom: 1px solid var(--line); }
 header.top .bar { display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: 20px; height: 64px; }
 .logo { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 20px; letter-spacing: -0.03em; white-space: nowrap; }
-.logo .mark { width: 28px; height: 28px; border-radius: 8px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; }
-.logo .mark svg { width: 16px; height: 16px; stroke-width: 2.2; }
+.logo .mark { width: 30px; height: 30px; border-radius: 10px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; }
+.logo .mark svg { width: 20px; height: 20px; }
 nav.primary { display: flex; gap: 4px; }
 nav.primary a { position: relative; padding: 8px 10px; font-size: 17px; font-weight: 700; color: var(--ink-3); white-space: nowrap; }
 nav.primary a:hover { color: var(--ink); }
@@ -453,3 +454,14 @@ footer .links a:hover { color: var(--ink); }
 .glist summary { cursor: pointer; padding: 14px 18px; font-weight: 700; display: flex; gap: 10px; align-items: center; }
 .glist summary small { color: var(--ink-3); font-weight: 500; margin-left: auto; }
 .glist .form { border: 0; border-top: 1px solid var(--line); border-radius: 0; }
+
+
+/* ── 제주 창업 지원 카드 ── */
+.support { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.support a { display: flex; flex-direction: column; gap: 4px; padding: 18px; border-radius: var(--r-m); background: var(--surface); border: 1px solid var(--line); transition: border-color .15s, transform .15s; }
+.support a:hover { border-color: var(--accent-2); transform: translateY(-1px); }
+.support .org { font-size: 12px; font-weight: 700; color: var(--accent-2); }
+.support b { font-size: 15px; font-weight: 700; line-height: 1.35; }
+.support .d { color: var(--ink-3); font-size: 13px; }
+.support .go { margin-top: 6px; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; color: var(--ink-2); }
+.support .go svg { width: 14px; height: 14px; }

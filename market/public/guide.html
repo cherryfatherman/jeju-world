@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>제주 생활 가이드 · 바톤</title>
+<title>제주 생활 가이드 · 탐라도감</title>
 <link rel="stylesheet" href="./style.css">
 <script src="./app.js"></script>
 </head>
@@ -31,7 +31,7 @@
 const id = new URLSearchParams(location.search).get('id');
 mountShell({ active: 'jeju', primary: 'jeju' }).then(async (c) => {
   let g; try { g = await api(`/api/guides/${encodeURIComponent(id || '')}`); } catch { $('#guide').innerHTML = '<div class="empty">찾는 가이드가 없어요. <a href="./jeju.html">제주 생활로 돌아가기</a></div>'; return; }
-  document.title = `${g.title} · 바톤`;
+  document.title = `${g.title} · 탐라도감`;
   $('#crumbTag').textContent = g.tag || '가이드';
   $('#gTitle').textContent = g.title; $('#gSummary').textContent = g.summary || '';
   $('#gMeta').innerHTML = `${g.verified ? '<span class="badge" style="color:var(--ok)">공식 안내로 확인됨</span>' : '<span class="badge sample">확인 필요 · 초안</span>'}<span class="note">마지막 확인 ${esc(g.lastChecked || '-')}</span>`;

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>관리자 · 바톤</title>
+<title>관리자 · 탐라도감</title>
 <meta name="robots" content="noindex">
 <link rel="stylesheet" href="./style.css">
 <script src="./app.js"></script>
@@ -116,7 +116,7 @@
     <div class="pane" id="pane-ticker"><div class="form">
       <label>공지 띠<select id="t-enabled"><option value="true">보이기</option><option value="false">숨기기</option></select></label>
       <label>내용<select id="t-mode"><option value="auto">자동 (국내 해커톤 → 없으면 참가자 최다 대회)</option><option value="custom">직접 쓰기</option></select></label>
-      <label>제목<input id="t-title" placeholder="예: 금요일 발표! 바톤 시연 중"></label>
+      <label>제목<input id="t-title" placeholder="예: 금요일 발표! 탐라도감 시연 중"></label>
       <label>설명<input id="t-text" placeholder="예: 지금 올리면 발표에 소개돼요"></label>
       <label>링크<input id="t-url" placeholder="https://..."></label>
     </div></div>
@@ -130,6 +130,9 @@
       <b>도구 상자</b><p class="help">아이콘(이모지) · 이름 · 작은 설명 · 링크 · 배지(NEW/AI/곧) · 준비중이면 체크</p>
       <div id="toolList"></div>
       <button type="button" class="btn" id="addTool">＋ 도구 추가</button>
+      <hr style="border:0;border-top:1px solid var(--line);margin:8px 0">
+      <b>제주 창업 지원 (홈에 카드로)</b><p class="help">한 줄에 하나. 기관 | 제목 | 설명 | 링크 주소. 기관 공식 사이트로만 연결하세요.</p>
+      <textarea id="supportText" style="min-height:110px;font-size:13px"></textarea>
     </div></div>
 
     <!-- 프로젝트 관리 -->
@@ -174,6 +177,7 @@ function fill() {
   v('#f-footer', cfg.footer?.note || '');
   v('#t-enabled', String(T.enabled !== false)); v('#t-mode', T.mode || 'auto'); v('#t-title', T.title); v('#t-text', T.text); v('#t-url', T.url);
   renderNav(); renderTools(); fillJeju(); loadDash(); renderSlides(); renderAds(); loadGuides();
+  v('#supportText', (cfg.support || []).map((s) => [s.org, s.title, s.sub, s.href].join(' | ')).join('\n'));
 }
 let GUIDES = [];
 async function loadGuides() { try { GUIDES = await api('/api/admin/guides'); } catch { GUIDES = []; } renderGuides(); }
@@ -244,7 +248,7 @@ function renderTips() {
     d.querySelectorAll('input[data-k]').forEach((inp) => inp.oninput = () => { t[inp.dataset.k] = inp.value; }); d.querySelector('input[type=checkbox]').onchange = (e) => { t.check = e.target.checked; }; d.querySelector('.del').onclick = () => { cfg.jeju.tips.splice(i, 1); renderTips(); }; return d; }));
 }
 $('#addTip').onclick = () => { (cfg.jeju.tips = cfg.jeju.tips || []).push({ title: '', body: '', check: false }); renderTips(); };
-const TODOS = ['스레드에 오늘 글 1개 올리기 (스레드 글 탭에서 생성)', '받은 편지함 확인하고 문의에 답하기', '분리배출 요일표를 제주시 공식 안내와 대조하기', '집주인·공인중개사 1명에게 바톤 소개하기', '농가·소상공인 1곳에 물건 올리기 권하기', '해커톤 참가자에게 프로젝트 등록 링크 보내기', '예시 글을 실제 글로 바꾸기 (관리자 → 예시 숨기기)'];
+const TODOS = ['스레드에 오늘 글 1개 올리기 (스레드 글 탭에서 생성)', '받은 편지함 확인하고 문의에 답하기', '분리배출 요일표를 제주시 공식 안내와 대조하기', '집주인·공인중개사 1명에게 탐라도감 소개하기', '농가·소상공인 1곳에 물건 올리기 권하기', '해커톤 참가자에게 프로젝트 등록 링크 보내기', '예시 글을 실제 글로 바꾸기 (관리자 → 예시 숨기기)'];
 function renderTodos() {
   let done = {}; try { done = JSON.parse(localStorage.getItem('todos') || '{}'); } catch {}
   $('#todos').replaceChildren(...TODOS.map((t, i) => { const d = document.createElement('label'); d.className = 'todo' + (done[i] ? ' done' : ''); d.innerHTML = `<input type="checkbox" ${done[i] ? 'checked' : ''}><span>${esc(t)}</span>`; d.querySelector('input').onchange = (e) => { done[i] = e.target.checked; try { localStorage.setItem('todos', JSON.stringify(done)); } catch {} renderTodos(); }; return d; }));
@@ -287,6 +291,7 @@ $('#save').onclick = async () => {
   cfg.footer = { note: v('#f-footer') };
   cfg.ticker = { enabled: v('#t-enabled') === 'true', mode: v('#t-mode'), title: v('#t-title'), text: v('#t-text'), url: v('#t-url') };
   cfg.ads = { ...cfg.ads, enabled: v('#ad-enabled') === 'true' };
+  cfg.support = v('#supportText').split('\n').map((l) => l.split('|').map((x) => x.trim())).filter((p) => p.length >= 4 && p[3]).map(([org, title, sub, href]) => ({ org, title, sub, href }));
   cfg.jeju = { ...cfg.jeju, area: v('#j-area'), waste: { ...(cfg.jeju.waste || {}), verified: v('#j-verified') === 'true', source: v('#j-source'), notes: v('#j-notes'), days: Object.fromEntries($$('#j-days input').map((i) => [i.dataset.day, i.value])) }, tips: (cfg.jeju.tips || []).filter((t) => t.title || t.body) };
   try { await api('/api/config', cfg, 'PUT'); toast('저장했어요. 사이트에 바로 반영돼요'); } catch (err) { toast(err.message); }
 };

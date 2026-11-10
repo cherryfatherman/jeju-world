@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>바톤 · 제주 생활 장터</title>
-<meta name="description" content="제주 생활에 바로 필요한 정보와 장터. 집·물건·프로젝트는 사진만 올리면 AI가 글을 써요.">
+<title>탐라도감 · 제주 창업자들의 도감</title>
+<meta name="description" content="제주의 프로젝트·집·물건을 모으는 도감. 멈춘 해커톤 프로젝트는 다음 주인에게, 집과 물건은 사진만 올리면 AI가 글을 써요.">
 <link rel="stylesheet" href="./style.css">
 <script src="./app.js"></script>
 </head>
@@ -16,7 +16,32 @@
     <div class="dots" id="dots"></div>
   </div>
 
-  <!-- 오늘 바로 필요한 것: 누르면 바로 답이 나오는 곳으로 -->
+  <!-- 1. 프로젝트: 다음 주인을 찾는 결과물 -->
+  <section>
+    <div class="sec-head"><h2>다음 주인을 찾는 프로젝트</h2><a class="more" href="./market.html?type=project">전체 보기</a></div>
+    <div class="grid" id="projects"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+  </section>
+
+  <!-- 2. 해커톤 + 수상작 도감 -->
+  <section>
+    <div class="sec-head"><h2>지금 열려 있는 해커톤</h2><a class="more" href="./winners.html">수상작 도감 보기</a></div>
+    <div class="hack" id="hackList"></div>
+  </section>
+
+  <!-- 3. 창업 지원: 기관 공식 사이트로 바로 -->
+  <section>
+    <div class="sec-head"><h2>제주 창업 지원</h2><span class="more">기관 공식 사이트로 연결</span></div>
+    <div class="support" id="support"></div>
+  </section>
+
+  <!-- 4. 장터는 한 줄 -->
+  <section>
+    <div class="sec-head"><h2>장터에 새로 올라온 집·물건</h2><a class="more" href="./market.html?type=home">장터 전체 보기</a></div>
+    <div class="pgrid" id="feed"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+    <p class="note" style="margin-top:14px">사진만 올리면 글은 AI가 써요. <a href="./sell.html">30초 만에 올리기</a></p>
+  </section>
+
+  <!-- 5. 제주살이: 입도 창업자를 위한 정착 정보 -->
   <section class="today">
     <div class="sec-head"><h2>오늘 바로 필요한 것</h2><span class="more" id="todayLabel"></span></div>
     <div class="quick" id="quick"></div>
@@ -24,16 +49,10 @@
 
   <!-- 제주 생활 가이드: 글 하나가 독립 정보 페이지 -->
   <section>
-    <div class="sec-head"><h2>제주 생활 가이드</h2><a class="more" href="./jeju.html#sec-guides">전체 보기</a></div>
+    <div class="sec-head"><h2>제주살이 가이드</h2><a class="more" href="./jeju.html#sec-guides">전체 보기</a></div>
     <div class="ggrid" id="guides"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
   </section>
 
-  <!-- 장터는 한 줄만. 나머지는 장터 탭으로 -->
-  <section>
-    <div class="sec-head"><h2>장터에 새로 올라온 글</h2><a class="more" href="./market.html">장터 전체 보기</a></div>
-    <div class="pgrid" id="feed"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
-    <p class="note" style="margin-top:14px">집·물건·프로젝트 모두 사진만 올리면 글은 AI가 써요. <a href="./sell.html">30초 만에 올리기</a></p>
-  </section>
 </main>
 
 <script>
@@ -65,10 +84,15 @@ function renderQuick() {
   }));
 }
 async function load() {
-  const [guides, all] = await Promise.all([api('/api/guides'), api('/api/projects')]);
-  $('#guides').replaceChildren(...guides.slice(0, 8).map(guideCard));
-  $('#feed').replaceChildren(...all.slice(0, 4).map(photoCard));
-  if (!all.length) $('#feed').innerHTML = '<div class="empty">아직 올라온 글이 없어요. <a href="./sell.html">첫 글을 올려 보세요</a></div>';
+  const [guides, all, h] = await Promise.all([api('/api/guides'), api('/api/projects'), api('/api/hackathons')]);
+  const projects = all.filter((p) => p.type === 'project'), goods = all.filter((p) => p.type !== 'project');
+  $('#projects').replaceChildren(...projects.slice(0, 3).map(listingCard));
+  if (!projects.length) $('#projects').innerHTML = '<div class="empty">아직 넘길 프로젝트가 없어요. <a href="./sell.html?type=project">첫 프로젝트를 올려 보세요</a></div>';
+  $('#hackList').replaceChildren(...(h.items || []).slice(0, 4).map((x) => { const a = document.createElement('a'); a.href = x.url; a.target = '_blank'; a.rel = 'noopener'; a.innerHTML = `<span class="src ${x.source}">${x.source === 'local' ? '국내 · 직접 등록' : 'Devpost'}</span><b>${esc(x.title)}</b><span class="d">${esc(x.dates || '')} · ${esc(x.location || '')}${x.participants ? ` · ${x.participants.toLocaleString()}명 참가` : ''}</span><span class="p">${x.prize ? `상금 ${esc(x.prize)}` : ''}</span>`; return a; }));
+  $('#support').replaceChildren(...(CFG.support || []).map((s) => { const a = document.createElement('a'); a.href = s.href; a.target = '_blank'; a.rel = 'noopener'; a.innerHTML = `<span class="org">${esc(s.org || '')}</span><b>${esc(s.title || '')}</b><span class="d">${esc(s.sub || '')}</span><span class="go">공식 사이트 ${icon('arrow')}</span>`; return a; }));
+  $('#guides').replaceChildren(...guides.slice(0, 4).map(guideCard));
+  $('#feed').replaceChildren(...goods.slice(0, 4).map(photoCard));
+  if (!goods.length) $('#feed').innerHTML = '<div class="empty">아직 올라온 글이 없어요. <a href="./sell.html">첫 글을 올려 보세요</a></div>';
 }
 mountShell({ active: 'home', primary: 'browse', sub: 'home' }).then((c) => { CFG = c; renderCarousel(); renderQuick(); load(); });
 </script>
