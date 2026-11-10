@@ -1,5 +1,5 @@
 {
- "updatedAt": "2026-11-10T04:01:26.995Z",
+ "updatedAt": "2026-11-10T04:24:48.693Z",
  "items": [
   {
    "source": "local",
@@ -22,7 +22,7 @@
    "prize": "$67,500",
    "dates": "Oct 01 - Nov 12, 2026",
    "location": "Online",
-   "participants": 32433,
+   "participants": 32447,
    "themes": [
     "Low/No Code",
     "Machine Learning/AI",
@@ -37,7 +37,7 @@
    "prize": "$100,000",
    "dates": "Oct 30 - Dec 04, 2026",
    "location": "Online",
-   "participants": 11092,
+   "participants": 11105,
    "themes": [
     "Beginner Friendly",
     "Machine Learning/AI",
@@ -67,7 +67,7 @@
    "prize": "$120,000",
    "dates": "Oct 27 - Dec 22, 2026",
    "location": "Online",
-   "participants": 2535,
+   "participants": 2537,
    "themes": [
     "Machine Learning/AI",
     "Enterprise",
@@ -82,7 +82,7 @@
    "prize": "$46,000",
    "dates": "Oct 22 - Nov 16, 2026",
    "location": "Online",
-   "participants": 1935,
+   "participants": 1936,
    "themes": [
     "Lifehacks",
     "Machine Learning/AI",
@@ -97,7 +97,7 @@
    "prize": "$50,000",
    "dates": "Nov 02 - Dec 15, 2026",
    "location": "Online",
-   "participants": 1009,
+   "participants": 1010,
    "themes": [
     "IoT",
     "Machine Learning/AI",
@@ -112,7 +112,7 @@
    "prize": "$7,800",
    "dates": "Oct 20 - Dec 21, 2026",
    "location": "Online",
-   "participants": 986,
+   "participants": 987,
    "themes": [
     "Beginner Friendly",
     "Machine Learning/AI",
@@ -122,12 +122,12 @@
   },
   {
    "source": "devpost",
-   "title": "LaunchPad Hacks",
+   "title": "LaunchPad Hacks (Judges + Sponsors Needed)",
    "url": "https://launchpad-hacks.devpost.com/",
    "prize": "$300",
-   "dates": "Oct 16 - Nov 20, 2026",
+   "dates": "Oct 16 - Dec 04, 2026",
    "location": "Online",
-   "participants": 504,
+   "participants": 505,
    "themes": [
     "Beginner Friendly",
     "Open Ended"
@@ -141,7 +141,7 @@
    "prize": "$17,150",
    "dates": "Nov 08 - 15, 2026",
    "location": "Online",
-   "participants": 430,
+   "participants": 431,
    "themes": [
     "Beginner Friendly",
     "Low/No Code",
@@ -231,7 +231,7 @@
    "prize": "$900",
    "dates": "Oct 26 - Nov 20, 2026",
    "location": "Online",
-   "participants": 211,
+   "participants": 212,
    "themes": [
     "Blockchain",
     "Fintech",
@@ -246,7 +246,7 @@
    "prize": "$28,000",
    "dates": "Nov 06 - 10, 2026",
    "location": "Online",
-   "participants": 191,
+   "participants": 192,
    "themes": [
     "Beginner Friendly",
     "Machine Learning/AI",
@@ -321,7 +321,7 @@
    "prize": "$CAD 1,400",
    "dates": "Nov 01 - 14, 2026",
    "location": "Online",
-   "participants": 65,
+   "participants": 66,
    "themes": [
     "Design",
     "Health",

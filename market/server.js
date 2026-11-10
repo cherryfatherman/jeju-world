@@ -6,6 +6,12 @@ const express = require('express');
 const { generateListing, generateHome, generateItem, answerWaste, generateThreadsPosts } = require('./lib/ai');
 const { fetchHackathons } = require('./lib/hackathons');
 
+// .env 파일이 있으면 읽는다 (예: GEMINI_API_KEY=..., ADMIN_PASSWORD=...). 이 파일은 GitHub에 올라가지 않는다.
+try {
+  for (const line of fs.readFileSync(path.join(__dirname, '.env'), 'utf8').split('\n')) {
+    const m = /^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/.exec(line); if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^['"]|['"]$/g, '');
+  }
+} catch {}
 const PORT = process.env.PORT || 4000;
 const DATA = path.join(__dirname, 'data');
 const file = (n) => path.join(DATA, n);

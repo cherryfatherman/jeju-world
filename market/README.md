@@ -8,6 +8,7 @@ npm install
 node server.js        # http://localhost:4000
 ```
 - AI 소개글: `GEMINI_API_KEY` 환경변수에 Google AI Studio 키를 넣으면 작동. 없으면 기본 초안으로 자동 전환.
+- 가장 쉬운 방법: `market/.env` 파일을 만들고 `GEMINI_API_KEY=키` 한 줄을 적는다 (GitHub에 올라가지 않음). `ADMIN_PASSWORD=비밀번호`도 같은 파일에.
 - 프록시 환경(클라우드 세션)에서는 `NODE_USE_ENV_PROXY=1 node server.js`.
 - 데이터는 `data/*.json` 파일에 저장. `inquiries.json`, `waitlist.json`은 커밋하지 않음.
 - 해커톤 일정은 Devpost 공개 API에서 6시간마다 자동 수집, 국내 대회는 `data/hackathons.local.json`에 직접 추가.

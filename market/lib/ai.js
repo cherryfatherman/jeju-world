@@ -4,28 +4,48 @@
 //  - generateItem    : 물건(사진) → 제목·설명·가격대
 //  - answerWaste     : "이거 어디 버려요?" (제주 배출 규칙 기준)
 //  - generateThreadsPosts : 스레드 글 초안
-const GEMINI_KEY = process.env.GEMINI_API_KEY || '';
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+const GEMINI_KEY = () => process.env.GEMINI_API_KEY || '';
+// 모델은 순서대로 시도한다. 하나가 404(종료)·503(혼잡)·429(한도)면 다음 모델로 넘어간다.
+const MODELS = () => [process.env.GEMINI_MODEL, 'gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-flash-latest', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'].filter(Boolean);
 const CATEGORIES = ['생산성', '마케팅', '교육', '커뮤니티', '데이터·분석', '커머스', '헬스·웰빙', '개발도구', '지역·로컬', '기타'];
 const ITEM_CATEGORIES = ['가전·디지털', '가구·인테리어', '생활·주방', '농수산물', '의류·잡화', '취미·도서', '유아·반려', '차량·레저', '기타'];
+let lastGood = null; // 마지막으로 성공한 모델을 먼저 쓴다
 
-// data:image/...;base64,xxx → Gemini 이미지 파트
 function imagePart(dataUrl) {
   const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(dataUrl || '');
   return m ? { inline_data: { mime_type: m[1], data: m[2] } } : null;
 }
 
 async function callGemini(parts) {
-  if (!GEMINI_KEY) throw new Error('no key');
-  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contents: [{ parts }], generationConfig: { temperature: 0.5, responseMimeType: 'application/json' } }),
-    signal: AbortSignal.timeout(40000),
-  });
-  if (!r.ok) throw new Error(`gemini ${r.status}`);
-  const d = await r.json();
-  return JSON.parse(d.candidates?.[0]?.content?.parts?.[0]?.text || '{}');
+  if (!GEMINI_KEY()) throw new Error('no key');
+  const order = [...new Set([lastGood, ...MODELS()].filter(Boolean))];
+  let lastErr = null;
+  for (const model of order) {
+    try {
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_KEY() },
+        body: JSON.stringify({ contents: [{ parts }], generationConfig: { temperature: 0.5, responseMimeType: 'application/json' } }),
+        signal: AbortSignal.timeout(45000),
+      });
+      if (!r.ok) {
+        const t = await r.text().catch(() => '');
+        lastErr = new Error(`gemini ${model} ${r.status} ${t.slice(0, 160).replace(/\s+/g, ' ')}`);
+        console.warn('[ai]', lastErr.message);
+        if ([404, 429, 500, 503].includes(r.status)) continue; // 다음 모델
+        throw lastErr;
+      }
+      const d = await r.json();
+      const text = d.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('') || '{}';
+      lastGood = model;
+      return JSON.parse(text.replace(/^```json\s*|```$/g, ''));
+    } catch (e) {
+      lastErr = e; console.warn('[ai]', model, e.message);
+      if (e.name === 'TimeoutError' || e.name === 'AbortError') continue;
+      if (!/^gemini /.test(e.message)) continue;
+    }
+  }
+  throw lastErr || new Error('gemini unavailable');
 }
 const askJSON = (prompt, images = []) => callGemini([{ text: prompt }, ...images.map(imagePart).filter(Boolean)]);
 
@@ -153,22 +173,28 @@ function localWaste(question, rules) {
   return { answer: hit.a + (day.length ? `\n\n📆 ${rules.area || '제주시'} 클린하우스 기준 "${hit.cat}" 배출 요일: ${day.join('·')}요일.` : ''), canToday: day.length ? day.includes(today) : null, nextDay: day.length && !day.includes(today) ? day[0] : null, caution: '일반적인 분리배출 기준이에요. 동네 안내판과 다르면 안내판이 우선이에요.', ai: false, source: 'kb' };
 }
 async function answerWaste({ question, rules, area }) {
+  // 1) 자주 묻는 품목은 검증된 기본 지식으로 바로 답한다 (일관성·신뢰)
+  const kb = localWaste(question, { ...rules, area });
+  if (kb) return kb;
+  // 2) 없으면 AI가 일반 분리배출 상식 + 요일표로 답한다
   const today = ['일', '월', '화', '수', '목', '금', '토'][new Date().getDay()];
   const table = Object.entries(rules.days || {}).map(([d, v]) => `${d}요일: ${v}`).join('\n');
-  const prompt = `당신은 제주 ${area} 생활 도우미입니다. 아래 배출 규칙 표만 근거로 답하세요. 표에 없는 내용은 "읍면동 주민센터나 제주시 환경과에 확인하세요"라고 하세요.
+  const prompt = `당신은 제주 ${area} 생활 도우미입니다. 한국의 일반적인 분리배출 기준(환경부 '재활용품 분리배출 가이드라인')과 아래 요일표를 함께 써서 답하세요.
+- 재질이 무엇인지, 어떻게 비우고 씻고 분리하는지, 어느 분류(플라스틱류·비닐류·종이류·캔·병·스티로폼·불연성·종량제봉투·전용수거함·대형폐기물)인지 구체적으로.
+- 그 분류가 요일표에 있으면 오늘 배출 가능 여부와 다음 가능 요일을 말하세요. 표에 없는 분류(예: 종량제봉투, 전용수거함)는 "요일 상관없음"으로.
+- 확신이 없는 지역 규칙만 "읍면동 주민센터에 확인"이라고 덧붙이세요. 전부 모른다고 하지 마세요.
 오늘은 ${today}요일입니다.
 [요일별 배출 규칙 (클린하우스 기준)]
 ${table}
 [공통 안내] ${rules.notes || ''}
 [질문] ${question}
-JSON으로만: {"answer":"3~5문장, 쉬운 말. 분리 방법 + 오늘 버릴 수 있는지 + 다음 가능 요일","canToday":true|false|null,"nextDay":"요일 또는 null","caution":"주의 한 줄 또는 null"}`;
+JSON으로만: {"answer":"3~5문장, 쉬운 말","canToday":true|false|null,"nextDay":"요일 또는 null","caution":"주의 한 줄 또는 null"}`;
   try { const o = await askJSON(prompt); return { answer: String(o.answer || ''), canToday: o.canToday ?? null, nextDay: o.nextDay || null, caution: o.caution || null, ai: true }; }
   catch {
-    const kb = localWaste(question, { ...rules, area }); if (kb) return kb;
     const q = question.toLowerCase();
     const hit = Object.entries(rules.days || {}).filter(([, v]) => q.split(/\s+/).some((w) => w.length > 1 && v.includes(w)));
     return { ai: false, canToday: null, nextDay: hit[0]?.[0] || null, caution: null,
-      answer: hit.length ? `표 기준으로 "${hit.map(([d]) => d + '요일').join(', ')}"에 배출하는 품목으로 보여요. 정확한 분류는 아래 요일표와 주민센터 안내를 확인해 주세요.` : 'AI 연결이 어려워 자동 답변을 못 했어요. 아래 요일표를 확인하거나 읍면동 주민센터에 문의해 주세요.' };
+      answer: hit.length ? `표 기준으로 "${hit.map(([d]) => d + '요일').join(', ')}"에 배출하는 품목으로 보여요. 정확한 분류는 아래 요일표와 주민센터 안내를 확인해 주세요.` : '지금은 자동 답변이 어려워요. 아래 요일표를 확인하거나 읍면동 주민센터에 문의해 주세요.' };
   }
 }
 
