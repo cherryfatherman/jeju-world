@@ -11,6 +11,7 @@ let CONFIG = null;
 
 // 큰 메뉴 3개와 각 메뉴의 보조 탭 (오늘의집: 집구경 · 쇼핑 · 인테리어/생활 → 탐라도감: 구경 · 장터 · 제주생활)
 const PRIMARY = [
+  { key: 'travel', label: '제주여행', href: './places.html?type=spot', subs: [['./places.html?type=spot', '관광지', 'spot'], ['./places.html?type=cafe', '카페', 'cafe'], ['./places.html?type=food', '맛집', 'food']] },
   { key: 'project', label: '프로젝트', href: './market.html?type=project', subs: [['./market.html?type=project', '넘길 프로젝트', 'project'], ['./market.html#hackathons', '열린 해커톤'], ['./winners.html', '수상작 도감', 'winners']] },
   { key: 'market', label: '장터', href: './market.html?type=home', subs: [['./market.html?type=home', '집', 'home'], ['./market.html?type=item', '물건', 'item']] },
   { key: 'jeju', label: '제주살이', href: './jeju.html', subs: [['./jeju.html#waste', '이거 어디 버려요?'], ['./jeju.html#sec-days', '요일별 배출'], ['./jeju.html#sec-guides', '생활 가이드'], ['./jeju.html#sec-tips', '생활 꿀팁']] },
@@ -106,6 +107,13 @@ function photoCard(p) {
   return a;
 }
 
+const PLACE_LABEL = { spot: '관광지', cafe: '카페', food: '맛집' };
+/* 장소 카드 (관광지·카페·맛집): 사진 · 순위 · 이름 · 동네 · 추천 수 */
+function placeCard(p, rank) {
+  const a = document.createElement('a'); a.className = 'gcard pcard2'; a.href = `./place.html?id=${encodeURIComponent(p.id)}`;
+  a.innerHTML = `<div class="gimg">${p.image ? `<img src="${esc(p.image)}" alt="" loading="lazy">` : ''}${rank ? `<span class="rank-n">${rank}</span>` : `<span class="gtag">${esc(PLACE_LABEL[p.type] || '')}</span>`}</div><b>${esc(p.name)}</b><p>${esc(p.summary || '')}</p><small>${esc(p.area || '')} · 추천 ${p.votes || 0}</small>`;
+  return a;
+}
 /* 가이드 카드 */
 function guideCard(g) {
   const a = document.createElement('a'); a.className = 'gcard'; a.href = `./guide.html?id=${encodeURIComponent(g.id)}`;
@@ -166,15 +174,15 @@ async function mountShell({ active, primary, sub, banner = false } = {}) {
   CONFIG = await api('/api/config');
   const S = CONFIG.site;
   document.documentElement.dataset.theme = 'day'; applyColors(CONFIG.colors);
-  if (!$('link[rel=icon]')) { const l = document.createElement('link'); l.rel = 'icon'; l.href = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#fff"/><circle cx="50" cy="60" r="30" fill="#ff6b1a"/><path d="M50 32c0-9 9-15 20-13-2 10-10 15-20 13z" fill="#19b3a6"/><circle cx="50" cy="32" r="3.5" fill="#1b1915"/></svg>')}`; document.head.append(l); }
+  if (!$('link[rel=icon]')) { const l = document.createElement('link'); l.rel = 'icon'; l.href = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#fff"/><rect x="22" y="12" width="56" height="76" rx="9" fill="#ff6b1a"/><path d="M60 12h11v28l-5.5-4.5L60 40z" fill="#1b1915" opacity=".28"/><circle cx="46" cy="58" r="15" fill="#fff"/><path d="M46 44c0-4.5 4.5-8.2 10.5-7.5-1 5.5-5.5 8.2-10.5 7.5z" fill="#19b3a6"/></svg>')}`; document.head.append(l); }
   for (const [k, v] of [['og:title', document.title], ['og:description', $('meta[name=description]')?.content || S.slogan], ['og:type', 'website'], ['og:site_name', S.name]]) { if (!$(`meta[property="${k}"]`)) { const m = document.createElement('meta'); m.setAttribute('property', k); m.content = v; document.head.append(m); } }
 
   const pkey = primary || ({ winners: 'project', market: 'market', jeju: 'jeju' }[active] || '');
   const header = document.createElement('header'); header.className = 'top';
   header.innerHTML = `<div class="wrap bar">
-      <a class="logo" href="./"><span class="mark"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="58" r="32" fill="#ff6b1a"/><path d="M50 28c0-9 9-15 20-13-2 10-10 15-20 13z" fill="#19b3a6"/><circle cx="50" cy="28" r="3.6" fill="#1b1915"/></svg></span>${esc(S.name)}</a>
+      <a class="logo" href="./"><span class="mark"><svg viewBox="0 0 100 100" aria-hidden="true"><rect x="18" y="10" width="64" height="80" rx="9" fill="#ff6b1a"/><path d="M62 10h12v30l-6-5-6 5z" fill="#1b1915" opacity=".28"/><circle cx="46" cy="58" r="16" fill="#fff"/><path d="M46 43c0-4.8 4.8-8.8 11.2-8-1.1 5.9-5.9 8.8-11.2 8z" fill="#19b3a6"/></svg></span>${esc(S.name)}</a>
       <nav class="primary">${PRIMARY.map((p) => `<a href="${p.href}" class="${p.key === pkey ? 'on' : ''}">${p.label}</a>`).join('')}</nav>
-      <form class="search" role="search" action="./search.html"><span class="sic">${icon('search')}</span><input name="q" placeholder="프로젝트, 해커톤, 집, 물건 검색" autocomplete="off" aria-label="검색"></form>
+      <form class="search" role="search" action="./search.html"><span class="sic">${icon('search')}</span><input name="q" placeholder="관광지, 카페, 버리는 법, 프로젝트 검색" autocomplete="off" aria-label="검색"></form>
       <div class="acts"><a class="btn write" href="./sell.html">${icon('plus')}<span>올리기</span></a></div>
     </div>`;
   document.body.prepend(header);
@@ -190,7 +198,7 @@ async function mountShell({ active, primary, sub, banner = false } = {}) {
 
   // 모바일 하단 탭 (홈 · 장터 · 올리기 · 제주생활 · 도감)
   const tabs = document.createElement('nav'); tabs.className = 'tabbar';
-  const t = [['./', 'home', '홈', 'home'], ['./market.html?type=project', 'puzzle', '프로젝트', 'project'], ['./sell.html', 'plus', '올리기', 'sell'], ['./market.html?type=home', 'grid', '장터', 'market'], ['./jeju.html', 'leaf', '제주살이', 'jeju']];
+  const t = [['./', 'home', '홈', 'home'], ['./places.html?type=spot', 'sun', '여행', 'travel'], ['./sell.html', 'plus', '올리기', 'sell'], ['./jeju.html', 'leaf', '제주살이', 'jeju'], ['./market.html?type=project', 'puzzle', '프로젝트', 'project']];
   tabs.innerHTML = t.map(([href, ic, label, key]) => `<a href="${href}" class="${key === 'sell' ? 'write' : ''} ${key === active ? 'on' : ''}">${icon(ic)}<span>${label}</span></a>`).join('');
   document.body.append(tabs);
   // 맨 위로

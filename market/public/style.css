@@ -465,3 +465,19 @@ footer .links a:hover { color: var(--ink); }
 .support .d { color: var(--ink-3); font-size: 13px; }
 .support .go { margin-top: 6px; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; color: var(--ink-2); }
 .support .go svg { width: 14px; height: 14px; }
+
+
+/* ── 장소 카드 순위 번호 · 상세 ── */
+.gcard .rank-n { position: absolute; left: 10px; top: 10px; min-width: 26px; height: 26px; padding: 0 8px; border-radius: 8px; background: var(--ink); color: var(--bg); font-weight: 800; font-size: 13px; display: grid; place-items: center; }
+.listbar { display: flex; align-items: center; gap: 12px; margin: 4px 0 16px; color: var(--ink-3); font-size: 14px; font-weight: 600; }
+.listbar .sort { margin-left: auto; display: flex; gap: 4px; }
+.listbar .sort button { height: 32px; padding: 0 12px; border-radius: 8px; color: var(--ink-3); font-weight: 600; font-size: 13px; }
+.listbar .sort button.on { background: var(--surface-2); color: var(--ink); }
+.pfacts { display: grid; gap: 10px; margin-top: 22px; padding: 18px 20px; border-radius: var(--r-m); background: var(--surface-2); }
+.pfacts div { display: grid; grid-template-columns: 72px 1fr; gap: 10px; font-size: 15px; }
+.pfacts dt { color: var(--ink-3); font-weight: 600; } .pfacts dd { margin: 0; line-height: 1.5; }
+.pactions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
+.pfeedback { margin-top: 28px; display: grid; gap: 8px; }
+.pfeedback h2 { font-size: 18px; }
+.pfeedback textarea { min-height: 80px; }
+#homePlaceTabs { max-width: 420px; margin: 0 0 16px; }

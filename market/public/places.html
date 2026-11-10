@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>제주여행 · 탐라도감</title>
+<meta name="description" content="제주 관광지·카페·맛집을 추천순으로. 도민과 여행자가 직접 추천하고 고쳐 가는 제주 도감.">
+<link rel="stylesheet" href="./style.css">
+<script src="./app.js"></script>
+</head>
+<body>
+<main class="wrap">
+  <div class="page-title"><h1 id="pageH1">관광지</h1><p id="pageSub"></p></div>
+  <div class="typetabs" id="typetabs"><button data-t="spot">관광지</button><button data-t="cafe">카페</button><button data-t="food">맛집</button></div>
+  <div class="chips" id="areaChips"></div>
+  <div class="listbar"><span id="count"></span><div class="sort" id="sort"><button data-s="votes" class="on">추천순</button><button data-s="new">최신순</button></div></div>
+  <div class="ggrid" id="list"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+  <p class="note" style="margin-top:20px">추천은 하루 한 번, 장소당 한 번이에요. 틀린 정보는 장소 페이지의 '알려주기'로 보내 주시면 확인 후 고칩니다. <span id="updated"></span></p>
+</main>
+<script>
+const Q = new URLSearchParams(location.search);
+let type = ['spot', 'cafe', 'food'].includes(Q.get('type')) ? Q.get('type') : 'spot', sort = 'votes', area = '전체', all = [];
+const SUB = { spot: '도민과 여행자가 추천한 제주 관광지. 많이 추천받은 곳이 위로 올라와요.', cafe: '바다뷰부터 중산간까지. 추천 많은 카페 동네가 위로.', food: '시장·거리·향토음식. 추천 많은 곳이 위로.' };
+function render() {
+  $$('#typetabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === type));
+  $('#pageH1').textContent = PLACE_LABEL[type]; $('#pageSub').textContent = SUB[type]; document.title = `${PLACE_LABEL[type]} · 탐라도감`;
+  const mine = all.filter((p) => p.type === type);
+  const areas = ['전체', ...new Set(mine.map((p) => (p.area || '').split(/[· ]/)[0]).filter(Boolean))];
+  if (!areas.includes(area)) area = '전체';
+  $('#areaChips').replaceChildren(...areas.map((a) => { const b = document.createElement('button'); b.className = 'chip' + (a === area ? ' on' : ''); b.textContent = a; b.onclick = () => { area = a; render(); }; return b; }));
+  let list = mine.filter((p) => area === '전체' || (p.area || '').startsWith(area));
+  list = sort === 'votes' ? list.sort((a, b) => (b.votes || 0) - (a.votes || 0)) : list.sort((a, b) => (b.lastChecked || '').localeCompare(a.lastChecked || ''));
+  $('#count').textContent = `${list.length}곳`;
+  $('#list').replaceChildren(...list.map((p, i) => placeCard(p, i + 1)));
+  if (!list.length) $('#list').innerHTML = '<div class="empty">아직 등록된 곳이 없어요.</div>';
+}
+$$('#typetabs button').forEach((b) => b.onclick = () => { type = b.dataset.t; history.replaceState(null, '', `?type=${type}`); render(); $$('.subnav a').forEach((a) => a.classList.toggle('on', a.getAttribute('href').includes(`type=${type}`))); });
+$$('#sort button').forEach((b) => b.onclick = () => { sort = b.dataset.s; $$('#sort button').forEach((x) => x.classList.toggle('on', x === b)); render(); });
+mountShell({ active: 'travel', primary: 'travel', sub: type }).then(async () => {
+  const d = await api('/api/places'); all = d.items || []; render();
+  if (d.updatedAt) $('#updated').textContent = `데이터 갱신: ${new Date(d.updatedAt).toLocaleString('ko-KR')}`;
+});
+</script>
+</body>
+</html>

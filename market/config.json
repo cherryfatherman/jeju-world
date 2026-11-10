@@ -1,17 +1,17 @@
 {
  "site": {
   "name": "탐라도감",
-  "slogan": "제주의 프로젝트·집·물건을 모으는 도감",
+  "slogan": "제주의 모든 것을 한 권에",
   "defaultTheme": "day",
   "threads": "https://www.threads.net/",
   "openchat": "#",
   "showSamples": true
  },
  "banner": {
-  "kicker": "제주 창업자들의 도감",
-  "title": "멈춘 프로젝트,\n[다음 주인]을 찾습니다",
-  "sub": "해커톤 결과물도, 집도, 물건도. 사진만 올리면 글은 [AI가 30초 만에] 써요.",
-  "primaryLabel": "프로젝트 넘기기",
+  "kicker": "제주 도민과 여행자의 도감",
+  "title": "제주의 모든 것,\n[한 권]에 모았어요",
+  "sub": "오늘 버릴 쓰레기부터 추천 관광지, 집·물건, 멈춘 프로젝트까지. 도민과 여행자가 함께 채우는 제주 도감.",
+  "primaryLabel": "제주여행 보기",
   "secondaryLabel": "새 글 알림 받기"
  },
  "ticker": {
@@ -144,12 +144,12 @@
  },
  "carousel": [
   {
-   "image": "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1600&h=600&fit=crop&q=80&auto=format",
-   "kicker": "제주 창업자들의 도감",
-   "title": "멈춘 프로젝트,\n[다음 주인]을 찾습니다",
-   "sub": "해커톤 결과물도, 집도, 물건도. 사진만 올리면 글은 AI가 30초 만에 써요.",
-   "ctaLabel": "프로젝트 넘기기",
-   "ctaHref": "./sell.html?type=project"
+   "image": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1600&h=600&fit=crop&q=80&auto=format",
+   "kicker": "제주 도민과 여행자의 도감",
+   "title": "제주의 모든 것,\n[한 권]에 모았어요",
+   "sub": "오늘 버릴 쓰레기부터 추천 관광지, 집·물건, 멈춘 프로젝트까지. 함께 채우는 제주 도감.",
+   "ctaLabel": "제주여행 보기",
+   "ctaHref": "./places.html?type=spot"
   }
  ],
  "ads": {

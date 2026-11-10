@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>탐라도감 · 제주 창업자들의 도감</title>
+<title>탐라도감 · 제주의 모든 것을 한 권에</title>
 <meta name="description" content="제주의 프로젝트·집·물건을 모으는 도감. 멈춘 해커톤 프로젝트는 다음 주인에게, 집과 물건은 사진만 올리면 AI가 글을 써요.">
 <link rel="stylesheet" href="./style.css">
 <script src="./app.js"></script>
@@ -16,43 +16,47 @@
     <div class="dots" id="dots"></div>
   </div>
 
-  <!-- 1. 프로젝트: 다음 주인을 찾는 결과물 -->
-  <section>
-    <div class="sec-head"><h2>다음 주인을 찾는 프로젝트</h2><a class="more" href="./market.html?type=project">전체 보기</a></div>
-    <div class="grid" id="projects"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
-  </section>
-
-  <!-- 2. 해커톤 + 수상작 도감 -->
-  <section>
-    <div class="sec-head"><h2>지금 열려 있는 해커톤</h2><a class="more" href="./winners.html">수상작 도감 보기</a></div>
-    <div class="hack" id="hackList"></div>
-  </section>
-
-  <!-- 3. 창업 지원: 기관 공식 사이트로 바로 -->
-  <section>
-    <div class="sec-head"><h2>제주 창업 지원</h2><span class="more">기관 공식 사이트로 연결</span></div>
-    <div class="support" id="support"></div>
-  </section>
-
-  <!-- 4. 장터는 한 줄 -->
-  <section>
-    <div class="sec-head"><h2>장터에 새로 올라온 집·물건</h2><a class="more" href="./market.html?type=home">장터 전체 보기</a></div>
-    <div class="pgrid" id="feed"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
-    <p class="note" style="margin-top:14px">사진만 올리면 글은 AI가 써요. <a href="./sell.html">30초 만에 올리기</a></p>
-  </section>
-
-  <!-- 5. 제주살이: 입도 창업자를 위한 정착 정보 -->
+  <!-- 1. 오늘 바로 필요한 것: 누르면 바로 답 -->
   <section class="today">
     <div class="sec-head"><h2>오늘 바로 필요한 것</h2><span class="more" id="todayLabel"></span></div>
     <div class="quick" id="quick"></div>
   </section>
 
-  <!-- 제주 생활 가이드: 글 하나가 독립 정보 페이지 -->
+  <!-- 2. 제주여행: 관광지 · 카페 · 맛집 추천순 TOP -->
+  <section>
+    <div class="sec-head"><h2>지금 많이 추천한 곳</h2><a class="more" href="./places.html?type=spot">제주여행 전체</a></div>
+    <div class="typetabs" id="homePlaceTabs"><button data-t="spot" class="on">관광지</button><button data-t="cafe">카페</button><button data-t="food">맛집</button></div>
+    <div class="ggrid" id="places"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+  </section>
+
+  <!-- 3. 제주살이 가이드 -->
   <section>
     <div class="sec-head"><h2>제주살이 가이드</h2><a class="more" href="./jeju.html#sec-guides">전체 보기</a></div>
     <div class="ggrid" id="guides"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
   </section>
 
+  <!-- 4. 프로젝트 + 해커톤 -->
+  <section>
+    <div class="sec-head"><h2>다음 주인을 찾는 프로젝트</h2><a class="more" href="./market.html?type=project">전체 보기</a></div>
+    <div class="grid" id="projects"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+  </section>
+  <section>
+    <div class="sec-head"><h2>지금 열려 있는 해커톤</h2><a class="more" href="./winners.html">수상작 도감 보기</a></div>
+    <div class="hack" id="hackList"></div>
+  </section>
+
+  <!-- 5. 창업 지원 -->
+  <section>
+    <div class="sec-head"><h2>제주 창업 지원</h2><span class="more">기관 공식 사이트로 연결</span></div>
+    <div class="support" id="support"></div>
+  </section>
+
+  <!-- 6. 장터 한 줄 -->
+  <section>
+    <div class="sec-head"><h2>장터에 새로 올라온 집·물건</h2><a class="more" href="./market.html?type=home">장터 전체 보기</a></div>
+    <div class="pgrid" id="feed"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+    <p class="note" style="margin-top:14px">사진만 올리면 글은 AI가 써요. <a href="./sell.html">30초 만에 올리기</a></p>
+  </section>
 </main>
 
 <script>
@@ -83,7 +87,11 @@ function renderQuick() {
     a.innerHTML = `<span class="qic">${icon(t.icon)}</span><span class="ql">${esc(t.label)}</span>${sub ? `<small>${esc(sub)}</small>` : ''}`; return a;
   }));
 }
+let PLACES = [];
+function renderPlaces(t) { $$('#homePlaceTabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === t)); $('#places').replaceChildren(...PLACES.filter((p) => p.type === t).slice(0, 4).map((p, i) => placeCard(p, i + 1))); }
+$$('#homePlaceTabs button').forEach((b) => b.onclick = () => renderPlaces(b.dataset.t));
 async function load() {
+  api('/api/places').then((d) => { PLACES = d.items || []; renderPlaces('spot'); });
   const [guides, all, h] = await Promise.all([api('/api/guides'), api('/api/projects'), api('/api/hackathons')]);
   const projects = all.filter((p) => p.type === 'project'), goods = all.filter((p) => p.type !== 'project');
   $('#projects').replaceChildren(...projects.slice(0, 3).map(listingCard));

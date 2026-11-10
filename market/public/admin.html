@@ -37,7 +37,7 @@
 
   <div id="panel" hidden>
     <div class="tabs">
-      <button data-tab="dash" class="on">대시보드</button><button data-tab="site">기본·배너</button><button data-tab="ticker">공지 띠</button><button data-tab="carousel">배너 이미지</button><button data-tab="ads">좌우 광고</button><button data-tab="guides">생활 가이드</button><button data-tab="jeju">제주 생활</button><button data-tab="nav">메뉴·도구 상자</button><button data-tab="projects">프로젝트 관리</button><button data-tab="inbox">받은 편지함</button><button data-tab="threads">스레드 글</button>
+      <button data-tab="dash" class="on">대시보드</button><button data-tab="site">기본·배너</button><button data-tab="ticker">공지 띠</button><button data-tab="carousel">배너 이미지</button><button data-tab="ads">좌우 광고</button><button data-tab="guides">생활 가이드</button><button data-tab="places">여행 장소</button><button data-tab="feeds">자동 갱신</button><button data-tab="jeju">제주 생활</button><button data-tab="nav">메뉴·도구 상자</button><button data-tab="projects">프로젝트 관리</button><button data-tab="inbox">받은 편지함</button><button data-tab="threads">스레드 글</button>
     </div>
 
     <!-- 대시보드 -->
@@ -112,6 +112,19 @@
       </div>
       <div class="glist" id="glist"></div>
     </div>
+    <!-- 여행 장소 -->
+    <div class="pane" id="pane-places">
+      <div class="form" style="margin-bottom:14px">
+        <p class="help">관광지·카페·맛집 카드예요. 추천 수가 높은 순으로 보여요. 외부 ID는 관광 API를 연결할 때 자동으로 맞추는 칸이라 비워 둬도 돼요. 사진은 파일 업로드 또는 주소 붙여넣기.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button" id="plAdd">＋ 새 장소</button><button class="btn primary" type="button" id="plSave">장소 저장</button></div>
+      </div>
+      <div class="glist" id="pllist"></div>
+    </div>
+    <!-- 자동 갱신 -->
+    <div class="pane" id="pane-feeds"><div class="form">
+      <p class="help">서버가 주기적으로 받아오는 데이터 목록이에요. 키가 필요한 피드는 <code>market/.env</code>에 키를 넣으면 켜져요(예: <code>TOUR_API_KEY=...</code>). '지금 갱신'으로 바로 돌릴 수 있어요.</p>
+      <div id="feedList"></div>
+    </div></div>
     <!-- 공지 띠 -->
     <div class="pane" id="pane-ticker"><div class="form">
       <label>공지 띠<select id="t-enabled"><option value="true">보이기</option><option value="false">숨기기</option></select></label>
@@ -176,7 +189,7 @@ function fill() {
   v('#f-kicker', B.kicker); v('#f-title', B.title); v('#f-sub', B.sub); v('#f-primary', B.primaryLabel); v('#f-secondary', B.secondaryLabel);
   v('#f-footer', cfg.footer?.note || '');
   v('#t-enabled', String(T.enabled !== false)); v('#t-mode', T.mode || 'auto'); v('#t-title', T.title); v('#t-text', T.text); v('#t-url', T.url);
-  renderNav(); renderTools(); fillJeju(); loadDash(); renderSlides(); renderAds(); loadGuides();
+  renderNav(); renderTools(); fillJeju(); loadDash(); renderSlides(); renderAds(); loadGuides(); loadPlaces(); loadFeeds();
   v('#supportText', (cfg.support || []).map((s) => [s.org, s.title, s.sub, s.href].join(' | ')).join('\n'));
 }
 let GUIDES = [];
@@ -205,6 +218,40 @@ function renderGuides() {
   }));
 }
 $('#gAdd').onclick = () => { GUIDES.unshift({ id: `guide-${Date.now().toString(36)}`, title: '', summary: '', tag: '생활', image: '', verified: false, hidden: false, lastChecked: new Date().toISOString().slice(0, 10), body: '## 제목\n- 내용', sources: [] }); renderGuides(); $('#glist details').open = true; };
+let PLACES = [];
+const PL = { spot: '관광지', cafe: '카페', food: '맛집' };
+async function loadPlaces() { try { PLACES = await api('/api/admin/places'); } catch { PLACES = []; } renderPlaces(); }
+function renderPlaces() {
+  $('#pllist').replaceChildren(...PLACES.map((p, idx) => {
+    const d = document.createElement('details');
+    d.innerHTML = `<summary>${esc(p.name || '(이름 없음)')}<span class="badge">${PL[p.type] || ''}</span><small>${p.hidden ? '숨김 · ' : ''}추천 ${p.votes || 0} · ${p.verified ? '확인됨' : '확인 필요'}</small></summary><div class="form">
+      <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap"><img src="${esc(p.image || '')}" alt="" style="width:240px;aspect-ratio:3/2;object-fit:cover;border-radius:10px;background:var(--surface-2)"><div style="flex:1;min-width:220px;display:grid;gap:8px"><label>사진 바꾸기<input type="file" accept="image/*"></label><label>또는 사진 주소<input data-k="image" value="${esc(p.image || '')}" placeholder="https://..."></label></div></div>
+      <div class="row2"><label>이름<input data-k="name" value="${esc(p.name || '')}"></label><label>분류<select data-k="type">${Object.entries(PL).map(([k, v]) => `<option value="${k}" ${p.type === k ? 'selected' : ''}>${v}</option>`).join('')}</select></label></div>
+      <div class="row2"><label>동네 (예: 제주시 애월읍)<input data-k="area" value="${esc(p.area || '')}"></label><label>주소<input data-k="address" value="${esc(p.address || '')}"></label></div>
+      <label>한 줄 소개<input data-k="summary" value="${esc(p.summary || '')}"></label>
+      <label>팁<input data-k="tip" value="${esc(p.tip || '')}"></label>
+      <div class="row2"><label>태그 (쉼표로)<input data-k="tags" value="${esc((p.tags || []).join(', '))}"></label><label>주소 이름(영문·숫자·-)<input data-k="id" value="${esc(p.id || '')}"></label></div>
+      <div class="row2"><label>출처 이름<input data-k="sourceLabel" value="${esc(p.source?.label || '')}"></label><label>출처 주소<input data-k="sourceUrl" value="${esc(p.source?.url || '')}"></label></div>
+      <div class="row2"><label>상태<select data-k="verified"><option value="false" ${!p.verified ? 'selected' : ''}>확인 필요</option><option value="true" ${p.verified ? 'selected' : ''}>확인됨</option></select></label><label>표시<select data-k="hidden"><option value="false" ${!p.hidden ? 'selected' : ''}>보이기</option><option value="true" ${p.hidden ? 'selected' : ''}>숨기기</option></select></label></div>
+      <div class="row2"><label>마지막 확인일<input data-k="lastChecked" type="date" value="${esc(p.lastChecked || '')}"></label><label>추천 수<input data-k="votes" type="number" value="${p.votes || 0}"></label></div>
+      <label>외부 ID (관광 API 연결용)<input data-k="externalId" value="${esc(p.externalId || '')}"></label>
+      <div style="display:flex;gap:8px"><button class="btn sm" type="button" data-del style="margin-left:auto;color:var(--danger)">삭제</button></div>
+    </div>`;
+    d.querySelectorAll('[data-k]').forEach((inp) => inp.oninput = inp.onchange = () => { const k = inp.dataset.k, val = inp.value;
+      if (k === 'verified' || k === 'hidden') p[k] = val === 'true'; else if (k === 'tags') p.tags = val.split(',').map((x) => x.trim()).filter(Boolean); else if (k === 'sourceLabel') p.source = { ...(p.source || {}), label: val }; else if (k === 'sourceUrl') p.source = { ...(p.source || {}), url: val }; else if (k === 'votes') p.votes = Number(val) || 0; else p[k] = val;
+      if (k === 'image') d.querySelector('img').src = val; });
+    d.querySelector('input[type=file]').onchange = async (e) => { const f = e.target.files[0]; if (!f) return; try { p.image = await upload(f, 1600); d.querySelector('img').src = p.image; d.querySelector('[data-k=image]').value = p.image; toast('사진을 올렸어요. 장소 저장을 눌러 반영하세요'); } catch (err) { toast(err.message); } };
+    d.querySelector('[data-del]').onclick = () => { if (confirm(`'${p.name}' 장소를 삭제할까요?`)) { PLACES.splice(idx, 1); renderPlaces(); } };
+    return d;
+  }));
+}
+$('#plAdd').onclick = () => { PLACES.unshift({ id: `place-${Date.now().toString(36)}`, type: 'spot', name: '', area: '', summary: '', tip: '', address: '', tags: [], image: '', source: { label: '', url: '' }, verified: false, hidden: false, lastChecked: new Date().toISOString().slice(0, 10), votes: 0, externalId: '' }); renderPlaces(); $('#pllist details').open = true; };
+$('#plSave').onclick = async () => { try { const r = await api('/api/admin/places', PLACES, 'PUT'); toast(`장소 ${r.count}곳을 저장했어요`); loadPlaces(); } catch (err) { toast(err.message); } };
+async function loadFeeds() {
+  let feeds = []; try { feeds = await api('/api/admin/feeds'); } catch { return; }
+  $('#feedList').innerHTML = feeds.map((f) => `<div class="trow" style="display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)"><div class="grow" style="flex:1"><b>${esc(f.name)}</b><div class="muted" style="font-size:13px">${f.everyHours}시간마다 · ${f.lastRun ? `마지막 ${new Date(f.lastRun).toLocaleString('ko-KR')} · ${f.ok ? '성공' : '실패'}` : '아직 실행 안 됨'}${f.note ? ` · ${esc(f.note)}` : ''}${!f.ready ? ` · <span style="color:var(--warn)">${esc(f.needs)} 필요</span>` : ''}</div></div><button class="btn sm" type="button" data-run="${f.id}">지금 갱신</button></div>`).join('');
+  $$('#feedList [data-run]').forEach((b) => b.onclick = async () => { b.disabled = true; b.textContent = '갱신 중'; try { await api(`/api/admin/feeds/${b.dataset.run}/run`, {}); } catch (e) { toast(e.message); } loadFeeds(); });
+}
 $('#gSave').onclick = async () => { try { const r = await api('/api/admin/guides', GUIDES, 'PUT'); toast(`가이드 ${r.count}개를 저장했어요`); loadGuides(); } catch (err) { toast(err.message); } };
 function renderAds() {
   cfg.ads = cfg.ads || { enabled: true, left: {}, right: {} };
@@ -315,6 +362,7 @@ async function loadInbox() {
   $('#inbox').innerHTML =
     sec('💬 구매 문의', d.inquiries.map((i) => `<b>${esc(i.projectName)}</b> ← ${esc(i.name || '익명')} (${esc(i.contact)})<div class="muted">${esc(i.message)} · ${new Date(i.createdAt).toLocaleString('ko-KR')}</div>`)) +
     sec('👀 알림 신청', d.waitlist.map((w) => `<b>${{ buy: '사고 싶어요', sell: '팔고 싶어요', both: '둘 다' }[w.role]}</b> ${esc(w.contact)}<div class="muted">${esc(w.note || '')} · ${new Date(w.createdAt).toLocaleString('ko-KR')}</div>`)) +
+    sec('📍 장소 정보 제보', (d.feedback || []).map((f) => `<b>${esc(f.placeName)}</b> ${esc(f.text)}<div class="muted">${new Date(f.createdAt).toLocaleString('ko-KR')}</div>`)) +
     sec('🗨️ 한 줄 추천', d.comments.map((c) => `<b>${esc(c.name)}</b> ${esc(c.text)}<div class="muted">${new Date(c.createdAt).toLocaleString('ko-KR')}</div>`));
 }
 $('#genThreads').onclick = async () => {

@@ -95,7 +95,7 @@ app.put('/api/admin/projects/:id', adminOnly, (req, res) => {
   for (const k of ['name', 'tagline', 'description']) if (typeof req.body[k] === 'string') p[k] = clean(req.body[k], k === 'description' ? 1500 : 80);
   save('projects.json', list); res.json({ ok: true, photos: p.photos });
 });
-app.get('/api/admin/inbox', adminOnly, (req, res) => res.json({ inquiries: load('inquiries.json', []), waitlist: load('waitlist.json', []), comments: load('comments.json', []) }));
+app.get('/api/admin/inbox', adminOnly, (req, res) => res.json({ inquiries: load('inquiries.json', []), waitlist: load('waitlist.json', []), comments: load('comments.json', []), feedback: load('feedback.json', []) }));
 
 // ---- 프로젝트 목록 ----
 app.get('/api/projects', (req, res) => {
@@ -219,6 +219,62 @@ app.post('/api/waitlist', limit(5), (req, res) => {
   save('waitlist.json', all);
   res.json({ ok: true, count: all.length });
 });
+
+// ---- 제주여행: 관광지·카페·맛집 (추천순, 피드백, 관리자 편집, 외부 API 연결 자리) ----
+const PLACE_TYPES = ['spot', 'cafe', 'food'];
+const publicPlace = (p) => ({ ...p, hidden: undefined });
+app.get('/api/places', (req, res) => {
+  const type = PLACE_TYPES.includes(req.query.type) ? req.query.type : null;
+  const items = load('places.json', []).filter((p) => p.hidden !== true && (!type || p.type === type)).sort((a, b) => (b.votes || 0) - (a.votes || 0)).map(publicPlace);
+  res.json({ items, updatedAt: feedState('tour').lastRun || null });
+});
+app.get('/api/places/:id', (req, res) => {
+  const p = load('places.json', []).find((x) => x.id === req.params.id && x.hidden !== true);
+  p ? res.json(publicPlace(p)) : res.status(404).json({ error: '장소가 없어요.' });
+});
+app.post('/api/places/:id/vote', limit(30), (req, res) => {
+  const list = load('places.json', []); const p = list.find((x) => x.id === req.params.id);
+  if (!p) return res.status(404).json({ error: '장소가 없어요.' });
+  p.votes = (p.votes || 0) + 1; save('places.json', list); res.json({ votes: p.votes });
+});
+app.post('/api/places/:id/feedback', limit(10), (req, res) => {
+  const p = load('places.json', []).find((x) => x.id === req.params.id);
+  if (!p) return res.status(404).json({ error: '장소가 없어요.' });
+  const text = clean(req.body.text, 500); if (!text) return res.status(400).json({ error: '내용을 적어 주세요.' });
+  const all = load('feedback.json', []); all.push({ id: newId(), placeId: p.id, placeName: p.name, text, createdAt: new Date().toISOString() }); save('feedback.json', all);
+  res.json({ ok: true });
+});
+app.get('/api/admin/places', adminOnly, (req, res) => res.json(load('places.json', [])));
+app.put('/api/admin/places', adminOnly, (req, res) => {
+  const list = Array.isArray(req.body) ? req.body : []; const seen = new Set();
+  const cleaned = list.map((p) => ({
+    id: clean(p.id, 40).toLowerCase().replace(/[^a-z0-9-]/g, '-') || newId(), type: PLACE_TYPES.includes(p.type) ? p.type : 'spot',
+    name: clean(p.name, 60), area: clean(p.area, 40), summary: clean(p.summary, 200), tip: clean(p.tip, 300), address: clean(p.address, 120),
+    tags: (Array.isArray(p.tags) ? p.tags : String(p.tags || '').split(',')).map((t) => clean(t, 16)).filter(Boolean).slice(0, 8),
+    image: isImg(p.image) ? p.image : '', source: { label: clean(p.source?.label, 60), url: isUrl(p.source?.url || '') ? p.source.url : '' },
+    verified: p.verified === true, hidden: p.hidden === true, lastChecked: clean(p.lastChecked, 10), votes: Number(p.votes) || 0, externalId: clean(p.externalId, 40),
+  })).filter((p) => p.name && !seen.has(p.id) && seen.add(p.id));
+  save('places.json', cleaned); res.json({ ok: true, count: cleaned.length });
+});
+
+// ---- 자동 갱신 피드: 어떤 데이터가 언제 갱신됐는지 한곳에서 관리 ----
+// 새 데이터 소스를 붙일 때는 여기 한 줄만 추가하면 관리자 화면·주기 실행이 따라온다.
+const FEEDS = {
+  hackathons: { name: '해커톤 일정 (Devpost)', every: 6 * 3600e3, run: () => refreshHackathons() },
+  waste: { name: '쓰레기 배출 통계 (공공데이터포털)', every: 86400e3, run: () => refreshWasteStats() },
+  tour: { name: '관광지·카페·맛집 (관광 API)', every: 86400e3, needs: 'TOUR_API_KEY', run: () => refreshTourPlaces() },
+};
+const feedState = (id) => (load('feeds.json', {})[id] || {});
+function markFeed(id, ok, note) { const s = load('feeds.json', {}); s[id] = { ...(s[id] || {}), lastRun: new Date().toISOString(), ok, note: note || '' }; save('feeds.json', s); }
+async function runFeed(id) {
+  const f = FEEDS[id]; if (!f) return;
+  if (f.needs && !process.env[f.needs]) { markFeed(id, false, `${f.needs} 가 .env에 없어요`); return; }
+  try { await f.run(); markFeed(id, true); } catch (e) { markFeed(id, false, e.message); }
+}
+// 관광 API: 키가 들어오면 여기서 받아와 places.json의 externalId로 맞춰 넣는다 (지금은 연결 자리만)
+async function refreshTourPlaces() { throw new Error('관광 API 연결 전이에요. 키를 받으면 이 함수에 호출 주소를 넣습니다.'); }
+app.get('/api/admin/feeds', adminOnly, (req, res) => res.json(Object.entries(FEEDS).map(([id, f]) => ({ id, name: f.name, everyHours: f.every / 3600e3, needs: f.needs || null, ready: !f.needs || !!process.env[f.needs], ...feedState(id) }))));
+app.post('/api/admin/feeds/:id/run', adminOnly, async (req, res) => { await runFeed(req.params.id); res.json(feedState(req.params.id)); });
 
 // ---- 제주 생활 가이드 (글 하나 = 독립 정보 페이지, 관리자에서 편집) ----
 const guideSummary = ({ id, title, summary, image, tag, verified, lastChecked }) => ({ id, title, summary, image, tag, verified, lastChecked });
@@ -359,10 +415,7 @@ app.get('/api/threads-drafts', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`탐라도감 실행 중: http://localhost:${PORT}`);
   if (DEFAULT_PW) console.warn('⚠️  관리자 비밀번호가 기본값이에요. 배포 전에 ADMIN_PASSWORD 환경변수를 설정하세요.');
-  refreshHackathons();
-  // 공공데이터: 캐시가 하루 넘게 지났을 때만 다시 받아온다
-  const ws = load('wasteStats.json', null);
-  if (!ws || Date.now() - new Date(ws.updatedAt).getTime() > 86400e3) refreshWasteStats();
-  setInterval(refreshWasteStats, 86400e3);
-  setInterval(refreshHackathons, 6 * 60 * 60 * 1000); // 6시간마다 자동 갱신
+  // 자동 갱신: 피드마다 마지막 실행이 주기보다 오래됐으면 지금 돌리고, 이후 1시간마다 점검
+  const tick = () => { for (const [id, f] of Object.entries(FEEDS)) { const last = new Date(feedState(id).lastRun || 0).getTime(); if (Date.now() - last > f.every) runFeed(id); } };
+  tick(); setInterval(tick, 3600e3);
 });

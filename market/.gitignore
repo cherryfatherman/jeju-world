@@ -5,3 +5,5 @@ data/comments.json
 data/metrics.json
 .env
 data/uploads/
+data/feedback.json
+data/feeds.json
