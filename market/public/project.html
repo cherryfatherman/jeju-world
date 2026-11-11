@@ -61,7 +61,7 @@ async function load() {
   if (!$('.mobilebar')) { const mb = document.createElement('div'); mb.className = 'mobilebar'; mb.innerHTML = `<span class="price" id="mPrice"></span><button class="btn primary" id="mInquiry">문의하기</button>`; document.body.append(mb); mb.querySelector('#mInquiry').onclick = () => $('#inqModal').classList.add('show'); }
   $('#gallery').replaceChildren(...(p.photos || []).map((src) => { const i = document.createElement('img'); i.src = src; i.alt = ''; i.onclick = () => window.open(src); return i; }));
   if (!(p.photos || []).length) $('#gallery').innerHTML = `<div class="nophoto">${icon(TYPE_ICON[p.type] || 'puzzle')}</div>`;
-  $('#meta').innerHTML = `<span class="badge">${esc(oneLabel(p))}</span>${p.sample ? '<span class="badge sample">예시 · 시연용 가상 데이터</span>' : ''}<span class="muted small">${[TYPE_LABEL[p.type], p.category !== TYPE_LABEL[p.type] ? p.category : '', ...(p.tags || []).map((t) => '#' + t)].filter(Boolean).map(esc).join(' · ')}</span>`;
+  $('#meta').innerHTML = `<span class="badge">${esc(oneLabel(p))}</span><span class="muted small">${[TYPE_LABEL[p.type], p.category !== TYPE_LABEL[p.type] ? p.category : '', ...(p.tags || []).map((t) => '#' + t)].filter(Boolean).map(esc).join(' · ')}</span>`;
   $('#name').textContent = p.name; $('#tagline').textContent = p.tagline;
   const dupe = (p.description || '').trim() === (p.tagline || '').trim(); $('#desc').textContent = dupe ? '' : p.description; $('#desc').hidden = dupe;
   $('#safety').textContent = SAFETY[p.type] || SAFETY.project;
@@ -95,7 +95,7 @@ $('#shareBtn').onclick = () => share(`${p.name} · 섬업`, p.tagline, location.
 if (new URLSearchParams(location.search).get('new')) setTimeout(() => { toast('글이 올라갔어요. 공유 버튼으로 알려 보세요'); }, 600);
 $$('[data-close]').forEach((b) => b.onclick = () => $$('.modal').forEach((m) => m.classList.remove('show')));
 $('#inqForm').onsubmit = async (e) => { e.preventDefault(); try { const d = await api(`/api/projects/${id}/inquiry`, Object.fromEntries(new FormData(e.target))); $('#inqModal').classList.remove('show'); e.target.reset(); $('#sellerContact').textContent = d.sellerContact; $('#doneModal').classList.add('show'); } catch (err) { toast(err.message); } };
-api(`/api/projects/${encodeURIComponent(id)}`).then((x) => x.type, () => 'project').then((t) => mountShell(t === 'project' ? { active: 'deal', sub: 'project' } : { active: 'jeju', sub: 'market' })).then(load);
+api(`/api/projects/${encodeURIComponent(id)}`).then((x) => x.type, () => 'project').then((t) => mountShell(t === 'project' ? { active: 'deal', sub: 'project' } : { active: 'jeju', sub: t })).then(load);
 </script>
 </body>
 </html>

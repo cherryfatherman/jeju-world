@@ -205,7 +205,7 @@ $('#step2').onsubmit = async (e) => {
   try { const d = await api('/api/projects', fd); setStep(3); confetti(); toast('올라갔어요'); setTimeout(() => { location.href = `./project.html?id=${d.id}&new=1`; }, 900); } catch (err) { btn.disabled = false; toast(err.message); }
 };
 api('/api/regions').then((r) => { $('#regionList').innerHTML = r.map((x) => `<option value="${esc(x)}">`).join(''); }).catch(() => {});
-mountShell({ active: 'sell', primary: type === 'project' ? 'deal' : 'jeju', sub: type === 'project' ? 'sell' : 'market' }).then(() => setType(type));
+mountShell({ active: 'sell', primary: type === 'project' ? 'deal' : 'jeju', sub: type === 'project' ? 'sell' : type }).then(() => setType(type));
 </script>
 </body>
 </html>

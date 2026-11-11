@@ -56,7 +56,7 @@ function draw(fit) {
 }
 function mark(key) { $$('#list .rrow').forEach((r) => r.classList.toggle('sel', r.dataset.key === key)); }
 function focus(key) { const m = markers[key]; if (!m) return; map.setView(m.getLatLng(), Math.max(map.getZoom(), 13)); m.openPopup(); mark(key); if (innerWidth < 860) $('#map').scrollIntoView({ behavior: 'smooth', block: 'center' }); }
-mountShell(Q.get('show') === 'deal' ? { active: 'deal', sub: 'mapdeal' } : { active: 'jeju', sub: 'map' }).then(async () => {
+mountShell({ active: 'jeju', sub: '' }).then(async () => {
   const d = await api('/api/map'); points = d.points;
   map = L.map('map', { scrollWheelZoom: true }).setView([d.center.lat, d.center.lng], 10);
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(map);

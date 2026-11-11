@@ -10,7 +10,7 @@
 </head>
 <body>
 <main class="wrap" style="max-width:860px">
-  <div class="page-title"><h1>제주마당</h1><p>도민 생활정보.</p></div>
+  <div class="page-title"><h1>생활</h1><p>도민 생활정보.</p></div>
   <div class="tgroups" id="tiles" style="margin-top:16px"></div>
 
   <section id="waste">
@@ -53,7 +53,7 @@ function renderWaste() {
   $('#wasteNote').textContent = W.notes || '';
   $('#wasteSource').innerHTML = `출처: ${W.sourceUrl ? `<a href="${esc(W.sourceUrl)}" target="_blank" rel="noopener" style="text-decoration:underline">${esc(W.source || '')}</a>` : esc(W.source || '')}${W.lastChecked ? ` · 업데이트 ${esc(W.lastChecked)}` : ''}`;
   $('#tips').replaceChildren(...(J.tips || []).map((t) => { const d = document.createElement('div'); d.className = 'row'; d.innerHTML = `<div class="body"><b>${esc(t.title)}</b><p>${esc(t.body)}</p></div>`; return d; }));
-  const today = DAYS[todayIdx]; tileGroups($('#tiles'), (CFG.tiles || []).filter((g) => g.name !== '창업'), { today: `${today}요일 · ${((W.days || {})[today] || '').split(/,\s*/)[0] || ''}` });
+  const today = DAYS[todayIdx]; tileGroups($('#tiles'), (CFG.tiles || []).filter((g) => g.name === '생활'), { today: `${today}요일 · ${((W.days || {})[today] || '').split(/,\s*/)[0] || ''}` });
 }
 $('#wasteForm').onsubmit = async (e) => {
   e.preventDefault();

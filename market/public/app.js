@@ -12,11 +12,11 @@ let CONFIG = null;
 
 // 큰 줄기(목차). 제일 앞이 본업인 '거래'. 보조 탭이 2개 이상일 때만 둘째 줄이 보인다.
 const PRIMARY = [
-  { key: 'deal', label: '장터', icon: 'puzzle', href: './market.html?type=project', subs: [['./market.html?type=project', '프로젝트', 'project'], ['./map.html?show=deal', '지도에서 보기', 'mapdeal'], ['./sell.html?type=project', '내 프로젝트 올리기', 'sell']] },
+  { key: 'deal', label: '장터', icon: 'puzzle', href: './market.html?type=project', subs: [['./market.html?type=project', '프로젝트', 'project'], ['./sell.html?type=project', '내 프로젝트 올리기', 'sell']] },
   { key: 'program', label: '창업마당', icon: 'coins', href: './board.html?kind=program', subs: [] },
   { key: 'insight', label: '인사이트', icon: 'bulb', href: './board.html?kind=insight', subs: [] },
   { key: 'hackathon', label: '해커톤', icon: 'trophy', href: './hackathon.html', subs: [['./hackathon.html', '열린 해커톤', 'hackathon'], ['./winners.html', '수상작 도감', 'winners']] },
-  { key: 'jeju', label: '제주마당', icon: 'leaf', href: './jeju.html', subs: [['./jeju.html', '생활정보', 'jeju'], ['./places.html?type=spot', '여행', 'travel'], ['./market.html?type=home', '집·물건', 'market'], ['./map.html', '지도', 'map']] },
+  { key: 'jeju', label: '제주마당', icon: 'leaf', href: './jeju.html', subs: [['./jeju.html', '생활', 'jeju'], ['./places.html?type=spot', '여행', 'travel'], ['./market.html?type=home', '집', 'home'], ['./market.html?type=item', '물건', 'item']] },
 ];
 
 const won = (n) => {
@@ -96,7 +96,7 @@ function listingCard(p) {
   let sub = p.tagline || '';
   if (p.type === 'home' && p.home) { const h = p.home; sub = [h.dong, h.areaM2 ? `${h.areaM2}㎡ · ${(h.areaM2 / 3.3058).toFixed(0)}평` : '', h.rooms, h.floor].filter(Boolean).join(' · ') || sub; }
   a.innerHTML = `<div class="pimg ratio43">${photo ? `<img src="${photo}" alt="" loading="lazy">` : `<div class="nophoto">${icon(TYPE_ICON[p.type] || 'puzzle')}</div>`}<button class="save" type="button" aria-label="추천">${icon('bookmark')}</button></div>
-    <div class="meta"><span>${esc(oneLabel(p))}</span>${p.sample ? '<span class="badge sample">예시</span>' : ''}${p.origin && p.type === 'project' ? `<span>${esc(p.origin)}</span>` : ''}</div>
+    <div class="meta"><span>${esc(oneLabel(p))}</span>${p.origin && p.type === 'project' ? `<span>${esc(p.origin)}</span>` : ''}</div>
     <h3>${esc(p.name)}</h3><p class="tag">${esc(sub)}</p>
     <div class="foot"><span class="price">${esc(listPrice(p))}</span><span class="heart">추천 ${p.interest || 0}${p.comments ? ` · 댓글 ${p.comments}` : ''}</span></div>`;
   a.querySelector('.save').onclick = async (e) => { e.preventDefault(); e.stopPropagation(); const btn = e.currentTarget; const r = await doUp('project', p.id); if (r) btn.classList.toggle('on', r.on); };
@@ -107,7 +107,7 @@ function photoCard(p) {
   const a = document.createElement('a'); a.className = 'pcard'; a.href = `./project.html?id=${encodeURIComponent(p.id)}`;
   const photo = (p.photos || [])[0];
   a.innerHTML = `<div class="pimg">${photo ? `<img src="${photo}" alt="" loading="lazy">` : `<div class="nophoto">${icon(TYPE_ICON[p.type] || 'puzzle')}</div>`}<span class="ptype">${esc(TYPE_LABEL[p.type] || '')}</span><button class="save" type="button" aria-label="추천">${icon('bookmark')}</button></div>
-    <div class="pwho"><span class="avatar">${esc(initial(p.seller))}</span><span class="who">${esc(p.seller || '익명')}</span>${p.sample ? '<span class="badge sample">예시</span>' : ''}</div>
+    <div class="pwho"><span class="avatar">${esc(initial(p.seller))}</span><span class="who">${esc(p.seller || '익명')}</span></div>
     <p class="ptext">${esc(p.name)} <span class="muted">${esc(p.tagline || '')}</span></p>
     <div class="pmeta"><span class="price">${esc(listPrice(p))}</span><span>추천 ${p.interest || 0} · 댓글 ${p.comments || 0}</span></div>`;
   a.querySelector('.save').onclick = async (e) => { e.preventDefault(); e.stopPropagation(); const btn = e.currentTarget; const r = await doUp('project', p.id); if (r) btn.classList.toggle('on', r.on); };
@@ -135,8 +135,8 @@ function upBtn(kind, id, votes, big) {
   return b;
 }
 /* ── 섬업 부품 ② 순위 줄: 번호 · 사진 · 제목/한 줄 · 오른쪽에 업 ── */
-function rankRow({ rank, href, external, image, iconName, title, sub, meta, badge, badgeTone, kind, id, votes }) {
-  const d = document.createElement('div'); d.className = 'rrow';
+function rankRow({ rank, href, external, image, iconName, title, sub, meta, badge, badgeTone, kind, id, votes, big }) {
+  const d = document.createElement('div'); d.className = 'rrow' + (big ? ' big' : '');
   const link = (cls, inner) => `<a class="${cls}" href="${esc(href)}"${external ? ' target="_blank" rel="noopener"' : ''}>${inner}</a>`;
   d.innerHTML = `${rank ? `<span class="rk${rank <= 3 ? ' top' : ''}">${rank}</span>` : ''}${link('rthumb', image ? `<img src="${esc(image)}" alt="" loading="lazy">` : icon(iconName || 'puzzle'))}${link('rbody', `<span class="rtitle">${badge ? `<i class="rbadge ${badgeTone || ''}">${esc(badge)}</i>` : ''}<b>${esc(title)}</b></span>${sub ? `<p>${esc(sub)}</p>` : ''}${meta ? `<small>${esc(meta)}</small>` : ''}`)}`;
   d.append(upBtn(kind, id, votes));
@@ -156,7 +156,7 @@ const PROGRAM_STATUS = { open: '진행', done: '완료' };
 const periodOf = (p) => p.periodText || (p.always ? '상시' : [p.start, p.end].filter(Boolean).join(' ~ '));
 const programRow = (p, rank) => rankRow({ rank, href: `./post.html?kind=program&id=${encodeURIComponent(p.id)}`, image: p.image, iconName: 'coins', title: p.title, sub: p.summary, meta: [p.org, periodOf(p), p.comments ? `이야기 ${p.comments}` : ''].filter(Boolean).join(' · '), badge: PROGRAM_STATUS[p.status], badgeTone: p.status, kind: 'program', id: p.id, votes: p.votes });
 const insightRow = (p, rank) => rankRow({ rank, href: `./post.html?kind=insight&id=${encodeURIComponent(p.id)}`, image: p.image, iconName: 'bulb', title: p.title, sub: p.summary, meta: [p.category, p.org, p.comments ? `이야기 ${p.comments}` : ''].filter(Boolean).join(' · '), kind: 'insight', id: p.id, votes: p.votes });
-const projectRow = (p, rank) => rankRow({ rank, href: `./project.html?id=${encodeURIComponent(p.id)}`, image: (p.photos || [])[0], iconName: TYPE_ICON[p.type], title: p.name, sub: p.tagline, meta: [listPrice(p), oneLabel(p), p.origin, p.sample ? '예시' : '', p.comments ? `이야기 ${p.comments}` : ''].filter(Boolean).join(' · '), badge: p.type === 'project' ? (p.deal === 'done' ? '완료' : '거래 중') : '', badgeTone: p.deal === 'done' ? 'done' : 'open', kind: 'project', id: p.id, votes: p.interest });
+const projectRow = (p, rank) => rankRow({ rank, href: `./project.html?id=${encodeURIComponent(p.id)}`, image: (p.photos || [])[0], iconName: TYPE_ICON[p.type], title: p.name, sub: p.tagline, big: true, badge: p.type === 'project' && p.deal === 'done' ? '완료' : '', badgeTone: 'done', kind: 'project', id: p.id, votes: p.interest });
 const guideRow = (g, rank) => rankRow({ rank, href: `./guide.html?id=${encodeURIComponent(g.id)}`, image: g.image, iconName: 'leaf', title: g.title, sub: g.summary, meta: [g.tag, g.comments ? `이야기 ${g.comments}` : ''].filter(Boolean).join(' · '), kind: 'guide', id: g.id, votes: g.votes });
 const hackRow = (h, rank) => rankRow({ rank, href: h.url, external: true, iconName: 'trophy', title: h.title, sub: [h.dates, h.location].filter(Boolean).join(' · '), meta: [h.source === 'local' ? '국내 · 직접 등록' : 'Devpost', h.participants ? `${h.participants.toLocaleString()}명 참가` : '', h.prize ? `상금 ${h.prize}` : ''].filter(Boolean).join(' · '), kind: 'hackathon', id: h.id, votes: h.votes });
 

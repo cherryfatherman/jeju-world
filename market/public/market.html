@@ -4,46 +4,52 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>장터 · 섬업</title>
-<meta name="description" content="AI로 만든 서비스와 해커톤 프로젝트를 거래하는 곳. 많이 업 받은 순서로 보여요.">
+<meta name="description" content="AI로 만든 서비스와 해커톤 프로젝트를 사고파는 곳.">
 <link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="./vendor/leaflet/leaflet.css">
+<script src="./vendor/leaflet/leaflet.js"></script>
 <script src="./app.js"></script>
 </head>
 <body>
 <main class="wrap" id="main">
   <div class="page-title"><h1 id="pageH1"></h1><p id="pageSub"></p></div>
-  <div class="typetabs" id="typetabs" hidden><button data-t="home">집</button><button data-t="item">물건</button></div>
+  <div id="minimap" class="minimap" hidden></div>
   <div class="listbar" style="margin-top:16px"><div class="stabs" id="stabs" hidden></div><span id="count"></span><div class="sort" id="sort"><button data-s="hot" class="on">추천순</button><button data-s="new">최신순</button></div><a class="btn primary sm" id="addBtn" href="./sell.html">올리기</a></div>
   <div class="chips" id="chips"></div>
   <div class="rlist" id="rows" hidden></div>
   <div class="grid" id="grid" hidden></div>
 </main>
 <script>
-let all = [], type = ['home', 'item', 'project'].includes(new URLSearchParams(location.search).get('type')) ? new URLSearchParams(location.search).get('type') : 'project', cat = '전체', sort = 'hot', deal = 'open';
-const isDeal = () => type === 'project';
+const type = ['home', 'item', 'project'].includes(new URLSearchParams(location.search).get('type')) ? new URLSearchParams(location.search).get('type') : 'project';
+const pj = type === 'project';
+const T = { project: ['장터', 'AI 서비스·해커톤 프로젝트를 사고팔아요.'], home: ['집', '제주의 방·집·상가.'], item: ['물건', '중고 물건과 농수산물.'] }[type];
+let all = [], cat = '전체', sort = 'hot', done = false, map, layer;
+$('#pageH1').textContent = T[0]; $('#pageSub').textContent = T[1]; document.title = `${T[0]} · 섬업`;
+$('#stabs').hidden = !pj; $('#rows').hidden = !pj; $('#grid').hidden = pj; $('#count').hidden = pj; $('#minimap').hidden = pj;
+$('#main').style.maxWidth = pj ? '860px' : ''; $('#addBtn').href = `./sell.html?type=${type}`;
 function render() {
-  const pj = isDeal();
-  $('#pageH1').textContent = pj ? '장터' : '집·물건'; document.title = `${pj ? '장터' : '집·물건'} · 섬업`;
-  $('#pageSub').textContent = pj ? 'AI 서비스·해커톤 프로젝트를 사고팔아요.' : '사진만 올리면 글은 AI가 써요.';
-  $('#typetabs').hidden = pj; $('#stabs').hidden = !pj; $('#rows').hidden = !pj; $('#grid').hidden = pj; $('#count').hidden = pj;
-  $('#main').style.maxWidth = pj ? '860px' : '';
-  $$('#typetabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === type));
-  $('#addBtn').href = `./sell.html?type=${type}`;
   const mine = all.filter((p) => p.type === type);
-  if (pj) $('#stabs').innerHTML = [['open', '거래 중'], ['done', '완료']].map(([k, l]) => `<button data-k="${k}" class="${k === deal ? 'on' : ''}">${l}<small>${mine.filter((p) => p.deal === k).length}</small></button>`).join(''), $$('#stabs button').forEach((b) => b.onclick = () => { deal = b.dataset.k; render(); });
-  const pool = mine.filter((p) => !pj || p.deal === deal);
+  if (pj) $('#stabs').innerHTML = [[false, '전체'], [true, '완료']].map(([k, l]) => `<button data-k="${k}" class="${k === done ? 'on' : ''}">${l}<small>${mine.filter((p) => (p.deal === 'done') === k).length}</small></button>`).join(''), $$('#stabs button').forEach((b) => b.onclick = () => { done = b.dataset.k === 'true'; render(); });
+  const pool = mine.filter((p) => !pj || (p.deal === 'done') === done);
   const cats = ['전체', ...new Set(pool.map((p) => p.category))]; if (!cats.includes(cat)) cat = '전체';
   $('#chips').replaceChildren(...cats.map((c) => { const b = document.createElement('button'); b.className = 'chip' + (c === cat ? ' on' : ''); b.textContent = c; b.onclick = () => { cat = c; render(); }; return b; }));
   const list = pool.filter((p) => cat === '전체' || p.category === cat).sort((a, b) => sort === 'hot' ? (b.interest || 0) - (a.interest || 0) : b.createdAt.localeCompare(a.createdAt));
   $('#count').textContent = `${list.length}개`;
   const empty = `<div class="empty">아직 올라온 글이 없어요. <a href="./sell.html?type=${type}">첫 번째로 올려 보세요</a></div>`;
-  const ready = all.length > 0 || render.loaded;
-  if (pj) { $('#rows').replaceChildren(...list.map((p, i) => projectRow(p, i + 1))); if (!list.length && ready) $('#rows').innerHTML = empty; }
-  else { $('#grid').replaceChildren(...list.map(listingCard)); if (!list.length && ready) $('#grid').innerHTML = empty; }
+  if (pj) { $('#rows').replaceChildren(...list.map((p, i) => projectRow(p, i + 1))); if (!list.length && render.loaded) $('#rows').innerHTML = empty; }
+  else { $('#grid').replaceChildren(...list.map(listingCard)); if (!list.length && render.loaded) $('#grid').innerHTML = empty; }
+}
+// 집·물건: 어느 동네에 있는지 지도로
+async function drawMap() {
+  const d = await api('/api/map'); const pts = d.points.filter((p) => p.kind === 'project' && p.type === type); if (!pts.length) { $('#minimap').hidden = true; return; }
+  map = L.map('minimap', { scrollWheelZoom: false }).setView([d.center.lat, d.center.lng], 10);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '&copy; OpenStreetMap' }).addTo(map);
+  for (const p of pts) L.marker([p.lat, p.lng], { icon: L.divIcon({ className: '', html: '<div class="pin" style="background:var(--accent)"></div>', iconSize: [22, 22], iconAnchor: [11, 22], popupAnchor: [0, -20] }) }).bindPopup(`<div class="pop"><small>${esc(p.area)}</small><b>${esc(p.title)}</b><a href="${esc(p.href)}">자세히 보기 →</a></div>`).addTo(map);
+  map.fitBounds(L.latLngBounds(pts.map((p) => [p.lat, p.lng])).pad(0.3), { maxZoom: 12 });
 }
 $$('#sort button').forEach((b) => b.onclick = () => { sort = b.dataset.s; $$('#sort button').forEach((x) => x.classList.toggle('on', x === b)); render(); });
-$$('#typetabs button').forEach((b) => b.onclick = () => { type = b.dataset.t; cat = '전체'; history.replaceState(null, '', `?type=${type}`); render(); });
 render();
-mountShell(isDeal() ? { active: 'deal', sub: 'project' } : { active: 'jeju', sub: 'market' }).then(async () => { all = await api('/api/projects'); render.loaded = true; render(); });
+mountShell(pj ? { active: 'deal', sub: 'project' } : { active: 'jeju', sub: type }).then(async () => { all = await api('/api/projects'); render.loaded = true; render(); if (!pj) drawMap(); });
 </script>
 </body>
 </html>
