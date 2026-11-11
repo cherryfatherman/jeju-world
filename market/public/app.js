@@ -219,7 +219,7 @@ function bannerSVG() {
 async function mountShell({ active, primary, sub, banner = false } = {}) {
   CONFIG = await api('/api/config');
   const S = CONFIG.site;
-  document.documentElement.dataset.theme = 'day'; applyColors(CONFIG.colors);
+  document.documentElement.dataset.theme = 'day'; applyColors(CONFIG.colors); applyTheme(CONFIG.theme);
   if (!$('link[rel=icon]')) { const l = document.createElement('link'); l.rel = 'icon'; l.href = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#fff"/><rect x="22" y="12" width="56" height="76" rx="9" fill="#ff6b1a"/><path d="M60 12h11v28l-5.5-4.5L60 40z" fill="#1b1915" opacity=".28"/><circle cx="46" cy="58" r="15" fill="#fff"/><path d="M46 44c0-4.5 4.5-8.2 10.5-7.5-1 5.5-5.5 8.2-10.5 7.5z" fill="#19b3a6"/></svg>')}`; document.head.append(l); }
   for (const [k, v] of [['og:title', document.title], ['og:description', $('meta[name=description]')?.content || S.slogan], ['og:type', 'website'], ['og:site_name', S.name]]) { if (!$(`meta[property="${k}"]`)) { const m = document.createElement('meta'); m.setAttribute('property', k); m.content = v; document.head.append(m); } }
 
@@ -260,6 +260,7 @@ async function mountShell({ active, primary, sub, banner = false } = {}) {
   const footer = document.createElement('footer');
   footer.innerHTML = `<div class="wrap"><div><b>${esc(S.name)}</b>${S.sub ? ` <span class="small">${esc(S.sub)}</span>` : ''} · ${esc(S.slogan)}<br><span class="small">${esc(CONFIG.footer?.note || '')}</span></div><div class="links"><a href="${esc(S.threads)}" target="_blank" rel="noopener">스레드</a><a href="${esc(S.openchat)}">오픈채팅</a><a href="./admin.html">관리자</a></div></div>`;
   document.body.append(footer);
+  applyTexts(); mountEditor();
   return CONFIG;
 }
 
@@ -296,4 +297,75 @@ function mountWaitlist() {
   m.onclick = (e) => { if (e.target === m) m.classList.remove('show'); };
   $('#wantForm').onsubmit = async (e) => { e.preventDefault(); try { await api('/api/waitlist', Object.fromEntries(new FormData(e.target))); m.classList.remove('show'); e.target.reset(); toast('알림을 신청했어요'); document.dispatchEvent(new Event('stats:refresh')); } catch (err) { toast(err.message); } };
   return m;
+}
+
+
+/* ════════ 보면서 고치기 (수정 모드) ════════
+   운영자가 사이트를 보면서 글꼴·색·크기·모서리·글자를 바로 고친다. 저장하면 config.json의 theme·texts에 들어가 모든 방문자에게 반영된다. */
+const FONTS = [['Pretendard Variable', '프리텐다드 (기본)', ''], ['Noto Sans KR', '노토 산스', 'Noto+Sans+KR:wght@400;500;700;900'], ['IBM Plex Sans KR', 'IBM 플렉스 산스', 'IBM+Plex+Sans+KR:wght@400;500;600;700'], ['Gowun Dodum', '고운돋움', 'Gowun+Dodum'], ['Nanum Gothic', '나눔고딕', 'Nanum+Gothic:wght@400;700;800'], ['Nanum Myeongjo', '나눔명조', 'Nanum+Myeongjo:wght@400;700;800'], ['Gowun Batang', '고운바탕', 'Gowun+Batang:wght@400;700'], ['Jua', '주아', 'Jua'], ['Do Hyeon', '도현', 'Do+Hyeon'], ['Black Han Sans', '검은고딕 (제목용)', 'Black+Han+Sans'], ['Gothic A1', '고딕 A1', 'Gothic+A1:wght@400;500;700;900']];
+const THEME_FIELDS = [
+  ['글꼴', [['bodyFont', '본문 글꼴', 'font'], ['headFont', '제목 글꼴', 'font'], ['headWeight', '제목 굵기', 'range', 500, 900, 100], ['scale', '전체 크기 (%)', 'range', 85, 120, 1], ['letter', '자간 (em)', 'range', -0.04, 0.04, 0.005]]],
+  ['색', [['accent', '포인트 색', 'color'], ['accent2', '보조 색', 'color'], ['bg', '바탕', 'color'], ['surface', '카드 바탕', 'color'], ['ink', '글자', 'color'], ['line', '선', 'color']]],
+  ['모양', [['radius', '카드 모서리 (px)', 'range', 0, 24, 1], ['btnRadius', '버튼 모서리 (px)', 'range', 0, 24, 1], ['wrap', '본문 폭 (px)', 'range', 900, 1320, 20], ['heroH', '홈 큰 배너 높이 (px)', 'range', 240, 560, 10], ['thumb', '목록 사진 크기 (px)', 'range', 48, 112, 4], ['gap', '구역 사이 간격 (px)', 'range', 16, 64, 4]]],
+];
+const THEME_DEFAULT = { bodyFont: 'Pretendard Variable', headFont: 'Pretendard Variable', headWeight: 800, scale: 100, letter: -0.01, accent: '#ff6b1a', accent2: '#19b3a6', bg: '#faf8f5', surface: '#ffffff', ink: '#1b1915', line: '#e9e3da', radius: 12, btnRadius: 8, wrap: 1080, heroH: 360, thumb: 72, gap: 32 };
+function loadFont(name) { const f = FONTS.find((x) => x[0] === name); if (!f || !f[2] || document.querySelector(`link[data-font="${name}"]`)) return; const l = document.createElement('link'); l.rel = 'stylesheet'; l.dataset.font = name; l.href = `https://fonts.googleapis.com/css2?family=${f[2]}&display=swap`; document.head.append(l); }
+function applyTheme(t) {
+  if (!t) return; const r = document.documentElement.style; const T = { ...THEME_DEFAULT, ...t };
+  const fb = ', "Pretendard Variable", Pretendard, -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
+  loadFont(T.bodyFont); loadFont(T.headFont);
+  r.setProperty('--font', `"${T.bodyFont}"${fb}`); r.setProperty('--font-head', `"${T.headFont}"${fb}`); r.setProperty('--head-weight', T.headWeight);
+  r.setProperty('--ls', T.letter + 'em'); r.setProperty('--accent', T.accent); r.setProperty('--accent-2', T.accent2); r.setProperty('--bg', T.bg); r.setProperty('--surface', T.surface); r.setProperty('--ink', T.ink); r.setProperty('--line', T.line);
+  r.setProperty('--r-m', T.radius + 'px'); r.setProperty('--r-s', T.btnRadius + 'px'); r.setProperty('--wrap', T.wrap + 'px'); r.setProperty('--hero-h', T.heroH + 'px'); r.setProperty('--thumb', T.thumb + 'px'); r.setProperty('--sec-gap', T.gap + 'px');
+  r.setProperty('--scale', String(T.scale / 100));
+}
+// 글자: 페이지에 박혀 있는 제목(h2 등)은 '페이지#순서'로, 설정에 묶인 글은 data-edit="경로"로 찾는다
+const pageKey = () => (location.pathname.split('/').pop() || 'index.html').replace('.html', '');
+const autoTexts = () => $$('main .sec-head h2:not([id]), main .page-title h1:not([id]), main .page-title p:not([id])');
+function applyTexts() { const X = CONFIG.texts || {}; autoTexts().forEach((el, i) => { const k = `${pageKey()}#${i}`; el.dataset.tkey = k; if (X[k]) el.textContent = X[k]; }); }
+const getPath = (o, path) => path.split('.').reduce((x, k) => (x == null ? x : x[k]), o);
+function setPath(o, path, v) { const ks = path.split('.'); let x = o; ks.slice(0, -1).forEach((k) => { x = x[k] = x[k] ?? {}; }); x[ks[ks.length - 1]] = v; }
+function mountEditor() {
+  const hasPw = () => !!sessionStorage.getItem('adminpw');
+  if (!hasPw() && !new URLSearchParams(location.search).has('edit')) return;
+  if ($('#edFab')) return;
+  const fab = document.createElement('button'); fab.id = 'edFab'; fab.type = 'button'; fab.textContent = '수정'; document.body.append(fab);
+  const panel = document.createElement('aside'); panel.id = 'edPanel';
+  let T = { ...THEME_DEFAULT, ...(CONFIG.theme || {}) }, textMode = false, dirty = false;
+  const field = ([k, label, type, min, max, step]) => type === 'font' ? `<label>${label}<select data-th="${k}">${FONTS.map((f) => `<option value="${f[0]}" ${T[k] === f[0] ? 'selected' : ''}>${f[1]}</option>`).join('')}</select></label>`
+    : type === 'color' ? `<label class="edc">${label}<span><input type="color" data-th="${k}" value="${T[k]}"><code>${T[k]}</code></span></label>`
+    : `<label>${label} <b data-out="${k}">${T[k]}</b><input type="range" data-th="${k}" min="${min}" max="${max}" step="${step}" value="${T[k]}"></label>`;
+  panel.innerHTML = `<div class="edhead"><b>보면서 고치기</b><button type="button" data-x aria-label="닫기">✕</button></div>
+    <div class="edbody">
+      <div class="edsec"><h4>글자 직접 고치기</h4><p>켜면 점선으로 표시된 글자를 눌러 바로 고칠 수 있어요. 강조는 [대괄호], 줄바꿈은 엔터.</p><button type="button" class="btn" data-text>글자 고치기 켜기</button></div>
+      ${THEME_FIELDS.map(([name, fs]) => `<div class="edsec"><h4>${name}</h4>${fs.map(field).join('')}</div>`).join('')}
+      <div class="edsec"><h4>글 내용</h4><p>프로젝트·지원사업·인사이트·생활정보 같은 글 자체는 관리자에서 고쳐요.</p><a class="btn" href="./admin.html">관리자 열기</a> <a class="btn" href="./hq.html">본부</a></div>
+    </div>
+    <div class="edfoot"><button type="button" class="btn" data-reset>처음 디자인으로</button><button type="button" class="btn primary" data-save>저장</button></div>`;
+  document.body.append(panel);
+  const open = async () => {
+    if (!hasPw()) { const pw = prompt('관리자 비밀번호'); if (!pw) return; try { await api('/api/admin/login', { password: pw }); sessionStorage.setItem('adminpw', pw); } catch (e) { return toast(e.message); } }
+    panel.classList.add('show'); document.body.classList.add('ed-open');
+  };
+  fab.onclick = () => (panel.classList.contains('show') ? close() : open());
+  const close = () => { panel.classList.remove('show'); document.body.classList.remove('ed-open'); };
+  panel.querySelector('[data-x]').onclick = close;
+  panel.querySelectorAll('[data-th]').forEach((inp) => inp.oninput = () => { const k = inp.dataset.th; T[k] = inp.type === 'range' ? Number(inp.value) : inp.value; const out = panel.querySelector(`[data-out="${k}"]`); if (out) out.textContent = T[k]; if (inp.type === 'color') inp.nextElementSibling.textContent = inp.value; applyTheme(T); dirty = true; });
+  // 글자 고치기
+  const targets = () => [...autoTexts(), ...$$('[data-edit]')];
+  const setText = (on) => { textMode = on; document.body.classList.toggle('ed-text', on); panel.querySelector('[data-text]').textContent = on ? '글자 고치기 끄기' : '글자 고치기 켜기';
+    targets().forEach((el) => { if (on) { if (el.dataset.edit) { el.dataset.shown = el.innerHTML; el.innerText = String(getPath(CONFIG, el.dataset.edit) ?? ''); } el.contentEditable = 'plaintext-only'; if (el.contentEditable !== 'plaintext-only') el.contentEditable = 'true'; el.oninput = () => { dirty = true; }; const a2 = el.closest('a'); if (a2) a2.addEventListener('click', stop, true); }
+      else { el.contentEditable = 'false'; const a2 = el.closest('a'); if (a2) a2.removeEventListener('click', stop, true); } }); };
+  const stop = (e) => { if (textMode) e.preventDefault(); };
+  panel.querySelector('[data-text]').onclick = () => setText(!textMode);
+  panel.querySelector('[data-reset]').onclick = () => { if (!confirm('글꼴·색·모양을 처음 디자인으로 되돌릴까요? (글자는 그대로)')) return; T = { ...THEME_DEFAULT }; applyTheme(T); dirty = true; panel.querySelectorAll('[data-th]').forEach((inp) => { inp.value = T[inp.dataset.th]; const out = panel.querySelector(`[data-out="${inp.dataset.th}"]`); if (out) out.textContent = T[inp.dataset.th]; if (inp.type === 'color') inp.nextElementSibling.textContent = inp.value; }); };
+  panel.querySelector('[data-save]').onclick = async () => {
+    try {
+      const cfg = await api('/api/config'); cfg.theme = T; cfg.colors = { ...(cfg.colors || {}), accent: T.accent, accent2: T.accent2 }; cfg.texts = cfg.texts || {};
+      if (textMode) targets().forEach((el) => { const v = el.innerText.replace(/\n+$/, ''); if (el.dataset.edit) setPath(cfg, el.dataset.edit, v); else if (el.dataset.tkey) cfg.texts[el.dataset.tkey] = v; });
+      await api('/api/config', cfg, 'PUT'); dirty = false; toast('저장했어요'); if (textMode) setTimeout(() => location.reload(), 500);
+    } catch (e) { toast(e.message); }
+  };
+  addEventListener('beforeunload', (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+  if (new URLSearchParams(location.search).has('edit')) open();
 }

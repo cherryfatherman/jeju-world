@@ -362,6 +362,20 @@ app.put('/api/admin/hq', adminOnly, (req, res) => {
   if (Array.isArray(b.tasks)) agents.remember(hq, oldTasks, hq.tasks);
   save('hq.json', hq); res.json({ ok: true });
 });
+// 본부 지식 지도: 줄기마다 실제 글을 점으로. 제목과 여는 주소만 보낸다
+app.get('/api/admin/hq/graph', adminOnly, (req, res) => {
+  const cfg = readConfig(); const TL = { home: '집', item: '물건', project: '프로젝트' };
+  const n = (t, s, href, extra) => ({ t: String(t || '').slice(0, 60), s, href, ...extra });
+  res.json({
+    deal: load('projects.json', []).map((p) => n(p.name, TL[p.type || 'project'] + (p.status === 'live' ? '' : ' · 숨김'), `./project.html?id=${encodeURIComponent(p.id)}`, { dim: p.status !== 'live' || p.deal === 'done' })),
+    program: load('programs.json', []).map((p) => n(p.title, agents.programStatus(p) === 'open' ? '진행' : '완료', `./post.html?kind=program&id=${encodeURIComponent(p.id)}`, { dim: p.hidden || agents.programStatus(p) !== 'open' })),
+    insight: load('insights.json', []).map((p) => n(p.title, p.category, `./post.html?kind=insight&id=${encodeURIComponent(p.id)}`, { dim: !!p.hidden })),
+    hackathon: [...hackItems().map((h) => n(h.title, '열린 해커톤', h.url)), ...WINNERS.map((w) => n(w.name, '수상작', w.url, { small: true }))],
+    community: [...load('comments.json', []).slice(-80).map((c) => n(c.text, '이야기 · ' + (c.name || '익명'), './admin.html', { dim: !!c.hidden })), ...load('feedback.json', []).map((f) => n(f.text, '제보 · ' + f.placeName, './admin.html')), ...load('waitlist.json', []).map((w) => n(w.note || w.contact, '알림 신청', './admin.html', { small: true }))],
+    life: [...load('guides.json', []).map((g) => n(g.title, '생활정보', `./guide.html?id=${encodeURIComponent(g.id)}`, { dim: !!g.hidden })), ...load('places.json', []).map((p) => n(p.name, { spot: '관광지', cafe: '카페', food: '맛집' }[p.type], `./place.html?id=${encodeURIComponent(p.id)}`, { dim: !!p.hidden }))],
+    partner: [...(cfg.support || []).map((s) => n(s.org, '기관', s.href)), ...['left', 'right'].filter((k) => cfg.ads?.[k]?.title).map((k) => n(cfg.ads[k].title.replace(/\n/g, ' '), '광고 자리', cfg.ads[k].href))],
+  });
+});
 app.post('/api/admin/hq/cycle', adminOnly, async (req, res) => { try { const r = await agents.runCycle({ load, save, feedState }, { force: true }); markFeed('agents', true); res.json(r); } catch (e) { res.status(500).json({ error: e.message }); } });
 
 // ---- 제주 생활 가이드 (글 하나 = 독립 정보 페이지, 관리자에서 편집) ----

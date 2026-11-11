@@ -61,15 +61,15 @@ const DAYS = ['월', '화', '수', '목', '금', '토', '일'];
 function renderHero() {
   const s = (CFG.carousel || [])[0] || {}, B = CFG.banner || {};
   if (s.image) $('#hero').style.backgroundImage = `url('${s.image}')`;
-  $('#heroText').innerHTML = `<p class="kicker">${esc(s.kicker || B.kicker || '')}</p><h1>${rich(s.title || B.title || CFG.site.slogan)}</h1><p class="sub">${esc(s.sub || B.sub || '')}</p>
-    <div class="cta"><a class="btn primary big" href="./market.html?type=project">${esc(B.primaryLabel || '프로젝트 둘러보기')}</a><a class="btn big line" href="./sell.html?type=project">${esc(B.secondaryLabel || '내 프로젝트 올리기')}</a></div>`;
+  $('#heroText').innerHTML = `<p class="kicker" data-edit="carousel.0.kicker">${esc(s.kicker || B.kicker || '')}</p><h1 data-edit="carousel.0.title">${rich(s.title || B.title || CFG.site.slogan)}</h1><p class="sub" data-edit="carousel.0.sub">${esc(s.sub || B.sub || '')}</p>
+    <div class="cta"><a class="btn primary big" href="./market.html?type=project"><span data-edit="banner.primaryLabel">${esc(B.primaryLabel || '프로젝트 둘러보기')}</span></a><a class="btn big line" href="./sell.html?type=project"><span data-edit="banner.secondaryLabel">${esc(B.secondaryLabel || '내 프로젝트 올리기')}</span></a></div>`;
 }
 function renderRing() {
-  $('#ring').replaceChildren(...(CFG.ring || []).map((r) => { const a = document.createElement('a'); a.href = r.href; a.innerHTML = `<span class="rimg">${r.image ? `<img src="${esc(r.image)}" alt="" loading="lazy">` : ''}</span><b>${esc(r.label)}</b><small>${esc(r.sub || '')}</small>`; return a; }));
+  $('#ring').replaceChildren(...(CFG.ring || []).map((r, i) => { const a = document.createElement('a'); a.href = r.href; a.innerHTML = `<span class="rimg">${r.image ? `<img src="${esc(r.image)}" alt="" loading="lazy">` : ''}</span><b data-edit="ring.${i}.label">${esc(r.label)}</b><small data-edit="ring.${i}.sub">${esc(r.sub || '')}</small>`; return a; }));
 }
 function renderDirection() {
   const D = CFG.direction; if (!D) { $('#direction').parentElement.hidden = true; return; }
-  $('#direction').innerHTML = `<div><p class="kicker">${esc(D.kicker || '')}</p><h2>${rich(D.title || '')}</h2></div><div class="facts">${(D.facts || []).map((f) => `<a href="${esc(f.href || '#')}" target="_blank" rel="noopener"><b>${esc(f.num)}</b><span>${esc(f.label)}</span><small>출처: ${esc(f.src || '')}</small></a>`).join('')}</div>`;
+  $('#direction').innerHTML = `<div><p class="kicker" data-edit="direction.kicker">${esc(D.kicker || '')}</p><h2 data-edit="direction.title">${rich(D.title || '')}</h2></div><div class="facts">${(D.facts || []).map((f, i) => `<a href="${esc(f.href || '#')}" target="_blank" rel="noopener"><b data-edit="direction.facts.${i}.num">${esc(f.num)}</b><span data-edit="direction.facts.${i}.label">${esc(f.label)}</span><small>출처: ${esc(f.src || '')}</small></a>`).join('')}</div>`;
 }
 function renderQuick() {
   const today = DAYS[(new Date().getDay() + 6) % 7];
@@ -90,6 +90,7 @@ async function load() {
   api('/api/guides').then((g) => $('#guides').replaceChildren(...g.slice(0, 8).map((x, i) => guideRow(x, i + 1))));
 }
 mountShell({ active: 'home' }).then((c) => { CFG = c; renderHero(); renderRing(); renderDirection(); renderQuick(); load(); });
+// 홈의 큰 글자는 설정에서 그려지므로, 수정 모드가 켜진 뒤에도 고칠 수 있게 data-edit로 표시해 둔다
 </script>
 </body>
 </html>

@@ -37,7 +37,7 @@ h1 { font-size: 28px; font-weight: 800; line-height: 1.2; }
 h2 { font-size: 20px; font-weight: 700; line-height: 1.3; }
 h3 { font-size: 16px; font-weight: 600; line-height: 1.4; }
 p { margin: 0; }
-.wrap { max-width: 1080px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: var(--wrap, 1080px); margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 .muted { color: var(--ink-3); }
 .small { font-size: 13px; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--r-s); }
@@ -602,3 +602,39 @@ footer .links a:hover { color: var(--ink); }
 .rlist.cols2 { display: grid; grid-template-columns: 1fr 1fr; column-gap: 32px; }
 .rlist.cols2 .rrow { min-width: 0; }
 @media (max-width: 860px) { .rlist.cols2 { grid-template-columns: 1fr; } }
+
+
+/* ════════ 디자인 변수 (수정 모드에서 바꾸는 값) ════════ */
+body { letter-spacing: var(--ls, -0.01em); }
+h1, h2, h3, .logo .lname, .hero h1, .direction h2, .nums b { font-family: var(--font-head, var(--font)); }
+h1, h2, .hero h1, .rrow .rtitle b { font-weight: var(--head-weight, 800); }
+main { zoom: var(--scale, 1); }
+section { padding-block: var(--sec-gap, 32px) 0; }
+.hero { min-height: var(--hero-h, 360px); }
+.rrow .rthumb { width: var(--thumb, 72px); height: var(--thumb, 72px); }
+@media (max-width: 560px) { .rrow .rthumb { width: min(var(--thumb, 72px), 56px); height: min(var(--thumb, 72px), 56px); } .hero { min-height: min(var(--hero-h, 360px), 340px); } }
+
+/* 수정 모드 */
+#edFab { position: fixed; left: 16px; bottom: 16px; z-index: 60; height: 44px; padding: 0 18px; border-radius: 999px; background: var(--ink); color: #fff; font-weight: 800; font-size: 14px; box-shadow: var(--shadow-float); }
+#edPanel { position: fixed; top: 0; right: 0; bottom: 0; width: 320px; z-index: 70; background: #fff; color: #1b1915; border-left: 1px solid #e9e3da; box-shadow: -12px 0 32px rgba(0,0,0,.12); transform: translateX(105%); transition: transform .2s; display: flex; flex-direction: column; font-family: "Pretendard Variable", system-ui, sans-serif; letter-spacing: -0.01em; }
+#edPanel.show { transform: none; }
+#edPanel .edhead { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #e9e3da; font-size: 16px; }
+#edPanel .edhead button { font-size: 16px; color: #8a8178; width: 32px; height: 32px; }
+#edPanel .edbody { flex: 1; overflow-y: auto; padding: 4px 16px 16px; }
+#edPanel .edsec { padding: 14px 0; border-bottom: 1px solid #f0ebe3; display: grid; gap: 10px; }
+#edPanel h4 { margin: 0; font-size: 12px; font-weight: 800; color: #8a8178; }
+#edPanel p { font-size: 12px; color: #8a8178; line-height: 1.5; }
+#edPanel label { display: grid; gap: 4px; font-size: 13px; font-weight: 600; color: #4e4842; }
+#edPanel label b { font-weight: 800; color: #1b1915; float: right; }
+#edPanel select { height: 36px; border: 1px solid #d8d0c4; border-radius: 8px; padding: 0 8px; font-size: 14px; background: #fff; min-height: 0; }
+#edPanel input[type=range] { width: 100%; accent-color: #ff6b1a; padding: 0; min-height: 0; border: 0; }
+#edPanel .edc { grid-template-columns: 1fr auto; align-items: center; }
+#edPanel .edc span { display: flex; align-items: center; gap: 6px; }
+#edPanel .edc input { width: 36px; height: 28px; padding: 0; border: 1px solid #d8d0c4; border-radius: 6px; min-height: 0; background: none; }
+#edPanel .edc code { font-size: 11px; color: #8a8178; width: 58px; }
+#edPanel .btn { height: 36px; font-size: 13px; padding: 0 12px; border-radius: 8px; }
+#edPanel .edfoot { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px 16px; border-top: 1px solid #e9e3da; }
+@media (min-width: 900px) { body.ed-open { margin-right: 320px; } body.ed-open .ads { display: none; } }
+@media (max-width: 899px) { #edPanel { width: 100%; top: auto; height: 62vh; border-left: 0; border-top: 1px solid #e9e3da; border-radius: 16px 16px 0 0; transform: translateY(105%); } #edFab { bottom: 76px; } }
+body.ed-text [contenteditable]:not([contenteditable=false]) { outline: 2px dashed var(--accent); outline-offset: 3px; border-radius: 4px; cursor: text; min-width: 20px; }
+body.ed-text [contenteditable]:focus { outline-style: solid; background: rgba(255,107,26,.08); }

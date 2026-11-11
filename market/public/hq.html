@@ -16,13 +16,27 @@
   .hqbar .btn { height: 36px; padding: 0 14px; font-size: 13px; background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.16); color: #fff; }
   .hqbar .btn:hover { background: rgba(255,255,255,.16); } .hqbar .btn.primary { background: var(--accent); border-color: var(--accent); }
   .stage { position: relative; min-height: 0; overflow: hidden; background: radial-gradient(ellipse at 50% 60%, #2a231b 0%, #14110d 70%); touch-action: none; }
-  .stage canvas { width: 100%; height: 100%; display: block; cursor: grab; } .stage canvas:active { cursor: grabbing; }
+  .stage canvas { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
   .lab { position: absolute; transform: translate(-50%, -100%); pointer-events: auto; cursor: pointer; text-align: center; white-space: nowrap; user-select: none; padding-bottom: 6px; }
   .lab b { display: block; font-size: 15px; font-weight: 800; color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,.6); }
   .lab small { font-size: 11px; color: rgba(255,255,255,.7); text-shadow: 0 1px 4px rgba(0,0,0,.6); }
   .lab i { font-style: normal; display: inline-block; min-width: 18px; padding: 1px 6px; border-radius: 9px; background: var(--accent); color: #fff; font-size: 11px; font-weight: 800; margin-left: 4px; }
   .lab.sel b { color: var(--accent); }
   .lab.core b { font-size: 18px; } .lab.core { pointer-events: none; }
+  .gleft { position: absolute; left: 14px; top: 14px; width: 190px; display: grid; gap: 8px; }
+  .gleft input { height: 34px; min-height: 0; border-radius: 999px; border: 1px solid rgba(255,255,255,.2); background: rgba(0,0,0,.35); color: #fff; padding: 0 14px; font-size: 13px; }
+  .gleft input::placeholder { color: rgba(255,255,255,.45); }
+  #glegend { display: grid; gap: 2px; }
+  #glegend button { display: grid; grid-template-columns: 12px 1fr auto; gap: 8px; align-items: center; padding: 5px 8px; border-radius: 8px; color: rgba(255,255,255,.85); font-size: 13px; font-weight: 600; text-align: left; }
+  #glegend button:hover, #glegend button.sel { background: rgba(255,255,255,.1); color: #fff; }
+  #glegend i { width: 10px; height: 10px; border-radius: 50%; } #glegend small { color: rgba(255,255,255,.5); font-variant-numeric: tabular-nums; }
+  .gzoom { position: absolute; right: 14px; top: 14px; display: grid; gap: 4px; }
+  .gzoom button { width: 34px; height: 34px; border-radius: 8px; background: rgba(255,255,255,.1); color: #fff; font-size: 16px; border: 1px solid rgba(255,255,255,.14); }
+  .gzoom button:hover { background: rgba(255,255,255,.2); }
+  .gtip { position: absolute; pointer-events: none; transform: translate(-50%, -130%); background: rgba(0,0,0,.82); color: #fff; font-size: 12px; padding: 5px 9px; border-radius: 6px; white-space: nowrap; max-width: 320px; overflow: hidden; text-overflow: ellipsis; z-index: 5; }
+  .gpop { position: absolute; transform: translate(-50%, 14px); background: #fff; color: var(--ink); border-radius: 12px; padding: 12px 14px; width: 240px; box-shadow: 0 12px 32px rgba(0,0,0,.4); z-index: 6; }
+  .gpop small { color: var(--ink-3); font-size: 12px; } .gpop b { display: block; font-size: 14px; line-height: 1.35; margin: 2px 0 8px; }
+  .gpop a { color: var(--accent); font-weight: 700; font-size: 13px; margin-right: 12px; }
   .hint { position: absolute; left: 16px; bottom: 14px; font-size: 12px; color: rgba(255,255,255,.45); }
   .legend { position: absolute; right: 16px; bottom: 14px; display: flex; gap: 12px; font-size: 12px; color: rgba(255,255,255,.6); }
   .legend span::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; background: var(--c); }
@@ -65,7 +79,7 @@
   @media (max-width: 860px) {
     body { overflow: auto; height: auto; } .hq { grid-template-columns: 1fr; grid-template-rows: 56px 46vh auto; height: auto; }
     .side { border-left: 0; } .side .scroll { overflow: visible; } .hqbar .state { display: none; } .hqbar { gap: 6px; padding: 0 10px; } .hqbar .btn { padding: 0 10px; }
-    .legend { display: none; } .lab small { display: none; } .lab b { font-size: 13px; } .lab.core b { font-size: 15px; } .lab i { font-size: 10px; min-width: 16px; padding: 0 5px; }
+    .legend { display: none; } .gleft { width: 150px; } #glegend button { font-size: 12px; padding: 3px 6px; } .hint { display: none; }
   }
 </style>
 </head>
@@ -73,7 +87,12 @@
 <div class="login" id="login" hidden><form class="form" id="loginForm"><h3>섬업 본부</h3><p class="note">관리자 비밀번호를 넣어 주세요.</p><input type="password" name="pw" required autocomplete="current-password" placeholder="비밀번호"><button class="btn primary">들어가기</button></form></div>
 <div class="hq">
   <div class="hqbar"><b><em>섬업</em> 본부</b><span class="state" id="state"></span><button class="btn primary" id="cycleBtn">지금 회의</button><button class="btn" id="addPillar">＋ 줄기</button><a class="btn" href="./admin.html">관리자</a><a class="btn" href="./">사이트</a></div>
-  <div class="stage" id="stage"><canvas id="c"></canvas><div id="labels"></div><div class="ring2d" id="ring2d"></div><span class="hint">끌어서 돌리기 · 줄기를 눌러 고치기</span><div class="legend"><span style="--c:#fff">제안</span><span style="--c:#ff6b1a">진행</span><span style="--c:#6b635a">완료</span></div></div>
+  <div class="stage" id="stage"><canvas id="c"></canvas>
+    <div class="gleft"><input id="gq" placeholder="제목 찾기" aria-label="찾기"><div id="glegend"></div></div>
+    <div class="gzoom"><button id="zin" aria-label="확대">＋</button><button id="zout" aria-label="축소">－</button><button id="zfit" aria-label="전체 보기">⟲</button></div>
+    <div class="gtip" id="gtip" hidden></div><div class="gpop" id="gpop" hidden></div>
+    <span class="hint">끌어서 이동 · 휠로 확대/축소 · 점을 눌러 열기 · 큰 점을 눌러 줄기 고치기</span>
+    <div class="legend"><span style="--c:#fff">제안</span><span style="--c:#ff6b1a">진행</span><span style="--c:#6b635a">완료</span><span style="--c:transparent;border:0">■ 할 일 · ● 글</span></div></div>
   <aside class="side">
     <div class="tabs3"><button data-t="pillar" class="on">줄기</button><button data-t="org">조직</button><button data-t="log">회의록</button></div>
     <div class="scroll on" id="t-pillar"></div>
@@ -83,7 +102,6 @@
 </div>
 
 <script type="module">
-import * as THREE from './vendor/three.module.js';
 
 let HQ = { pillars: [], agents: [], tasks: [], log: [], facts: {} }, sel = null, saveTimer = null;
 const RANKS = ['본부장', '부서장', '팀장', '팀원'];
@@ -105,83 +123,114 @@ const ava = (a) => `<i class="ava" style="background:${colorOfAgent(a)}">${esc((
 /* ── 저장: 고치면 잠깐 뒤 자동 저장 ── */
 function touch() { clearTimeout(saveTimer); $('#state').textContent = '저장 중…'; saveTimer = setTimeout(async () => { try { await api('/api/admin/hq', { pillars: HQ.pillars, agents: HQ.agents, tasks: HQ.tasks }, 'PUT'); $('#state').textContent = '저장됨 · ' + new Date().toLocaleTimeString('ko-KR'); } catch (e) { $('#state').textContent = '저장 실패: ' + e.message; } }, 700); }
 
-/* ── 3D: 고리 위의 줄기들 ── */
-const stage = $('#stage'), canvas = $('#c'), labels = $('#labels');
-let renderer = null, scene, camera, world, nodes = [], yaw = 0.5, pitch = 0, zoom = 1, lastTouch = 0, R = 5.6;
-try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true }); renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); } catch { renderer = null; }
-if (renderer) {
-  scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x3a2f24, 1.5));
-  const dl = new THREE.DirectionalLight(0xffffff, 1.6); dl.position.set(6, 10, 8); scene.add(dl);
-  world = new THREE.Group(); scene.add(world);
-}
-function build3D() {
-  labels.innerHTML = ''; nodes = [];
-  if (!renderer) { $('#ring2d').style.display = 'grid'; $('#ring2d').replaceChildren(...HQ.pillars.map((p) => { const b = document.createElement('button'); b.style.background = p.color; b.textContent = p.name; b.onclick = () => select(p.id); return b; })); return; }
-  while (world.children.length) world.remove(world.children[0]);
-  // 가운데: 섬업
-  const core = new THREE.Mesh(new THREE.SphereGeometry(1.15, 48, 32), new THREE.MeshStandardMaterial({ color: 0xff6b1a, roughness: 0.35, metalness: 0.05, emissive: 0x5a2000, emissiveIntensity: 0.5 }));
-  world.add(core); nodes.push({ mesh: core, core: true, el: label('섬업', '제주(섬)에서 창업을 거래하다', 0, true), h: 1.3 });
-  // 고리
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(R, 0.035, 12, 160), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35 }));
-  ring.rotation.x = Math.PI / 2; world.add(ring);
+/* ── 지식 지도: 가운데 섬업, 줄기마다 실제 글이 점으로 모인다. 끌어서 이동, 휠·핀치로 확대/축소 ── */
+const stage = $('#stage'), canvas = $('#c'), ctx = canvas.getContext('2d');
+let GRAPH = {}, clusters = [], view = { x: 0, y: 0, k: 1 }, target = null, lastTouch = 0, hover = null, query = '', W = 0, H = 0, DPR = 1;
+const GOLD = 2.39996323;
+function build3D() { // 이름은 예전 그대로 두고 내용만 2D 지식 지도
   const n = HQ.pillars.length || 1;
-  HQ.pillars.forEach((p, i) => {
-    const a = (i / n) * Math.PI * 2; const pos = new THREE.Vector3(Math.cos(a) * R, 0, Math.sin(a) * R);
-    const tasks = HQ.tasks.filter((t) => t.pillar === p.id); const open = tasks.filter((t) => t.status !== 'done');
-    const g = new THREE.Group(); g.position.copy(pos); world.add(g);
-    const col = new THREE.Color(p.color);
-    const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.62 + Math.min(open.length, 6) * 0.045, 40, 28), new THREE.MeshStandardMaterial({ color: col, roughness: 0.4, emissive: col, emissiveIntensity: 0.18 }));
-    mesh.userData.id = p.id; g.add(mesh);
-    // 가운데와 잇는 살
-    const spoke = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), pos]), new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: 0.35 })); world.add(spoke);
-    // 할 일 위성
-    const orbit = new THREE.Group(); orbit.rotation.x = 0.5; orbit.rotation.z = (i % 2 ? 1 : -1) * 0.35; g.add(orbit);
-    tasks.slice(0, 10).forEach((t, k, arr) => {
-      const b = (k / arr.length) * Math.PI * 2;
-      const sat = new THREE.Mesh(new THREE.SphereGeometry(0.11, 16, 12), new THREE.MeshStandardMaterial({ color: t.status === 'doing' ? 0xff6b1a : t.status === 'done' ? 0x6b635a : 0xffffff, roughness: 0.5, emissive: t.status === 'doing' ? 0xff6b1a : 0x000000, emissiveIntensity: 0.4 }));
-      sat.position.set(Math.cos(b) * 1.15, 0, Math.sin(b) * 1.15); orbit.add(sat);
-    });
-    nodes.push({ mesh, g, orbit, id: p.id, el: label(p.name, p.dept, open.length, false, p.id), h: 0.85 });
+  const sized = HQ.pillars.map((p) => { const items = (GRAPH[p.id] || []); const tasks = HQ.tasks.filter((t) => t.pillar === p.id); return { p, items, tasks, r: Math.max(46, Math.min(230, 15 * Math.sqrt(items.length + 4))) }; });
+  // 큰 묶음일수록 고리에서 넓은 자리를 차지하게 해서 서로 겹치지 않게 한다
+  const span = sized.map((c) => c.r * 2 + 90); const total = span.reduce((a, b) => a + b, 0);
+  const ring = Math.max(320, total / (2 * Math.PI), Math.max(...sized.map((c) => c.r)) + 200);
+  let acc = 0;
+  clusters = sized.map((c, i) => {
+    const a = -Math.PI / 2 + ((acc + span[i] / 2) / total) * Math.PI * 2; acc += span[i]; const cx = Math.cos(a) * ring, cy = Math.sin(a) * ring;
+    const nodes = c.items.map((it, k) => { const rr = c.r * Math.sqrt((k + 0.6) / (c.items.length + 0.6)); return { ...it, a: k * GOLD, rr, ph: k * 1.7 }; });
+    const tasks = c.tasks.slice(0, 16).map((t, k, arr) => ({ t: t.title, s: '할 일 · ' + STATUS[t.status], task: t, a: (k / arr.length) * Math.PI * 2, rr: c.r + 22 }));
+    return { ...c, cx, cy, nodes, tasks, spin: (i % 2 ? 1 : -1) };
   });
-  paintSel();
+  $('#glegend').replaceChildren(...clusters.map((c) => { const b = document.createElement('button'); b.dataset.id = c.p.id; b.innerHTML = `<i style="background:${esc(c.p.color)}"></i><span>${esc(c.p.name)}</span><small>${c.items.length}</small>`; b.onclick = () => { select(c.p.id); flyTo(c); }; return b; }));
+  paintSel(); if (!build3D.fitted && W) { fit(); build3D.fitted = true; }
 }
-function label(name, sub, count, core, id) {
-  const d = document.createElement('div'); d.className = 'lab' + (core ? ' core' : '');
-  d.innerHTML = `<b>${esc(name)}${count ? `<i>${count}</i>` : ''}</b><small>${esc(sub || '')}</small>`;
-  if (id) d.onclick = () => select(id);
-  labels.append(d); return d;
-}
-function paintSel() { for (const nd of nodes) { if (nd.core) continue; const on = nd.id === sel; nd.mesh.scale.setScalar(on ? 1.28 : 1); nd.mesh.material.emissiveIntensity = on ? 0.65 : 0.18; nd.el.classList.toggle('sel', on); } }
-function resize() { if (!renderer) return; const w = stage.clientWidth, h = stage.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+function paintSel() { $$('#glegend button').forEach((b) => b.classList.toggle('sel', b.dataset.id === sel)); }
+function resize() { DPR = Math.min(devicePixelRatio || 1, 2); W = stage.clientWidth; H = stage.clientHeight; canvas.width = W * DPR; canvas.height = H * DPR; if (clusters.length && !build3D.fitted) { fit(); build3D.fitted = true; } }
 new ResizeObserver(resize).observe(stage);
-const v3 = new THREE.Vector3();
+function extent() { let m = 200; for (const c of clusters) m = Math.max(m, Math.hypot(c.cx, c.cy) + c.r + 60); return m; }
+function fit() { const e = extent(); target = { x: 0, y: 0, k: Math.min(W, H) / (e * 2) }; if (!fit.done) { view = { ...target }; fit.done = true; } }
+function flyTo(c) { const k = Math.min(2.2, Math.min(W, H) / (c.r * 3.2)); target = { x: -c.cx * k, y: -c.cy * k, k }; lastTouch = Date.now(); }
+const toWorld = (px, py) => ({ x: (px - W / 2 - view.x) / view.k, y: (py - H / 2 - view.y) / view.k });
+function nodePos(c, nd, t) { const a = nd.a + t * 0.00004 * c.spin; const w = Math.sin(t * 0.0012 + nd.ph) * 2.2; return { x: c.cx + Math.cos(a) * (nd.rr + w), y: c.cy + Math.sin(a) * (nd.rr + w) }; }
+function hexA(hex, al) { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${al})`; }
+let T0 = 0;
 function frame(t) {
-  requestAnimationFrame(frame);
-  if (!renderer || !stage.clientWidth) return;
-  if (Date.now() - lastTouch > 3500) yaw += 0.0012;
-  const narrow = camera.aspect < 0.9; const dist = (narrow ? 23 : camera.aspect < 1.35 ? 17.5 : 18) / zoom;
-  camera.position.set(0, dist * (0.52 + pitch), dist * 0.86); camera.lookAt(0, -0.3, 0);
-  world.rotation.y = yaw;
-  for (const nd of nodes) if (nd.orbit) nd.orbit.rotation.y = t * 0.0005;
-  renderer.render(scene, camera);
-  const w = stage.clientWidth, h = stage.clientHeight;
-  for (const nd of nodes) {
-    nd.mesh.getWorldPosition(v3); v3.y += nd.h; const z = v3.clone().project(camera);
-    nd.el.style.left = ((z.x + 1) / 2) * w + 'px'; nd.el.style.top = ((1 - z.y) / 2) * h + 'px';
-    const far = nd.mesh.getWorldPosition(new THREE.Vector3()).distanceTo(camera.position); nd.el.style.zIndex = String(Math.round(1000 - far * 10)); nd.el.style.opacity = nd.core ? '1' : String(Math.max(0.6, Math.min(1, 1.9 - far / 20)));
+  requestAnimationFrame(frame); T0 = t; if (!W) return;
+  if (target) { view.x += (target.x - view.x) * 0.12; view.y += (target.y - view.y) * 0.12; view.k += (target.k - view.k) * 0.12; if (Math.abs(target.k - view.k) < 0.001 && Math.abs(target.x - view.x) < 0.5) target = null; }
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.setTransform(DPR * view.k, 0, 0, DPR * view.k, DPR * (W / 2 + view.x), DPR * (H / 2 + view.y));
+  const k = view.k, q = query;
+  // 가운데와 줄기를 잇는 선
+  for (const c of clusters) { ctx.strokeStyle = hexA(c.p.color, 0.28); ctx.lineWidth = 1.2 / k; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(c.cx, c.cy); ctx.stroke(); }
+  for (const c of clusters) {
+    const on = c.p.id === sel; const col = c.p.color;
+    // 글 점과 가는 선
+    const showLines = k > 0.75 || on;
+    ctx.lineWidth = 0.5 / k;
+    for (const nd of c.nodes) {
+      const pos = nodePos(c, nd, t); nd.x = pos.x; nd.y = pos.y;
+      const match = q && nd.t.toLowerCase().includes(q); const al = q ? (match ? 1 : 0.12) : nd.dim ? 0.35 : 0.9;
+      if (showLines && !nd.small) { ctx.strokeStyle = hexA(col, 0.1 * al + 0.03); ctx.beginPath(); ctx.moveTo(c.cx, c.cy); ctx.lineTo(nd.x, nd.y); ctx.stroke(); }
+      const r = (nd.small ? 2 : 3.4) * (match ? 1.8 : 1) * (hover === nd ? 1.8 : 1);
+      ctx.fillStyle = hexA(col, al); ctx.beginPath(); ctx.arc(nd.x, nd.y, r, 0, 6.2832); ctx.fill();
+    }
+    // 할 일: 바깥 고리의 네모
+    for (const nd of c.tasks) {
+      const a = nd.a + t * 0.00012; nd.x = c.cx + Math.cos(a) * nd.rr; nd.y = c.cy + Math.sin(a) * nd.rr;
+      const st = nd.task.status; const z = hover === nd ? 9 : 6;
+      ctx.fillStyle = st === 'doing' ? '#ff6b1a' : st === 'done' ? '#6b635a' : '#ffffff'; ctx.globalAlpha = q ? (nd.t.toLowerCase().includes(q) ? 1 : 0.15) : 1;
+      ctx.fillRect(nd.x - z / 2, nd.y - z / 2, z, z); ctx.globalAlpha = 1;
+    }
+    // 줄기 중심
+    const g = ctx.createRadialGradient(c.cx, c.cy, 0, c.cx, c.cy, on ? 46 : 34); g.addColorStop(0, hexA(col, 0.9)); g.addColorStop(1, hexA(col, 0));
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(c.cx, c.cy, on ? 46 : 34, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = col; ctx.strokeStyle = '#14110d'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(c.cx, c.cy, on ? 15 : 12, 0, 6.2832); ctx.fill(); ctx.stroke();
+    // 이름표 (확대와 상관없이 읽히는 크기)
+    const fs = Math.min(30, 15 / k); ctx.font = `800 ${fs}px "Pretendard Variable", sans-serif`; ctx.textAlign = 'center';
+    const ty = c.cy - c.r - 30 - fs * 0.9; const open = c.tasks.filter((x) => x.task.status !== 'done').length;
+    ctx.lineWidth = fs * 0.28; ctx.lineJoin = 'round'; ctx.strokeStyle = 'rgba(20,17,13,.85)'; ctx.strokeText(c.p.name, c.cx, ty); ctx.fillStyle = on ? '#ff8a4a' : '#fff'; ctx.fillText(c.p.name, c.cx, ty);
+    ctx.font = `600 ${fs * 0.68}px "Pretendard Variable", sans-serif`; ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.fillText(`글 ${c.items.length}${open ? ` · 할 일 ${open}` : ''}`, c.cx, ty + fs * 0.95);
   }
+  // 가운데: 섬업
+  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 70); g.addColorStop(0, 'rgba(255,107,26,.9)'); g.addColorStop(1, 'rgba(255,107,26,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, 70 + Math.sin(t * 0.002) * 4, 0, 6.2832); ctx.fill();
+  ctx.fillStyle = '#ff6b1a'; ctx.beginPath(); ctx.arc(0, 0, 22, 0, 6.2832); ctx.fill(); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, 7, 0, 6.2832); ctx.fill();
+  const fs = Math.min(34, 17 / k); ctx.font = `800 ${fs}px "Pretendard Variable", sans-serif`; ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.fillText('섬업', 0, 44 + fs * 0.6);
 }
-// 끌어서 돌리기 · 눌러서 고르기
-let down = null;
-canvas.addEventListener('pointerdown', (e) => { down = { x: e.clientX, y: e.clientY, yaw, pitch, moved: 0 }; canvas.setPointerCapture(e.pointerId); lastTouch = Date.now(); });
-canvas.addEventListener('pointermove', (e) => { if (!down) return; const dx = e.clientX - down.x, dy = e.clientY - down.y; down.moved = Math.max(down.moved, Math.abs(dx) + Math.abs(dy)); yaw = down.yaw + dx * 0.006; pitch = Math.max(-0.3, Math.min(0.45, down.pitch + dy * 0.003)); lastTouch = Date.now(); });
-canvas.addEventListener('pointerup', (e) => {
-  if (down && down.moved < 6 && renderer) { const r = canvas.getBoundingClientRect(); const m = new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); const rc = new THREE.Raycaster(); rc.setFromCamera(m, camera); const hit = rc.intersectObjects(nodes.filter((n) => !n.core).map((n) => n.mesh))[0]; if (hit) select(hit.object.userData.id); }
-  down = null;
+function pick(px, py) {
+  const w = toWorld(px, py); const tol = 9 / view.k; let best = null, bd = tol;
+  for (const c of clusters) { if (Math.hypot(w.x - c.cx, w.y - c.cy) < 18 / Math.min(1, view.k)) return { hub: c };
+    if (Math.hypot(w.x - c.cx, w.y - c.cy) > c.r + 40) continue;
+    for (const nd of [...c.tasks, ...c.nodes]) { const d = Math.hypot(w.x - nd.x, w.y - nd.y); if (d < bd) { bd = d; best = { node: nd, c }; } } }
+  return best;
+}
+// 끌어서 이동 · 휠과 두 손가락으로 확대/축소
+const ptrs = new Map(); let drag = null, pinch = null;
+canvas.addEventListener('pointerdown', (e) => { canvas.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); target = null; $('#gpop').hidden = true;
+  if (ptrs.size === 1) drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, moved: 0 };
+  if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), k: view.k }; drag = null; } });
+canvas.addEventListener('pointermove', (e) => {
+  const r = canvas.getBoundingClientRect();
+  if (ptrs.has(e.pointerId)) ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pinch && ptrs.size === 2) { const [a, b] = [...ptrs.values()]; zoomAt((a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top, pinch.k * Math.hypot(a.x - b.x, a.y - b.y) / pinch.d, true); return; }
+  if (drag) { const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.moved = Math.max(drag.moved, Math.abs(dx) + Math.abs(dy)); view.x = drag.vx + dx; view.y = drag.vy + dy; return; }
+  const hit = pick(e.clientX - r.left, e.clientY - r.top); hover = hit?.node || null; const tip = $('#gtip');
+  if (hit?.node) { tip.hidden = false; tip.textContent = `${hit.node.t} · ${hit.node.s || ''}`; tip.style.left = e.clientX - r.left + 'px'; tip.style.top = e.clientY - r.top + 'px'; } else tip.hidden = true;
+  canvas.style.cursor = hit ? 'pointer' : 'grab';
 });
-canvas.addEventListener('wheel', (e) => { e.preventDefault(); zoom = Math.max(0.7, Math.min(1.6, zoom - e.deltaY * 0.001)); lastTouch = Date.now(); }, { passive: false });
+canvas.addEventListener('pointerup', (e) => {
+  const r = canvas.getBoundingClientRect(); ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null;
+  if (drag && drag.moved < 6) { const hit = pick(e.clientX - r.left, e.clientY - r.top);
+    if (hit?.hub) { select(hit.hub.p.id); flyTo(hit.hub); }
+    else if (hit?.node) { const nd = hit.node, pop = $('#gpop'); pop.hidden = false; pop.style.left = Math.max(130, Math.min(W - 130, e.clientX - r.left)) + 'px'; pop.style.top = Math.min(H - 110, e.clientY - r.top) + 'px';
+      pop.innerHTML = `<small>${esc(hit.c.p.name)} · ${esc(nd.s || '')}</small><b>${esc(nd.t)}</b>${nd.task ? '<a href="#" data-sel>이 줄기에서 고치기</a>' : `<a href="${esc(nd.href)}" target="_blank" rel="noopener">열기 ↗</a><a href="./admin.html" target="_blank" rel="noopener">관리자에서 고치기</a>`}`;
+      pop.querySelector('[data-sel]')?.addEventListener('click', (ev) => { ev.preventDefault(); select(hit.c.p.id); pop.hidden = true; }); } }
+  drag = null;
+});
+canvas.addEventListener('pointerleave', () => { hover = null; $('#gtip').hidden = true; });
+function zoomAt(px, py, k, abs) { const nk = Math.max(0.15, Math.min(6, abs ? k : view.k * k)); const w = toWorld(px, py); view.k = nk; view.x = px - W / 2 - w.x * nk; view.y = py - H / 2 - w.y * nk; target = null; }
+canvas.addEventListener('wheel', (e) => { e.preventDefault(); const r = canvas.getBoundingClientRect(); zoomAt(e.clientX - r.left, e.clientY - r.top, Math.exp(-e.deltaY * 0.001)); $('#gpop').hidden = true; }, { passive: false });
+canvas.addEventListener('dblclick', (e) => { const r = canvas.getBoundingClientRect(); zoomAt(e.clientX - r.left, e.clientY - r.top, 1.6); });
+$('#zin').onclick = () => zoomAt(W / 2, H / 2, 1.35); $('#zout').onclick = () => zoomAt(W / 2, H / 2, 1 / 1.35); $('#zfit').onclick = () => { fit(); };
+$('#gq').oninput = (e) => { query = e.target.value.trim().toLowerCase(); };
 
 /* ── 오른쪽 패널 ── */
 function select(id) { sel = id; paintSel(); renderPillar(); showTab('pillar'); lastTouch = Date.now(); }
@@ -229,7 +278,7 @@ function renderLog() {
 }
 function setState() { const c = HQ.lastCycle; $('#state').textContent = c ? `마지막 회의 ${new Date(c.at).toLocaleString('ko-KR')} · ${c.round}번째${c.ai ? ' · AI' : ''}` : '아직 회의 전'; }
 async function load() {
-  HQ = await api('/api/admin/hq'); if (!sel || !pillarOf(sel)) sel = HQ.pillars[0]?.id || null;
+  [HQ, GRAPH] = await Promise.all([api('/api/admin/hq'), api('/api/admin/hq/graph')]); if (!sel || !pillarOf(sel)) sel = HQ.pillars[0]?.id || null;
   build3D(); renderPillar(); renderOrg(); renderLog(); setState();
 }
 $('#cycleBtn').onclick = async (e) => { const b = e.currentTarget; b.disabled = true; b.textContent = '회의 중…'; try { const r = await api('/api/admin/hq/cycle', {}); toast(`회의 끝 · 새 제안 ${r.added}건${r.ai ? '' : ' (AI 없이 진행)'}`); await load(); showTab('log'); } catch (err) { toast(err.message); } b.disabled = false; b.textContent = '지금 회의'; };
