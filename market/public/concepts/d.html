@@ -1,0 +1,58 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>시안 D · 빛줄기</title><link rel="stylesheet" href="./c.css">
+<style>
+body{background:#07060a;color:#fff}.nav{mix-blend-mode:normal}
+.hero{position:relative;height:100vh;min-height:640px;overflow:hidden;display:flex;align-items:center}
+#fx{position:absolute;inset:0;width:100%;height:100%}
+.hero::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 78% 50%,transparent 0,rgba(7,6,10,.0) 30%,rgba(7,6,10,.75) 75%),linear-gradient(90deg,rgba(7,6,10,.92) 0,rgba(7,6,10,.55) 38%,transparent 62%);pointer-events:none}
+.in{position:relative;z-index:2;padding:0 6vw;max-width:760px}
+.k{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#ffb48a;border:1px solid rgba(255,180,138,.35);border-radius:999px;padding:6px 12px;margin-bottom:22px}.k::before{content:'';width:6px;height:6px;border-radius:50%;background:#ff6b1a;box-shadow:0 0 10px #ff6b1a}
+h1{font-size:clamp(40px,6.2vw,92px);font-weight:900;line-height:1.05}h1 em{background:linear-gradient(90deg,#ff6b1a,#ffb347 60%,#19e0c8);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{font-size:clamp(16px,1.5vw,20px);line-height:1.6;color:rgba(255,255,255,.72);margin:22px 0 32px}
+.cta{display:flex;gap:12px;flex-wrap:wrap}.btn{box-shadow:0 0 32px rgba(255,107,26,.45)}.btn.line{box-shadow:none;border-color:rgba(255,255,255,.35);color:#fff}
+/* 떠 있는 유리 카드 */
+.float{position:relative;height:120vh;perspective:1400px;overflow:hidden}
+.float h2{position:sticky;top:16vh;text-align:center;font-size:clamp(28px,4.4vw,60px);font-weight:900;z-index:1}
+.panel{position:absolute;width:min(340px,70vw);border-radius:22px;overflow:hidden;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(10px);box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 60px rgba(255,107,26,.12);will-change:transform;transition:box-shadow .2s}
+.panel:hover{box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 80px rgba(255,107,26,.45)}
+.panel img{width:100%;aspect-ratio:16/10;object-fit:cover;display:block;opacity:.92}.panel div{padding:14px 16px 16px}.panel b{font-size:18px;display:block}.panel p{font-size:13px;color:rgba(255,255,255,.65);margin-top:4px}.panel u{text-decoration:none;font-weight:800;color:#ffb48a;font-size:13px;display:block;margin-top:10px}
+section{padding:110px 0}.sec2 h2{font-size:clamp(28px,4vw,48px);font-weight:900;margin-bottom:36px}.fact span{color:rgba(255,255,255,.7)}
+.fact{padding:26px;border-radius:20px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}
+</style></head><body>
+<div id="nav"></div>
+<header class="hero"><canvas id="fx"></canvas><div class="in"><span class="k">제주 창업 장터</span><h1>제주(섬)에서<br><em>창업을 거래하다</em></h1>
+<p class="sub">AI로 만든 서비스와 해커톤 프로젝트가 다음 주인을 만나는 곳.<br>흩어진 창업 정보가 한 줄기로 모입니다.</p>
+<div class="cta"><a class="btn" href="../market.html?type=project">프로젝트 둘러보기</a><a class="btn line" href="../sell.html?type=project">내 프로젝트 올리기</a></div></div></header>
+<div class="float" id="float"><h2 class="reveal">멈춘 프로젝트가<br><em>다음 주인</em>을 기다려요</h2></div>
+<section class="sec2"><div class="wrap"><h2 class="reveal">제주는 지금 <em>창업도시</em>에 도전 중</h2><div id="facts"></div></div></section>
+<span class="tag">시안 D · 빛줄기</span>
+<script src="./c.js"></script><script>
+nav.innerHTML = NAV; facts.innerHTML = FACTS;
+// 빛줄기: 왼쪽에서 흩어져 들어와 오른쪽 한 점(섬)으로 모인다. '흩어진 것이 모인다'는 뜻
+const cv = document.getElementById('fx'), c = cv.getContext('2d'); let W, H, D, strands = [], mx = .5, my = .5;
+function size() { D = Math.min(devicePixelRatio || 1, 2); W = cv.clientWidth; H = cv.clientHeight; cv.width = W * D; cv.height = H * D; }
+function make() { strands = Array.from({ length: 150 }, (_, i) => ({ y0: (Math.random() - .5) * 1.7, a: Math.random() * 6.28, sp: .15 + Math.random() * .5, w: .4 + Math.random() * 1.6, hue: Math.random(), amp: .05 + Math.random() * .22 })); }
+function draw(t) {
+  requestAnimationFrame(draw); c.setTransform(D, 0, 0, D, 0, 0); c.fillStyle = 'rgba(7,6,10,.22)'; c.fillRect(0, 0, W, H); c.globalCompositeOperation = 'lighter';
+  const fx = W * (.74 + (mx - .5) * .06), fy = H * (.5 + (my - .5) * .1), T = t * .00025;
+  for (const s of strands) {
+    const y0 = H * (.5 + s.y0), col = s.hue < .62 ? `255,${110 + s.hue * 120 | 0},26` : s.hue < .86 ? '255,200,120' : '25,224,200';
+    c.beginPath(); c.moveTo(-20, y0);
+    const wob = Math.sin(T * s.sp * 8 + s.a) * H * s.amp;
+    c.bezierCurveTo(W * .28, y0 + wob, W * .5, fy + (y0 - fy) * .55 - wob * .6, fx, fy);
+    c.bezierCurveTo(W * .9, fy + (fy - y0) * .2 + wob * .5, W * 1.02, fy + (y0 - fy) * .9, W + 40, fy + (y0 - fy) * 1.5 + wob);
+    const g = c.createLinearGradient(0, 0, W, 0); g.addColorStop(0, `rgba(${col},0)`); g.addColorStop(.35, `rgba(${col},.10)`); g.addColorStop(.74, `rgba(${col},.55)`); g.addColorStop(1, `rgba(${col},.06)`);
+    c.strokeStyle = g; c.lineWidth = s.w; c.stroke();
+  }
+  const r = 60 + Math.sin(t * .002) * 8, g2 = c.createRadialGradient(fx, fy, 0, fx, fy, r * 3); g2.addColorStop(0, 'rgba(255,220,180,.5)'); g2.addColorStop(.25, 'rgba(255,107,26,.25)'); g2.addColorStop(1, 'rgba(255,107,26,0)'); c.fillStyle = g2; c.beginPath(); c.arc(fx, fy, r * 3, 0, 6.3); c.fill();
+  c.globalCompositeOperation = 'source-over';
+}
+size(); make(); addEventListener('resize', size); addEventListener('pointermove', (e) => { mx = e.clientX / innerWidth; my = e.clientY / innerHeight; tilt(); }); requestAnimationFrame(draw);
+// 떠 있는 카드: 스크롤과 마우스에 따라 입체로 움직인다
+const POS = [[8, 30, -18, 0], [62, 22, 16, -120], [30, 58, -6, 80], [70, 62, 22, -40], [-4, 70, -24, -160], [44, 8, 4, -220]]; let panels = [];
+function tilt() { const fl = document.getElementById('float'); const r = fl.getBoundingClientRect(); const p = Math.max(0, Math.min(1, (innerHeight - r.top) / (innerHeight + r.height)));
+  panels.forEach((el, i) => { const [, , ry, z] = POS[i]; el.style.transform = `translate3d(0,${(0.5 - p) * (140 + i * 46)}px,${z + p * 160}px) rotateY(${ry + (mx - .5) * 16}deg) rotateX(${(my - .5) * -10}deg)`; }); }
+addEventListener('scroll', tilt, { passive: true });
+projects().then((l) => { const fl = document.getElementById('float');
+  l.slice(0, 6).forEach((p, i) => { const a = document.createElement('a'); a.className = 'panel'; a.href = `../project.html?id=${encodeURIComponent(p.id)}`; a.style.left = POS[i][0] + '%'; a.style.top = POS[i][1] + '%'; a.innerHTML = `<img src="${esc((p.photos || [])[0] || '')}" alt=""><div><b>${esc(p.name)}</b><p>${esc(p.tagline || '')}</p><u>추천 ${p.interest} →</u></div>`; fl.append(a); panels.push(a); });
+  tilt(); reveal(); });
+</script></body></html>

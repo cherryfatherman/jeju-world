@@ -1,0 +1,27 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>시안 G · 움직이는 글자</title><link rel="stylesheet" href="./c.css">
+<style>
+body{background:#faf8f5;overflow-x:hidden}.nav{mix-blend-mode:normal;color:#1b1915}
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;gap:1.2vw;padding-top:70px}
+.ln{white-space:nowrap;font-size:clamp(48px,11.5vw,190px);font-weight:900;line-height:1;display:flex;align-items:center;gap:.25em;will-change:transform}.ln.o{color:#ff6b1a}.ln.s{-webkit-text-stroke:3px #1b1915;color:transparent}
+.pill{display:inline-block;height:.78em;width:1.9em;border-radius:999px;overflow:hidden;flex:none;background:#eee center/cover;animation:pz 7s ease-in-out infinite alternate}@keyframes pz{to{background-size:135%}}.pill{background-size:110%}
+.bar{display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:3vw;padding:0 24px}.bar p{font-size:18px;font-weight:700;color:#4e4842}
+.hz{height:220vh;position:relative;background:#1b1915;color:#fff}.hz .pin{position:sticky;top:0;height:100vh;overflow:hidden;display:flex;align-items:center}.track{display:flex;gap:28px;padding:0 8vw;will-change:transform}
+.hc{flex:none;width:min(420px,76vw);border-radius:24px;overflow:hidden;background:#2a251f}.hc img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}.hc div{padding:20px}.hc b{font-size:24px;font-weight:900}.hc p{color:rgba(255,255,255,.65);margin-top:6px}.hc u{display:inline-block;margin-top:14px;text-decoration:none;color:#ff6b1a;font-weight:800}
+.hz h2{position:absolute;top:8vh;left:8vw;font-size:clamp(24px,3.4vw,44px);font-weight:900;z-index:2}
+section{padding:110px 0}section h2{font-size:clamp(28px,4vw,48px);font-weight:900;margin-bottom:36px}
+</style></head><body>
+<div id="nav"></div>
+<header class="hero" id="hero"><div class="ln" data-d="-1">제주 <span class="pill" style="background-image:url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&q=70&auto=format')"></span> (섬)에서</div>
+<div class="ln o" data-d="1">창업을 <span class="pill" style="background-image:url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=600&q=70&auto=format')"></span> 거래하다</div>
+<div class="ln s" data-d="-1">프로젝트 · 지원사업 · 해커톤 · 인사이트</div>
+<div class="bar"><p>멈춘 프로젝트가 다음 주인을 만나는 곳.</p><a class="btn" href="../market.html?type=project">프로젝트 둘러보기</a></div></header>
+<div class="hz" id="hz"><h2>지금 추천 많은 프로젝트 →</h2><div class="pin"><div class="track" id="track"></div></div></div>
+<section><div class="wrap"><h2 class="reveal">제주는 지금 <em>창업도시</em>에 도전 중</h2><div id="facts"></div></div></section>
+<span class="tag">시안 G · 움직이는 글자</span>
+<script src="./c.js"></script><script>
+nav.innerHTML = NAV; facts.innerHTML = FACTS;
+const lns = [...document.querySelectorAll('.ln')]; let t0 = performance.now();
+const on = () => { const y = scrollY, t = (performance.now() - t0) * .012; lns.forEach((l, i) => { const d = Number(l.dataset.d); const over = l.scrollWidth - innerWidth; l.style.transform = `translateX(${d < 0 ? -(((y * .9 + t * 3) % (Math.max(over, 0) + innerWidth * .5))) + innerWidth * .06 : -over + ((y * .9 + t * 3) % (Math.max(over, 0) + innerWidth * .5)) - innerWidth * .06}px)`; });
+  const hz = document.getElementById('hz'), r = hz.getBoundingClientRect(), p = Math.max(0, Math.min(1, -r.top / (r.height - innerHeight))); track.style.transform = `translateX(${-p * (track.scrollWidth - innerWidth)}px)`; requestAnimationFrame(on); }; requestAnimationFrame(on);
+projects().then((l) => { track.innerHTML = l.map((p) => `<a class="hc" href="../project.html?id=${encodeURIComponent(p.id)}"><img src="${esc((p.photos || [])[0] || '')}" alt=""><div><b>${esc(p.name)}</b><p>${esc(p.tagline || '')}</p><u>추천 ${p.interest} →</u></div></a>`).join(''); reveal(); });
+</script></body></html>

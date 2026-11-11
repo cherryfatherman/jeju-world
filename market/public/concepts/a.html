@@ -1,0 +1,22 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>시안 A · 열리는 창</title><link rel="stylesheet" href="./c.css">
+<style>
+.stage{height:260vh;position:relative}.pin{position:sticky;top:0;height:100vh;overflow:hidden;display:grid;place-items:center;background:#faf8f5}
+.win{position:relative;width:calc(42vw + 58vw * var(--p,0));height:calc(52vh + 48vh * var(--p,0));border-radius:calc(28px * (1 - var(--p,0)));overflow:hidden;box-shadow:0 30px 80px rgba(27,25,21,calc(.25 * (1 - var(--p,0))))}
+.hl{position:absolute;z-index:2;font-size:clamp(40px,8.4vw,128px);font-weight:900;line-height:1;white-space:nowrap;color:#1b1915;paint-order:stroke fill;-webkit-text-stroke:14px #faf8f5;will-change:transform}.hl em{color:#ff6b1a}
+.hl.t{top:16vh;transform:translateX(calc(-60vw * var(--p,0)))}.hl.b{bottom:16vh;transform:translateX(calc(60vw * var(--p,0)))}
+.after{position:absolute;z-index:3;inset:auto 0 12vh 0;text-align:center;color:#fff;opacity:calc((var(--p,0) - .75) * 4);display:grid;gap:22px;justify-items:center}.after p{font-size:clamp(22px,3vw,40px);font-weight:800;text-shadow:0 2px 20px rgba(0,0,0,.5)}
+.shade{position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(20,17,13,.7));opacity:var(--p,0)}
+.hint{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);font-size:13px;font-weight:700;color:#8a8178;opacity:calc(1 - var(--p,0) * 4);animation:bob 1.6s ease-in-out infinite}@keyframes bob{50%{transform:translate(-50%,6px)}}
+section{padding:110px 0}h2{font-size:clamp(28px,4vw,48px);font-weight:900;margin-bottom:36px}
+</style></head><body>
+<div id="nav"></div>
+<div class="stage" id="stage"><div class="pin"><div class="hl t">제주(섬)에서</div><div class="win"><div class="media" id="media"></div><div class="shade"></div></div><div class="hl b"><em>창업을 거래하다</em></div>
+<div class="after"><p>멈춘 프로젝트가 다음 주인을 만나는 곳</p><a class="btn" href="../market.html?type=project">프로젝트 둘러보기</a></div><span class="hint">스크롤하면 열려요 ↓</span></div></div>
+<section><div class="wrap"><h2 class="reveal">제주는 지금 <em>창업도시</em>에 도전 중</h2><div id="facts"></div></div></section>
+<section style="padding-top:0"><div class="wrap"><h2 class="reveal">지금 추천 많은 프로젝트</h2><div class="rows" id="rows"></div></div></section>
+<span class="tag">시안 A · 열리는 창</span>
+<script src="./c.js"></script><script>
+nav.innerHTML = NAV; facts.innerHTML = FACTS; mountMedia(media);
+const st = document.getElementById('stage'); const on = () => { const r = st.getBoundingClientRect(); const p = Math.max(0, Math.min(1, -r.top / (r.height - innerHeight))); st.style.setProperty('--p', p.toFixed(4)); }; addEventListener('scroll', on, { passive: true }); on();
+projects().then((l) => { rows.innerHTML = rowsHTML(l); reveal(); });
+</script></body></html>

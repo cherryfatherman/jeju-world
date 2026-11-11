@@ -1,0 +1,23 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>시안 F · 돌아가는 고리</title><link rel="stylesheet" href="./c.css">
+<style>
+body{background:radial-gradient(ellipse at 50% 30%,#2b1a10 0,#0c0a08 60%);color:#fff;overflow-x:hidden}.nav{mix-blend-mode:normal}
+.hero{min-height:100vh;display:grid;grid-template-rows:auto 1fr;justify-items:center;padding-top:110px;text-align:center}
+h1{font-size:clamp(36px,6vw,84px);font-weight:900;line-height:1.05}h1 em{background:linear-gradient(90deg,#ff6b1a,#ffc15e);-webkit-background-clip:text;background-clip:text;color:transparent}.sub{color:rgba(255,255,255,.7);margin:16px 0 24px;font-size:18px}
+.scene{width:100%;height:56vh;min-height:380px;perspective:1300px;display:grid;place-items:center;cursor:grab;user-select:none}.ring3{position:relative;width:260px;height:330px;transform-style:preserve-3d;will-change:transform}
+.c3{position:absolute;inset:0;border-radius:20px;overflow:hidden;background:#1b1612;border:1px solid rgba(255,255,255,.2);box-shadow:0 20px 60px rgba(0,0,0,.6);backface-visibility:hidden}.c3 img{width:100%;height:58%;object-fit:cover;display:block}.c3 div{padding:14px;text-align:left}.c3 b{font-size:18px}.c3 p{font-size:13px;color:rgba(255,255,255,.65);margin-top:4px}.c3 u{position:absolute;right:12px;top:12px;text-decoration:none;font-weight:800;font-size:12px;background:#ff6b1a;border-radius:999px;padding:4px 10px}
+.floor{position:absolute;width:900px;height:900px;border-radius:50%;border:1px dashed rgba(255,255,255,.18);transform:rotateX(90deg) translateZ(-190px)}
+section{padding:110px 0}h2{font-size:clamp(28px,4vw,48px);font-weight:900;margin-bottom:36px}.fact span{color:rgba(255,255,255,.7)}
+</style></head><body>
+<div id="nav"></div>
+<header class="hero"><div><h1>제주(섬)에서 <em>창업을 거래하다</em></h1><p class="sub">돌려 보세요. 다음 주인을 기다리는 프로젝트들.</p><a class="btn" href="../market.html?type=project">프로젝트 둘러보기</a></div>
+<div class="scene" id="scene"><div class="ring3" id="ring"><div class="floor"></div></div></div></header>
+<section><div class="wrap"><h2 class="reveal">제주는 지금 <em>창업도시</em>에 도전 중</h2><div id="facts"></div></div></section>
+<span class="tag">시안 F · 돌아가는 고리</span>
+<script src="./c.js"></script><script>
+nav.innerHTML = NAV; facts.innerHTML = FACTS;
+let rot = 0, vel = .18, drag = null;
+projects().then((l) => { const n = Math.max(l.length, 6), items = Array.from({ length: n }, (_, i) => l[i % l.length]).filter(Boolean), R = Math.round(150 / Math.tan(Math.PI / items.length)) + 40;
+  items.forEach((p, i) => { const a = document.createElement('a'); a.className = 'c3'; a.href = `../project.html?id=${encodeURIComponent(p.id)}`; a.draggable = false; a.style.transform = `rotateY(${i * 360 / items.length}deg) translateZ(${R}px)`; a.innerHTML = `<img src="${esc((p.photos || [])[0] || '')}" alt="" draggable="false"><u>추천 ${p.interest}</u><div><b>${esc(p.name)}</b><p>${esc(p.tagline || '')}</p></div>`; a.onclick = (e) => { if (Math.abs(vel) > .6) e.preventDefault(); }; ring.append(a); });
+  const f = () => { rot += vel; if (!drag) vel += (.18 - vel) * .02; ring.style.transform = `translateZ(-${R}px) rotateX(-8deg) rotateY(${rot}deg)`; requestAnimationFrame(f); }; f(); reveal(); });
+scene.onpointerdown = (e) => { drag = e.clientX; scene.setPointerCapture(e.pointerId); }; scene.onpointermove = (e) => { if (drag === null) return; vel = (e.clientX - drag) * .25; drag = e.clientX; }; scene.onpointerup = () => { drag = null; };
+</script></body></html>
