@@ -33,6 +33,9 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font); lette
 .s5 .big u::before { content: ""; position: absolute; left: 50%; top: -.34em; width: .26em; height: .26em; border-left: .07em solid #fff; border-top: .07em solid #fff; transform: translateX(-50%) rotate(45deg); }
 .s5 .big u { position: relative; }
 @keyframes lift { 0%, 100% { transform: translateY(0); } 45%, 70% { transform: translateY(-.24em); } }
+.w6 { will-change: clip-path, opacity; }
+.w6 u { text-decoration: none; display: inline-block; position: relative; transition: color .25s; }
+.w6 u::before { content: ""; position: absolute; left: 50%; top: -.36em; width: .24em; height: .24em; border-left: .075em solid #ff6b1a; border-top: .075em solid #ff6b1a; transform: translateX(-50%) rotate(45deg); opacity: var(--a, 0); }
 .say { margin: 0; color: var(--mute); font-size: 14px; line-height: 1.6; }
 .say b { color: var(--ink); }
 @media (max-width: 720px) { .split { grid-template-columns: 1fr; grid-template-rows: 1.15fr auto; } .split .r { padding: 22px 22px 28px; gap: 10px; } .stage { height: 78vh; } }
@@ -53,6 +56,7 @@ const LIST = [
   ['건네다', '만든 사람의 섬에서 다음 주인의 섬으로 프로젝트가 넘어가요. 거래를 그림으로만 설명해요.'],
   ['한 줄기', '사방에서 온 빛줄기가 한 점으로 모여요. 흩어진 창업 정보가 한곳에 모인다는 뜻이에요.'],
   ['올리다', '"업"이 위로 튀어 오르고 카드가 계속 떠올라요. 가장 단순하고 밝은 쪽이에요.'],
+  ['합친 시안', '빛줄기가 가운데로 모이고, 터지면서 섬이 되고, "섬업"이 써진 뒤 "업"이 올라가요. 13초마다 다시 시작해요.'],
 ];
 const SCENES = [
   // 1. 모이다
@@ -103,6 +107,33 @@ const SCENES = [
     return (t) => { const { c, W, H } = e; c.fillStyle = '#ff6b1a'; c.fillRect(0, 0, W, H);
       for (const k of C) { const u = (t * k.sp + k.ph) % 1, y = H * 1.15 - u * H * 1.35, w = 92 * k.s, h = 62 * k.s; c.save(); c.translate(k.x * W, y); c.rotate(k.rot + Math.sin(t + k.ph * 9) * .08); c.globalAlpha = .9;
         c.fillStyle = k.white ? '#ffffff' : '#1b1915'; rr(c, -w / 2, -h / 2, w, h, 12 * k.s); c.fill(); c.fillStyle = k.white ? '#ff6b1a' : '#ffffff'; rr(c, -w / 2 + 12 * k.s, -h / 2 + 12 * k.s, w * .34, 8 * k.s, 4); c.fill(); c.globalAlpha = .35; rr(c, -w / 2 + 12 * k.s, -h / 2 + 28 * k.s, w * .62, 6 * k.s, 3); c.fill(); c.restore(); } c.globalAlpha = 1; }; },
+  // 6. 합친 시안: 빛줄기 → 터짐 → 섬 → 섬업 → 업이 올라감
+  (e) => { e.ov.innerHTML = '<b class="word w6"><span>섬</span><u>업</u></b>'; const w = e.ov.firstChild, u = w.querySelector('u');
+    const backOut = (x) => 1 + 2.7 * (x - 1) ** 3 + 1.7 * (x - 1) ** 2, hh = (x) => .55 * mound(x, .57, .2) + .3 * mound(x, .27, .11);
+    const S = Array.from({ length: 190 }, () => ({ a: Math.random() * 6.28, r: .6 + Math.random() * .6, sp: .2 + Math.random() * .6, w: .5 + Math.random() * 1.7, hue: Math.random(), bend: (Math.random() - .5) * 1.6 })), P = [];
+    for (let i = 0; i < 1500; i++) { let x, y; do { x = Math.random(); y = Math.random() * .6; } while (y > hh(x)); P.push({ tx: x, ty: y, an: Math.random() * 6.28, rd: .12 + Math.random() * .6, ph: Math.random() * 6.28, col: ['#ff6b1a', '#ff6b1a', '#ffb347', '#19e0c8', '#ffffff'][i % 5], r: .8 + Math.random() * 1.8 }); }
+    let prev = 99;
+    return (tt) => { const { c, W, H } = e, T = (tt - 3) % 13, cx = W / 2, cy = H * .4, m = Math.min(W, H);
+      if (T < prev) { c.fillStyle = '#07060a'; c.fillRect(0, 0, W, H); } prev = T;
+      c.fillStyle = `rgba(7,6,10,${T < 3.4 ? .18 : .4})`; c.fillRect(0, 0, W, H);
+      const f = ease(T / 2.9), sA = T < 3.2 ? ease(T / .5) : Math.max(.12, 1 - ease((T - 3.2) / 1.3)), R = Math.hypot(W, H) * .6;
+      c.globalCompositeOperation = 'lighter';
+      for (const s of S) { const a = s.a + Math.sin(tt * s.sp * .5 + s.a) * .12, x0 = cx + Math.cos(a) * R * s.r, y0 = cy + Math.sin(a) * R * s.r * .8, mx = cx + Math.cos(a + s.bend) * R * .28, my = cy + Math.sin(a + s.bend) * R * .28, ex = x0 + (cx - x0) * f, ey = y0 + (cy - y0) * f;
+        const col = s.hue < .62 ? `255,${110 + (s.hue * 120 | 0)},26` : s.hue < .86 ? '255,200,120' : '25,224,200', g = c.createLinearGradient(x0, y0, ex, ey); g.addColorStop(0, `rgba(${col},0)`); g.addColorStop(.55, `rgba(${col},${.16 * sA})`); g.addColorStop(1, `rgba(${col},${.7 * sA})`);
+        c.strokeStyle = g; c.lineWidth = s.w; c.beginPath(); c.moveTo(x0, y0); c.quadraticCurveTo(x0 + (mx - x0) * f, y0 + (my - y0) * f, ex, ey); c.stroke(); }
+      const fl = Math.max(0, 1 - Math.abs(T - 3.3) / .4), gr = m * (.04 + .3 * f) * (1 + fl * 1.6), g2 = c.createRadialGradient(cx, cy, 0, cx, cy, gr); g2.addColorStop(0, `rgba(255,${190 + fl * 60 | 0},${120 + fl * 130 | 0},${.4 * sA * f + fl * .9})`); g2.addColorStop(1, 'rgba(255,107,26,0)'); c.fillStyle = g2; c.beginPath(); c.arc(cx, cy, gr, 0, 6.3); c.fill();
+      const rp = (T - 3.3) / 1.2; if (rp > 0 && rp < 1) { c.strokeStyle = `rgba(255,190,120,${(1 - rp) * .8})`; c.lineWidth = 3 + (1 - rp) * 8; c.beginPath(); c.arc(cx, cy, rp * Math.max(W, H) * .62, 0, 6.3); c.stroke(); }
+      c.globalCompositeOperation = 'source-over';
+      const a = ease((T - 3.2) / .9), b = ease((T - 4.0) / 2.3);
+      if (a > 0) { const bw = Math.min(W * .86, 920), bx = (W - bw) / 2, base = H * .58, bh = H * .66;
+        for (const p of P) { const sx = cx + Math.cos(p.an) * p.rd * m * 1.1, sy = cy + Math.sin(p.an) * p.rd * m * .75, tx = bx + p.tx * bw, ty = base - p.ty * bh + Math.sin(tt * 1.5 + p.ph) * 1.6; let x = cx + (sx - cx) * a, y = cy + (sy - cy) * a; x += (tx - x) * b; y += (ty - y) * b;
+          c.globalAlpha = a; c.fillStyle = p.col; c.beginPath(); c.arc(x, y, p.r * (1 + (1 - b) * .8), 0, 6.3); c.fill(); }
+        c.globalAlpha = b * .7; c.strokeStyle = '#19e0c8'; c.lineWidth = 1.5; c.beginPath(); for (let x = 0; x <= W; x += 10) { const y = base + 8 + Math.sin(x * .02 + tt * 1.4) * 3; x ? c.lineTo(x, y) : c.moveTo(x, y); } c.stroke(); c.globalAlpha = 1; }
+      const r = ease((T - 6) / 1), l = T < 7.3 ? 0 : backOut(Math.min(1, (T - 7.3) / .7)), out = 1 - ease((T - 11.6) / 1.2);
+      w.style.opacity = r > 0 ? out : 0; w.style.clipPath = `inset(-70% ${(1 - r) * 100}% -20% -10%)`; u.style.transform = `translateY(${-.26 * l}em)`; u.style.color = l > .3 ? '#ff6b1a' : '#fff'; u.style.setProperty('--a', Math.max(0, Math.min(1, l)));
+      if (l > 0 && out > 0) { const ur = u.getBoundingClientRect(), cr = c.canvas.getBoundingClientRect(), ux = ur.left + ur.width / 2 - cr.left, uy = ur.top - cr.top;
+        for (let i = 0; i < 20; i++) { const ph = (tt * .8 + i / 20) % 1; c.globalAlpha = (1 - ph) * Math.min(1, l) * out; c.fillStyle = i % 3 ? '#ff6b1a' : '#ffb347'; rr(c, ux + Math.sin(i * 2.4) * ur.width * .5 - 1.5, uy - ph * H * .24, 3, 12, 2); c.fill(); } c.globalAlpha = 1; }
+      if (out < 1) { c.fillStyle = `rgba(7,6,10,${1 - out})`; c.fillRect(0, 0, W, H); } }; },
 ];
 const stage = document.getElementById('stage'), tabs = document.getElementById('tabs'), say = document.getElementById('say'); let stop = null;
 function show(i) {
@@ -121,6 +152,6 @@ function show(i) {
 }
 tabs.innerHTML = LIST.map(([n], i) => `<button type="button" role="tab" id="tab${i + 1}">${i + 1}. ${n}</button>`).join('');
 [...tabs.children].forEach((b, i) => b.addEventListener('click', () => show(i)));
-const m = /^#s([1-5])$/.exec(location.hash || ''); show(m ? Number(m[1]) - 1 : 0);
+const m = /^#s([1-6])$/.exec(location.hash || ''); show(m ? Number(m[1]) - 1 : 5);
 </script>
 </body></html>
