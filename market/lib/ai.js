@@ -5,8 +5,12 @@
 //  - answerWaste     : "이거 어디 버려요?" (제주 배출 규칙 기준)
 //  - generateThreadsPosts : 스레드 글 초안
 const GEMINI_KEY = () => process.env.GEMINI_API_KEY || '';
-// 모델은 순서대로 시도한다. 하나가 404(종료)·503(혼잡)·429(한도)면 다음 모델로 넘어간다.
-const MODELS = () => [process.env.GEMINI_MODEL, 'gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-flash-latest', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'].filter(Boolean);
+// 모델은 순서대로 시도한다. 실측(2026-11)에서 3.5·3.6 계열이 1~4초에 답했고, 3.7·3.8·flash-latest는 40초 넘게 멈췄다.
+// 그래서 빠른 모델을 앞에 두고, 한 모델에 12초·전체 30초까지만 기다린다. 멈추거나 실패한 모델은 10분간 건너뛴다.
+const MODELS = () => [process.env.GEMINI_MODEL, 'gemini-3.5-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-flash-lite-latest', 'gemini-3.1-flash-lite', 'gemini-3-flash-preview', 'gemini-3.8-flash', 'gemini-3.7-flash'].filter(Boolean);
+const PER_MODEL_MS = 8000, TOTAL_MS = 30000, COOLDOWN_MS = 600000;
+const cooling = new Map(); // 모델 → 다시 써도 되는 시각
+let lastStatus = { ok: null, model: null, ms: null, error: 'AI를 아직 부른 적이 없어요', at: null };
 const CATEGORIES = ['생산성', '마케팅', '교육', '커뮤니티', '데이터·분석', '커머스', '헬스·웰빙', '개발도구', '지역·로컬', '기타'];
 const ITEM_CATEGORIES = ['가전·디지털', '가구·인테리어', '생활·주방', '농수산물', '의류·잡화', '취미·도서', '유아·반려', '차량·레저', '기타'];
 let lastGood = null; // 마지막으로 성공한 모델을 먼저 쓴다
@@ -17,35 +21,45 @@ function imagePart(dataUrl) {
 }
 
 async function callGemini(parts) {
-  if (!GEMINI_KEY()) throw new Error('no key');
-  const order = [...new Set([lastGood, ...MODELS()].filter(Boolean))];
-  let lastErr = null;
+  if (!GEMINI_KEY()) { lastStatus = { ok: false, model: null, ms: null, error: 'GEMINI_API_KEY가 없어요 (market/.env)', at: new Date().toISOString() }; throw new Error('no key'); }
+  const now = Date.now(); const all = [...new Set([lastGood, ...MODELS()].filter(Boolean))];
+  const order = all.filter((m) => (cooling.get(m) || 0) < now); if (!order.length) order.push(...all);
+  const started = Date.now(); let lastErr = null;
   for (const model of order) {
+    const left = TOTAL_MS - (Date.now() - started); if (left < 1500) break;
+    const t0 = Date.now();
     try {
       const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_KEY() },
         body: JSON.stringify({ contents: [{ parts }], generationConfig: { temperature: 0.5, responseMimeType: 'application/json' } }),
-        signal: AbortSignal.timeout(45000),
+        signal: AbortSignal.timeout(Math.min(PER_MODEL_MS, left)),
       });
       if (!r.ok) {
         const t = await r.text().catch(() => '');
-        lastErr = new Error(`gemini ${model} ${r.status} ${t.slice(0, 160).replace(/\s+/g, ' ')}`);
-        console.warn('[ai]', lastErr.message);
-        if ([404, 429, 500, 503].includes(r.status)) continue; // 다음 모델
-        throw lastErr;
+        lastErr = new Error(`${model} ${r.status} ${t.slice(0, 140).replace(/\s+/g, ' ')}`);
+        console.warn('[ai]', lastErr.message); cooling.set(model, Date.now() + COOLDOWN_MS);
+        if ([400, 401, 403].includes(r.status) && /API key|permission|PERMISSION/i.test(t)) break; // 키 문제는 다른 모델도 같다
+        continue;
       }
       const d = await r.json();
-      const text = d.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('') || '{}';
-      lastGood = model;
-      return JSON.parse(text.replace(/^```json\s*|```$/g, ''));
+      const text = d.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('') || '';
+      if (!text) { lastErr = new Error(`${model} 빈 응답 (${d.candidates?.[0]?.finishReason || d.promptFeedback?.blockReason || '이유 없음'})`); console.warn('[ai]', lastErr.message); continue; }
+      const out = JSON.parse(text.replace(/^```json\s*|```$/g, ''));
+      lastGood = model; lastStatus = { ok: true, model, ms: Date.now() - t0, error: '', at: new Date().toISOString() };
+      return out;
     } catch (e) {
-      lastErr = e; console.warn('[ai]', model, e.message);
-      if (e.name === 'TimeoutError' || e.name === 'AbortError') continue;
-      if (!/^gemini /.test(e.message)) continue;
+      lastErr = e; console.warn('[ai]', model, e.name === 'TimeoutError' ? `${PER_MODEL_MS / 1000}초 안에 답이 없음` : e.message);
+      cooling.set(model, Date.now() + COOLDOWN_MS); if (lastGood === model) lastGood = null;
     }
   }
+  lastStatus = { ok: false, model: null, ms: Date.now() - started, error: String(lastErr?.message || 'AI가 답하지 않았어요').slice(0, 200), at: new Date().toISOString() };
   throw lastErr || new Error('gemini unavailable');
+}
+// 관리자용 점검: 키가 있는지, 지금 어떤 모델이 몇 초에 답하는지
+async function aiStatus(test) {
+  if (test) { try { await callGemini([{ text: '점검입니다. JSON으로만 답하세요: {"ok":true}' }]); } catch {} }
+  return { hasKey: !!GEMINI_KEY(), ...lastStatus, cooling: [...cooling.entries()].filter(([, t]) => t > Date.now()).map(([m]) => m) };
 }
 const askJSON = (prompt, images = []) => callGemini([{ text: prompt }, ...images.map(imagePart).filter(Boolean)]);
 
@@ -60,19 +74,20 @@ async function peek(url) {
     return { title, desc, text };
   } catch { return { title: '', desc: '', text: '' }; }
 }
-async function generateListing({ url, hint }) {
-  const page = await peek(url);
+async function generateListing({ url, hint, photos = [] }) {
+  const page = url ? await peek(url) : { title: '', desc: '', text: '' };
   const prompt = `당신은 "섬업"(AI로 만든 작은 서비스와 해커톤 프로젝트를 다음 주인에게 넘기는 장터)의 등록 도우미입니다.
 아래 정보로 판매 등록 글을 한국어로 작성하세요. 과장하지 말고, 모르는 것은 지어내지 마세요.
-[서비스 주소] ${url}
+[서비스 주소] ${url || '(없음)'}
+[첨부 화면 사진] ${photos.length}장. 사진이 있으면 화면에 보이는 기능·분위기를 근거로 쓰세요.
 [페이지 제목] ${page.title}
 [페이지 설명] ${page.desc}
 [페이지 본문 일부] ${page.text}
 [판매자 메모] ${hint || '(없음)'}
 JSON으로만 답하세요:
 {"name":"이름(20자 이내)","tagline":"한 줄 소개(40자 이내)","description":"소개글 300~500자, 문단 2~3개(문제·사용자·단계·다음 가능성)","category":"${CATEGORIES.join(' | ')} 중 하나","tags":["태그 3~5개"],"priceMin":숫자(원),"priceMax":숫자(원),"priceReason":"가격 근거 한 문장","nextSteps":["다음 주인이 할 일 3가지"]}`;
-  try { return { ...normalize(await askJSON(prompt)), ai: true }; }
-  catch { return { ...fallbackListing(url, page, hint), ai: false, note: '지금은 AI 연결이 어려워 기본 초안을 만들었어요. 내용을 직접 다듬어 주세요.' }; }
+  try { return { ...normalize(await askJSON(prompt, photos)), ai: true }; }
+  catch { return { ...fallbackListing(url || 'https://', page, hint), ai: false, note: '지금은 AI 연결이 어려워 기본 초안을 만들었어요. 내용을 직접 다듬어 주세요.' }; }
 }
 function normalize(o) {
   return {
@@ -222,4 +237,4 @@ JSON으로만: {"posts":["글1","글2","글3"]}`;
   }
 }
 
-module.exports = { askJSON, generateListing, generateHome, generateItem, answerWaste, localWaste, generateThreadsPosts, CATEGORIES, ITEM_CATEGORIES };
+module.exports = { askJSON, aiStatus, generateListing, generateHome, generateItem, answerWaste, localWaste, generateThreadsPosts, CATEGORIES, ITEM_CATEGORIES };

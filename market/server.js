@@ -3,7 +3,7 @@
 const path = require('path');
 const fs = require('fs');
 const express = require('express');
-const { generateListing, generateHome, generateItem, answerWaste, generateThreadsPosts } = require('./lib/ai');
+const { generateListing, generateHome, generateItem, answerWaste, generateThreadsPosts, aiStatus } = require('./lib/ai');
 const { fetchHackathons } = require('./lib/hackathons');
 const crypto = require('crypto');
 const agents = require('./lib/agents');
@@ -163,20 +163,25 @@ app.post('/api/generate', limit(10), async (req, res) => {
     if (type === 'home') { if (!photos.length && !docs.length && !hint) return res.status(400).json({ error: '사진이나 서류, 메모 중 하나는 필요해요.' }); return res.json(await generateHome({ photos, docs, hint })); }
     if (type === 'item') { if (!photos.length && !hint) return res.status(400).json({ error: '사진 한 장은 올려 주세요.' }); return res.json(await generateItem({ photos, hint })); }
     const url = clean(req.body.url, 300);
-    if (!isUrl(url)) return res.status(400).json({ error: '주소 형식이 맞지 않아요. https:// 로 시작해야 해요.' });
-    res.json(await generateListing({ url, hint }));
+    if (url && !isUrl(url)) return res.status(400).json({ error: '주소 형식이 맞지 않아요. https:// 로 시작해야 해요.' });
+    if (!url && !photos.length) return res.status(400).json({ error: '서비스 주소나 화면 사진 중 하나는 필요해요.' });
+    res.json(await generateListing({ url, hint, photos }));
   } catch (e) {
     console.error('generate failed', e.message);
     res.status(500).json({ error: '소개글을 만들지 못했어요. 잠시 후 다시 시도해 주세요.' });
   }
 });
 
+// AI 상태 점검 (관리자): 키가 있는지, 지금 어떤 모델이 몇 초에 답하는지. ?test=1 이면 실제로 한 번 불러 본다
+app.get('/api/admin/ai-status', adminOnly, async (req, res) => res.json(await aiStatus(req.query.test === '1')));
+
 // ---- 판매 등록 (2단계: 확인 후 게시) ----
 app.post('/api/projects', limit(5), (req, res) => {
   const b = req.body || {};
   const type = TYPES.includes(b.type) ? b.type : 'project';
   const url = clean(b.url, 300);
-  if (type === 'project' && !isUrl(url)) return res.status(400).json({ error: '주소가 필요해요.' });
+  if (type === 'project' && url && !isUrl(url)) return res.status(400).json({ error: '주소 형식이 맞지 않아요.' });
+  if (type === 'project' && !url && !(Array.isArray(b.photos) && b.photos.some(isImg))) return res.status(400).json({ error: '서비스 주소나 화면 사진 중 하나는 필요해요.' });
   if (type === 'home' && !b.ownerConfirmed) return res.status(400).json({ error: '집은 집주인 본인 또는 공인중개사만 올릴 수 있어요. 확인란에 체크해 주세요.' });
   const contact = clean(b.contact, 200);
   if (!contact) return res.status(400).json({ error: '연락처(이메일 또는 오픈채팅 링크)가 필요해요.' });

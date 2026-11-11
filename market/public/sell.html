@@ -33,6 +33,8 @@
     <!-- 프로젝트 -->
     <div data-for="project" hidden>
       <label>서비스 주소 (배포된 사이트, 데모, GitHub 등)<input name="url" type="url" placeholder="https://..."></label>
+      <label>화면 사진 (최대 6장 · 주소가 없으면 사진만으로도 돼요)<input type="file" accept="image/*" multiple id="projPhotos"></label>
+      <div class="thumbs" id="projThumbs"></div>
     </div>
     <label>메모 (선택) — AI에게 알려줄 것<textarea name="hint" style="min-height:80px" id="hint"></textarea></label>
     <button class="btn primary big" id="genBtn">AI로 글 만들기</button>
@@ -112,7 +114,7 @@ $('#itemCat').innerHTML = ITEM_CATS.map((c) => `<option>${c}</option>`).join('')
 const HINTS = { home: '예: 제주대 도보 10분, 2026년 2월까지 단기 가능. 보증금 300에 월 45.', item: '예: 어제 딴 노지 감귤 10kg. 아라동 직거래.', project: '예: 2026 가을 교내 해커톤 우수상. 가입자 140명. 졸업해서 운영이 어려워요.' };
 const NOTES = { home: '사진이 없어도 서류나 메모만으로 초안을 만들어요. 집주인 본인 또는 공인중개사만 올릴 수 있어요.', item: '사진 1장이면 충분해요. 보이는 그대로 설명해요.', project: '페이지를 읽지 못해도 메모를 바탕으로 초안을 만들어요.' };
 let type = new URLSearchParams(location.search).get('type'); if (!['home', 'item', 'project'].includes(type)) type = 'project';
-const photos = { home: [], item: [] }, docs = [];
+const photos = { home: [], item: [], project: [] }, docs = [];
 let draftMeta = {};
 
 function setType(t) {
@@ -121,7 +123,7 @@ function setType(t) {
   // 숨긴 분류의 입력칸은 꺼서(disabled) 다른 분류 값이 섞여 전송되지 않게 한다
   $$('[data-for]').forEach((el) => { el.hidden = !el.dataset.for.split(' ').includes(t); el.querySelectorAll('input, select, textarea').forEach((i) => { i.disabled = el.hidden; }); });
   $('#hint').placeholder = HINTS[t]; $('#hintNote').textContent = NOTES[t];
-  $('#step1 [name=url]').required = t === 'project';
+  $('#step1 [name=url]').required = false;
 }
 $$('#typetabs button').forEach((b) => b.onclick = () => setType(b.dataset.t));
 function setStep(n) { [1, 2, 3].forEach((i) => $('#st' + i).classList.toggle('on', i === n)); $('#step1').hidden = n !== 1; $('#step2').hidden = n !== 2; }
@@ -140,6 +142,7 @@ async function pick(input, arr, el, max) {
 $('#homePhotos').onchange = (e) => pick(e.target, photos.home, $('#homeThumbs'), 6);
 $('#homeDocs').onchange = (e) => pick(e.target, docs, $('#docThumbs'), 3);
 $('#itemPhotos').onchange = (e) => pick(e.target, photos.item, $('#itemThumbs'), 6);
+$('#projPhotos').onchange = (e) => pick(e.target, photos.project, $('#projThumbs'), 6);
 $('#areaM2').oninput = (e) => { const v = Number(e.target.value); $('#pyeongIn').value = v ? (v / 3.3058).toFixed(1) : ''; };
 $('#pyeongIn').oninput = (e) => { const v = Number(e.target.value); $('#areaM2').value = v ? (v * 3.3058).toFixed(1) : ''; };
 // 금액: 10000 미만으로 적으면 "만 원" 단위로 본다 (300 → 3,000,000)
@@ -161,10 +164,11 @@ $('#step1').onsubmit = async (e) => {
   e.preventDefault();
   const hint = $('#hint').value.trim();
   const body = { type, hint };
-  if (type === 'project') body.url = $('#step1 [name=url]').value.trim();
+  if (type === 'project') { body.url = $('#step1 [name=url]').value.trim(); body.photos = photos.project; if (!body.url && !photos.project.length) return toast('서비스 주소나 화면 사진 중 하나는 넣어 주세요'); }
   if (type === 'home') { body.photos = photos.home; body.docs = docs; if (!photos.home.length && !docs.length && !hint) return toast('사진이나 서류, 메모 중 하나는 올려 주세요'); }
   if (type === 'item') { body.photos = photos.item; if (!photos.item.length && !hint) return toast('사진 한 장은 올려 주세요'); }
-  const btn = $('#genBtn'); btn.disabled = true; btn.innerHTML = `<span class="spinner"></span> ${type === 'home' ? '서류와 사진을 읽는 중…' : type === 'item' ? '사진을 보는 중…' : '페이지를 읽는 중…'}`;
+  const btn = $('#genBtn'); btn.disabled = true; const msg = type === 'home' ? '서류와 사진을 읽는 중' : type === 'item' ? '사진을 보는 중' : '화면을 읽는 중'; const t0 = Date.now();
+  const tick = () => { btn.innerHTML = `<span class="spinner"></span> ${msg}… ${Math.round((Date.now() - t0) / 1000)}초 (보통 5초, 길어도 30초)`; }; tick(); const timer = setInterval(tick, 1000);
   try {
     const d = await api('/api/generate', body);
     const f = $('#step2');
@@ -172,7 +176,7 @@ $('#step1').onsubmit = async (e) => {
     f.tags.value = (d.tags || []).join(', ');
     setStep(2); window.scrollTo({ top: 0, behavior: 'smooth' });
     await typeInto(f.name, d.name || ''); await typeInto(f.tagline, d.tagline || ''); typeInto(f.description, d.description || '', 4);
-    thumbs($('#previewThumbs'), type === 'project' ? [] : photos[type], false);
+    thumbs($('#previewThumbs'), photos[type], false);
     if (type === 'home') {
       f.dong.value = d.dong || ''; f.use.value = d.use || ''; f.areaM2.value = d.areaM2 || ''; $('#areaM2').dispatchEvent(new Event('input'));
       f.floor.value = d.floor || ''; f.builtYear.value = d.builtYear || ''; f.rooms.value = d.rooms || ''; f.options.value = (d.options || []).join(', ');
@@ -184,15 +188,16 @@ $('#step1').onsubmit = async (e) => {
     if (type !== 'home') { f.priceMin.value = d.priceMin || ''; f.priceMax.value = d.priceMax || ''; $('#priceReason').textContent = d.priceReason ? `AI 가격 근거: ${d.priceReason}` : ''; }
     draftMeta = { priceReason: d.priceReason, nextSteps: d.nextSteps };
     $('#aiNote').textContent = d.ai ? 'AI가 쓴 초안이에요. 틀린 부분은 고쳐 주세요. 과장된 표현은 거래 신뢰를 떨어뜨려요.' : (d.note || '기본 초안이에요. 내용을 채워 주세요.');
+    $('#aiNote').style.color = d.ai ? '' : 'var(--danger)'; if (!d.ai) toast('AI가 답하지 않아 기본 틀만 채웠어요. 잠시 뒤 다시 눌러 보세요');
   } catch (err) { toast(err.message); }
-  btn.disabled = false; btn.textContent = 'AI로 글 만들기';
+  clearInterval(timer); btn.disabled = false; btn.textContent = 'AI로 글 만들기';
 };
 $('#backBtn').onclick = () => setStep(1);
 $('#step2').onsubmit = async (e) => {
   e.preventDefault();
   const fd = Object.fromEntries(new FormData(e.target));
   fd.tags = (fd.tags || '').split(',').map((s) => s.trim()).filter(Boolean);
-  fd.photos = type === 'project' ? [] : photos[type];
+  fd.photos = photos[type];
   if (type === 'home') { fd.ownerConfirmed = !!e.target.ownerConfirmed.checked; fd.category = '집'; fd.stage = 'users'; fd.dealType = 'sell'; fd.deposit = toWon(fd.deposit); fd.monthly = toWon(fd.monthly); }
   if (type === 'item') { fd.stage = 'users'; fd.dealType = 'sell'; }
   Object.assign(fd, draftMeta);

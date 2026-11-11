@@ -45,6 +45,7 @@
     <div class="pane on" id="pane-dash"><div class="form">
       <div id="pwWarn" hidden class="warnbox">관리자 비밀번호가 기본값(baton1234)이에요. 배포할 때 환경변수 <b>ADMIN_PASSWORD</b>로 꼭 바꾸세요.</div>
       <div class="kpis" id="kpis"></div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 14px;border:1px solid var(--line);border-radius:10px"><b>AI 글쓰기 상태</b><span id="aiState" class="muted" style="flex:1;min-width:200px">확인 전</span><button type="button" class="btn sm" id="aiTest">지금 점검</button></div>
       <b>최근 14일 방문</b><p class="help">페이지를 연 횟수예요. 개인정보는 모으지 않아요.</p>
       <div class="chart" id="chart"></div>
       <details style="margin-top:8px"><summary class="muted" style="cursor:pointer">표로 보기</summary><table id="chartTable" style="width:100%;font-size:13px;margin-top:6px"></table></details>
@@ -207,7 +208,7 @@ function fill() {
   v('#f-kicker', B.kicker); v('#f-title', B.title); v('#f-sub', B.sub); v('#f-primary', B.primaryLabel); v('#f-secondary', B.secondaryLabel);
   v('#f-footer', cfg.footer?.note || '');
   v('#t-enabled', String(T.enabled !== false)); v('#t-mode', T.mode || 'auto'); v('#t-title', T.title); v('#t-text', T.text); v('#t-url', T.url);
-  renderNav(); renderTools(); fillJeju(); loadDash(); renderSlides(); renderAds(); loadGuides(); loadPlaces(); loadFeeds(); loadPosts('program'); loadPosts('insight'); loadTalk();
+  renderNav(); renderTools(); fillJeju(); loadDash(); renderSlides(); renderAds(); loadGuides(); loadPlaces(); loadFeeds(); loadPosts('program'); loadPosts('insight'); loadTalk(); loadAi(false);
   v('#supportText', (cfg.support || []).map((s) => [s.org, s.title, s.sub, s.href].join(' | ')).join('\n'));
 }
 /* ── 창업정보 · 인사이트: 같은 편집기 ── */
@@ -245,6 +246,15 @@ async function loadTalk() {
   $('#talkList').innerHTML = list.length ? list.map((c) => `<div class="trow" style="display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);${c.hidden ? 'opacity:.5' : ''}"><div class="grow" style="flex:1;min-width:0"><b>${esc(c.name || '익명')}</b> ${esc(c.text)}<div class="muted" style="font-size:12px">${esc(KIND_NAME[(c.key || '').split(':')[0]] || '')} · ${esc(c.title || c.key || '')} · ${new Date(c.createdAt).toLocaleString('ko-KR')}${c.hidden ? ' · 숨김' : ''}</div></div><button class="btn sm" data-c="${c.id}" data-act="${c.hidden ? 'show' : 'hide'}">${c.hidden ? '보이기' : '숨기기'}</button><button class="btn sm" data-c="${c.id}" data-act="delete" style="color:var(--danger)">삭제</button></div>`).join('') : '<p class="help">아직 이야기가 없어요.</p>';
   $$('#talkList [data-c]').forEach((b) => b.onclick = async () => { if (b.dataset.act === 'delete' && !confirm('이 이야기를 삭제할까요?')) return; await api(`/api/admin/comments/${b.dataset.c}`, { action: b.dataset.act }); loadTalk(); });
 }
+async function loadAi(test) {
+  const el = $('#aiState'); if (test) el.textContent = '점검 중… (최대 30초)';
+  try { const s = await api(`/api/admin/ai-status${test ? '?test=1' : ''}`);
+    el.innerHTML = !s.hasKey ? '<span style="color:var(--danger)">키가 없어요. <code>market/.env</code> 파일에 <code>GEMINI_API_KEY=...</code> 한 줄을 넣고 서버를 다시 켜세요.</span>'
+      : s.ok === true ? `<span style="color:var(--ok)">정상</span> · ${esc(s.model)} · ${(s.ms / 1000).toFixed(1)}초${s.cooling.length ? ` · 느려서 쉬는 모델 ${s.cooling.length}개` : ''}`
+      : s.ok === false ? `<span style="color:var(--danger)">응답 없음</span> · ${esc(s.error)}` : '키는 있어요. "지금 점검"을 눌러 확인하세요.';
+  } catch (e) { el.textContent = e.message; }
+}
+$('#aiTest').onclick = () => loadAi(true);
 let GUIDES = [];
 async function loadGuides() { try { GUIDES = await api('/api/admin/guides'); } catch { GUIDES = []; } renderGuides(); }
 function renderGuides() {
