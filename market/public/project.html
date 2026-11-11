@@ -65,7 +65,7 @@ async function load() {
   $('#name').textContent = p.name; $('#tagline').textContent = p.tagline;
   const dupe = (p.description || '').trim() === (p.tagline || '').trim(); $('#desc').textContent = dupe ? '' : p.description; $('#desc').hidden = dupe;
   $('#safety').textContent = SAFETY[p.type] || SAFETY.project;
-  const common = [['올린 분', p.seller || '익명'], ['상태', p.type === 'project' ? (p.deal === 'done' ? '거래 완료' : '거래 중') : ''], ['조회', String(p.views || 0)]];
+  const common = [['올린 분', p.seller || '익명'], ['거래 지역', p.area || ''], ['상태', p.type === 'project' ? (p.deal === 'done' ? '거래 완료' : '거래 중') : ''], ['조회', String(p.views || 0)]];
   if (p.type === 'home' && p.home) {
     const h = p.home;
     $('#price').textContent = h.deal === '매매' ? (h.deposit ? won(h.deposit) : '가격 협의') : h.deal === '전세' ? (h.deposit ? `전세 ${won(h.deposit)}` : '가격 협의') : h.monthly ? `${h.deposit ? won(h.deposit) + ' / ' : ''}월 ${won(h.monthly)}` : '가격 협의';
@@ -84,6 +84,7 @@ async function load() {
     $('#facts').innerHTML = dl([['단계', STAGE[p.stage]], ['출처', p.origin], ...common]) + (p.url ? `<dt>서비스</dt><dd><a href="${esc(p.url)}" target="_blank" rel="noopener" style="color:var(--accent);font-weight:700">열어보기 ↗</a></dd>` : '');
     if (p.nextSteps?.length) { $('#nextPanel').hidden = false; $('#nexts').replaceChildren(...p.nextSteps.map((s) => { const li = document.createElement('li'); li.textContent = s; return li; })); }
   }
+  if (p.area || p.home?.dong) $('#facts').insertAdjacentHTML('beforeend', `<dt>지도</dt><dd><a href="./map.html?focus=${encodeURIComponent(p.id)}" style="color:var(--accent);font-weight:700">지도에서 보기</a></dd>`);
   $('#mPrice').textContent = $('#price').textContent;
   $('#upSlot').replaceChildren(upBtn('project', id, p.interest, true));
   $('#upSlot .up').style.width = '100%';

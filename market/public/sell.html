@@ -92,6 +92,7 @@
       <label>희망 가격대 (원)<div style="display:flex;gap:6px;align-items:center"><input name="priceMin" type="number" min="0" step="1000" placeholder="최소"><span>~</span><input name="priceMax" type="number" min="0" step="1000" placeholder="최대"></div></label>
       <p class="note" id="priceReason"></p>
     </div>
+    <label>거래 지역 (지도에 동네 단위로만 보여요)<input name="area" list="regionList" placeholder="예: 제주시 아라동" autocomplete="off"><datalist id="regionList"></datalist></label>
     <label>태그 (쉼표로)<input name="tags" placeholder="아라동, 투룸, 단기가능"></label>
     <div class="row2">
       <label>표시 이름 (선택)<input name="seller" maxlength="30" placeholder="예: 집주인 / 과수원집 딸 / 졸업반 개발자"></label>
@@ -198,6 +199,7 @@ $('#step2').onsubmit = async (e) => {
   const btn = e.target.querySelector('.primary'); btn.disabled = true;
   try { const d = await api('/api/projects', fd); setStep(3); confetti(); toast('올라갔어요'); setTimeout(() => { location.href = `./project.html?id=${d.id}&new=1`; }, 900); } catch (err) { btn.disabled = false; toast(err.message); }
 };
+api('/api/regions').then((r) => { $('#regionList').innerHTML = r.map((x) => `<option value="${esc(x)}">`).join(''); }).catch(() => {});
 mountShell({ active: 'sell', primary: type === 'project' ? 'deal' : 'jeju', sub: type === 'project' ? 'sell' : 'market' }).then(() => setType(type));
 </script>
 </body>

@@ -7,6 +7,7 @@ const { generateListing, generateHome, generateItem, answerWaste, generateThread
 const { fetchHackathons } = require('./lib/hackathons');
 const crypto = require('crypto');
 const agents = require('./lib/agents');
+const { REGIONS, findRegion, jitter } = require('./lib/regions');
 
 // .env 파일이 있으면 읽는다 (예: GEMINI_API_KEY=..., ADMIN_PASSWORD=...). 이 파일은 GitHub에 올라가지 않는다.
 try {
@@ -129,6 +130,7 @@ app.put('/api/admin/projects/:id', adminOnly, (req, res) => {
   if (!p) return res.status(404).json({ error: 'not found' });
   if (Array.isArray(req.body.photos)) p.photos = req.body.photos.filter(isImg).slice(0, 8);
   for (const k of ['name', 'tagline', 'description']) if (typeof req.body[k] === 'string') p[k] = clean(req.body[k], k === 'description' ? 1500 : 80);
+  if (typeof req.body.area === 'string') p.area = findRegion(req.body.area)?.name || '';
   save('projects.json', list); res.json({ ok: true, photos: p.photos });
 });
 app.get('/api/admin/inbox', adminOnly, (req, res) => res.json({ inquiries: load('inquiries.json', []), waitlist: load('waitlist.json', []), comments: load('comments.json', []), feedback: load('feedback.json', []) }));
@@ -191,6 +193,7 @@ app.post('/api/projects', limit(5), (req, res) => {
     tags: (Array.isArray(b.tags) ? b.tags : []).map((t) => clean(t, 20)).filter(Boolean).slice(0, 6),
     url,
     origin: clean(b.origin, 80), // 어느 해커톤에서 나왔는지
+    area: findRegion(b.area || b.dong)?.name || '', // 거래 지역(읍·면·동). 지도에 동네 단위로만 표시
     stage: ['idea', 'demo', 'users', 'revenue'].includes(b.stage) ? b.stage : 'demo',
     priceMin: Math.max(0, Number(b.priceMin) || 0),
     priceMax: Math.max(0, Number(b.priceMax) || 0),
@@ -282,9 +285,27 @@ app.put('/api/admin/places', adminOnly, (req, res) => {
     name: clean(p.name, 60), area: clean(p.area, 40), summary: clean(p.summary, 200), tip: clean(p.tip, 300), address: clean(p.address, 120),
     tags: (Array.isArray(p.tags) ? p.tags : String(p.tags || '').split(',')).map((t) => clean(t, 16)).filter(Boolean).slice(0, 8),
     image: isImg(p.image) ? p.image : '', source: { label: clean(p.source?.label, 60), url: isUrl(p.source?.url || '') ? p.source.url : '' },
-    verified: p.verified === true, hidden: p.hidden === true, lastChecked: clean(p.lastChecked, 10), votes: Number(p.votes) || 0, externalId: clean(p.externalId, 40),
+    hidden: p.hidden === true, lastChecked: clean(p.lastChecked, 10), votes: Number(p.votes) || 0, externalId: clean(p.externalId, 40), lat: Number(p.lat) || null, lng: Number(p.lng) || null,
   })).filter((p) => p.name && !seen.has(p.id) && seen.add(p.id));
   save('places.json', cleaned); res.json({ ok: true, count: cleaned.length });
+});
+
+// ---- 지도: 거래 글(동네 단위)과 여행 장소를 한 번에. 좌표는 서버가 계산하므로 지도 API 호출·AI 토큰이 들지 않는다 ----
+app.get('/api/regions', (req, res) => res.json(REGIONS.map((r) => r.name)));
+app.get('/api/map', (req, res) => {
+  const V = liveVotes(); const showSamples = readConfig().site.showSamples !== false; const points = [];
+  for (const p of load('projects.json', [])) {
+    if (p.status !== 'live' || (!showSamples && p.sample)) continue;
+    const r = findRegion(p.area || p.home?.dong); if (!r) continue;
+    const type = p.type || 'project';
+    points.push({ kind: 'project', type, id: p.id, title: p.name, sub: p.tagline || '', area: r.name, image: (p.photos || [])[0] || '', href: `./project.html?id=${encodeURIComponent(p.id)}`, votes: voteOf(V, 'project', p.id, p.interest), done: type === 'project' && p.deal === 'done', ...jitter(p.id, r.lat, r.lng) });
+  }
+  for (const p of load('places.json', [])) {
+    if (p.hidden === true) continue;
+    const r = p.lat && p.lng ? { lat: p.lat, lng: p.lng, exact: true } : findRegion(p.area); if (!r) continue;
+    points.push({ kind: 'place', type: p.type, id: p.id, title: p.name, sub: p.summary || '', area: p.area || '', image: p.image || '', href: `./place.html?id=${encodeURIComponent(p.id)}`, votes: voteOf(V, 'place', p.id, p.votes), ...(r.exact ? { lat: r.lat, lng: r.lng } : jitter(p.id, r.lat, r.lng)) });
+  }
+  res.json({ points, center: { lat: 33.38, lng: 126.55 } });
 });
 
 // ---- 자동 갱신 피드: 어떤 데이터가 언제 갱신됐는지 한곳에서 관리 ----
@@ -333,14 +354,15 @@ app.post('/api/admin/feeds/:id/run', adminOnly, async (req, res) => { await runF
 // ---- 본부(HQ): 큰 줄기(기둥)·부서·AI 직원·할 일·회의록. 3D 대시보드(/hq.html)가 쓴다 ----
 app.get('/api/admin/hq', adminOnly, (req, res) => res.json({ ...load('hq.json', { pillars: [], agents: [], tasks: [], log: [] }), facts: agents.sense({ load, save, feedState }) }));
 app.put('/api/admin/hq', adminOnly, (req, res) => {
-  const b = req.body || {}; const hq = load('hq.json', { pillars: [], agents: [], tasks: [], log: [] });
+  const b = req.body || {}; const hq = load('hq.json', { pillars: [], agents: [], tasks: [], log: [] }); const oldTasks = hq.tasks || [];
   const color = (c) => (/^#[0-9a-fA-F]{6}$/.test(c || '') ? c : '#ff6b1a');
   if (Array.isArray(b.pillars)) hq.pillars = b.pillars.map((p) => ({ id: clean(p.id, 30).toLowerCase().replace(/[^a-z0-9-]/g, '-') || newId(), name: clean(p.name, 20), dept: clean(p.dept, 20), color: color(p.color), goal: clean(p.goal, 120), kpi: clean(p.kpi, 80) })).filter((p) => p.name).slice(0, 12);
   if (Array.isArray(b.agents)) hq.agents = b.agents.map((a) => ({ id: clean(a.id, 30).toLowerCase().replace(/[^a-z0-9-]/g, '-') || newId(), name: clean(a.name, 12), rank: ['본부장', '부서장', '팀장', '팀원'].includes(a.rank) ? a.rank : '팀원', dept: clean(a.dept, 20), pillar: clean(a.pillar, 30), persona: clean(a.persona, 120) })).filter((a) => a.name).slice(0, 40);
   if (Array.isArray(b.tasks)) hq.tasks = b.tasks.map((t) => ({ id: clean(t.id, 30) || newId(), pillar: clean(t.pillar, 30), owner: clean(t.owner, 30), title: clean(t.title, 100), why: clean(t.why, 240), status: ['proposed', 'doing', 'done'].includes(t.status) ? t.status : 'proposed', by: t.by === 'agent' ? 'agent' : 'admin', createdAt: clean(t.createdAt, 30) || new Date().toISOString() })).filter((t) => t.title).slice(0, 200);
+  if (Array.isArray(b.tasks)) agents.remember(hq, oldTasks, hq.tasks);
   save('hq.json', hq); res.json({ ok: true });
 });
-app.post('/api/admin/hq/cycle', adminOnly, async (req, res) => { try { const r = await agents.runCycle({ load, save, feedState }); markFeed('agents', true); res.json(r); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.post('/api/admin/hq/cycle', adminOnly, async (req, res) => { try { const r = await agents.runCycle({ load, save, feedState }, { force: true }); markFeed('agents', true); res.json(r); } catch (e) { res.status(500).json({ error: e.message }); } });
 
 // ---- 제주 생활 가이드 (글 하나 = 독립 정보 페이지, 관리자에서 편집) ----
 const guideSummary = ({ id, title, summary, image, tag, lastChecked, votes }) => ({ id, title, summary, image, tag, lastChecked, votes });

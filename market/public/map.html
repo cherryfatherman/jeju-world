@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>지도 · 섬업</title>
+<meta name="description" content="제주 어디에서 어떤 거래가 열려 있는지, 추천 많은 곳이 어디인지 지도에서 바로 봐요.">
+<link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="./vendor/leaflet/leaflet.css">
+<script src="./vendor/leaflet/leaflet.js"></script>
+<script src="./app.js"></script>
+<style>
+  .mapwrap { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; margin-top: 12px; }
+  #map { height: min(70vh, 640px); border-radius: 14px; border: 1px solid var(--line); background: #dfeaf0; z-index: 1; }
+  .mlist { max-height: min(70vh, 640px); overflow-y: auto; border-top: 1px solid var(--line); }
+  .mlist .rrow { cursor: pointer; padding: 10px 2px; } .mlist .rrow.sel { background: var(--accent-soft); }
+  .mlist .rrow .rthumb { width: 52px; height: 52px; }
+  .pin { width: 26px; height: 26px; border-radius: 50% 50% 50% 4px; transform: rotate(-45deg); border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.3); display: grid; place-items: center; }
+  .pin i { transform: rotate(45deg); font-style: normal; font-size: 11px; font-weight: 800; color: #fff; }
+  .pin.done { opacity: .5; }
+  .leaflet-popup-content { margin: 12px 14px; font-family: var(--font); min-width: 180px; }
+  .pop b { display: block; font-size: 15px; } .pop p { font-size: 13px; color: var(--ink-2); margin: 2px 0 6px; } .pop small { color: var(--ink-3); font-size: 12px; display: block; }
+  .pop a { display: inline-block; margin-top: 8px; color: var(--accent); font-weight: 700; font-size: 13px; }
+  .legend2 { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--ink-3); margin-top: 10px; }
+  .legend2 span::before { content: ''; display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--c); margin-right: 5px; }
+  @media (max-width: 860px) { .mapwrap { grid-template-columns: 1fr; } #map { height: 52vh; } .mlist { max-height: none; } }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="page-title"><h1>지도</h1><p>어디에서 어떤 거래가 열려 있는지 한눈에. 거래 글은 동네 단위로만 표시해요.</p></div>
+  <div class="chips" id="chips" style="margin-top:14px"></div>
+  <div class="mapwrap"><div id="map"></div><div class="mlist rlist" id="list"></div></div>
+  <div class="legend2" id="legend"></div>
+  <p class="note" style="margin-top:8px">거래 글의 위치는 읍·면·동 중심 근처에 대략 찍혀요. 정확한 주소는 올린 분께 문의하세요.</p>
+</main>
+<script>
+const Q = new URLSearchParams(location.search);
+const TYPES = { project: ['프로젝트', '#ff6b1a', 'P'], home: ['집', '#3b8fd9', '집'], item: ['물건', '#e8a400', '물'], spot: ['관광지', '#19b3a6', '관'], cafe: ['카페', '#7c6cf0', '카'], food: ['맛집', '#e5536b', '맛'] };
+const GROUPS = { all: ['전체', Object.keys(TYPES)], deal: ['거래', ['project', 'home', 'item']], project: ['프로젝트', ['project']], home: ['집', ['home']], item: ['물건', ['item']], travel: ['여행', ['spot', 'cafe', 'food']] };
+let points = [], group = GROUPS[Q.get('show')] ? Q.get('show') : 'all', map, layer, markers = {};
+function draw(fit) {
+  $('#chips').replaceChildren(...Object.entries(GROUPS).map(([k, [l]]) => { const b = document.createElement('button'); b.className = 'chip' + (k === group ? ' on' : ''); b.textContent = l; b.onclick = () => { group = k; draw(true); }; return b; }));
+  const list = points.filter((p) => GROUPS[group][1].includes(p.type)).sort((a, b) => b.votes - a.votes);
+  layer.clearLayers(); markers = {};
+  for (const p of list) {
+    const [label, color, ch] = TYPES[p.type];
+    const m = L.marker([p.lat, p.lng], { icon: L.divIcon({ className: '', html: `<div class="pin${p.done ? ' done' : ''}" style="background:${color}"><i>${ch}</i></div>`, iconSize: [26, 26], iconAnchor: [13, 26], popupAnchor: [0, -24] }), title: p.title });
+    m.bindPopup(`<div class="pop"><small>${esc(label)}${p.done ? ' · 거래 완료' : ''} · ${esc(p.area)}</small><b>${esc(p.title)}</b><p>${esc(p.sub)}</p><small>업 ${p.votes}</small><a href="${esc(p.href)}">자세히 보기 →</a></div>`);
+    m.on('click', () => mark(p.kind + p.id)); m.addTo(layer); markers[p.kind + p.id] = m;
+  }
+  $('#list').replaceChildren(...list.map((p) => { const r = rankRow({ href: p.href, image: p.image, iconName: 'puzzle', title: p.title, sub: p.sub, meta: `${TYPES[p.type][0]} · ${p.area}`, kind: p.kind, id: p.id, votes: p.votes }); r.dataset.key = p.kind + p.id;
+    r.addEventListener('click', (e) => { if (e.target.closest('.up')) return; e.preventDefault(); focus(p.kind + p.id); }); return r; }));
+  if (!list.length) $('#list').innerHTML = '<div class="empty">표시할 곳이 없어요.</div>';
+  if (fit && list.length) map.fitBounds(L.latLngBounds(list.map((p) => [p.lat, p.lng])).pad(0.15), { maxZoom: 13 });
+}
+function mark(key) { $$('#list .rrow').forEach((r) => r.classList.toggle('sel', r.dataset.key === key)); }
+function focus(key) { const m = markers[key]; if (!m) return; map.setView(m.getLatLng(), Math.max(map.getZoom(), 13)); m.openPopup(); mark(key); if (innerWidth < 860) $('#map').scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+mountShell(Q.get('show') === 'deal' ? { active: 'deal', sub: 'mapdeal' } : { active: 'jeju', sub: 'map' }).then(async () => {
+  const d = await api('/api/map'); points = d.points;
+  map = L.map('map', { scrollWheelZoom: true }).setView([d.center.lat, d.center.lng], 10);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(map);
+  layer = L.layerGroup().addTo(map);
+  $('#legend').innerHTML = Object.values(TYPES).map(([l, c]) => `<span style="--c:${c}">${l}</span>`).join('');
+  const f = Q.get('focus'); const hit = f && points.find((p) => p.id === f);
+  if (hit) { group = 'all'; draw(false); focus(hit.kind + hit.id); } else draw(true);
+});
+</script>
+</body>
+</html>

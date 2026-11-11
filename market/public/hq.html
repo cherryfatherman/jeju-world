@@ -89,12 +89,12 @@ let HQ = { pillars: [], agents: [], tasks: [], log: [], facts: {} }, sel = null,
 const RANKS = ['본부장', '부서장', '팀장', '팀원'];
 const STATUS = { proposed: '제안', doing: '진행', done: '완료' };
 const FACT = {
-  deal: [['open', '거래 중'], ['done', '완료'], ['real', '실제 글'], ['inquiries', '문의'], ['noPhoto', '사진 없음'], ['goods', '집·물건']],
+  deal: [['open', '거래 중'], ['done', '완료'], ['real', '실제 글'], ['inquiries', '문의'], ['noPhoto', '사진 없음'], ['noArea', '동네 없음']],
   program: [['open', '진행'], ['done', '완료'], ['closing', '마감 임박'], ['auto', '자동 수집']],
   insight: [['count', '글'], ['categories', '분류'], ['newestDays', '마지막 추가(일 전)']],
   hackathon: [['open', '열린 해커톤'], ['winners', '수상작'], ['feedDays', '수집(일 전)']],
   community: [['votes', '누적 업'], ['comments', '이야기'], ['commentsWeek', '이번 주'], ['feedback', '제보'], ['waitlist', '알림 신청']],
-  life: [['guides', '생활정보'], ['places', '여행 장소'], ['staleGuides', '오래된 글']],
+  life: [['guides', '생활정보'], ['places', '여행 장소'], ['staleGuides', '오래된 글'], ['noCoord', '좌표 없음']],
   partner: [['support', '연결 기관'], ['ads', '광고 자리']],
 };
 const pillarOf = (id) => HQ.pillars.find((p) => p.id === id);
@@ -212,7 +212,7 @@ function renderPillar() {
 function renderOrg() {
   const box = $('#t-org'); const order = (a) => (a.rank === '본부장' ? -1 : HQ.pillars.findIndex((p) => p.id === a.pillar)) * 10 + RANKS.indexOf(a.rank);
   const list = HQ.agents.slice().sort((a, b) => order(a) - order(b));
-  box.innerHTML = `<p class="note">가상의 AI 직원이에요. 부서장은 본부장에게 보고하고, 팀장·팀원은 부서장에게 제안해요. 성격을 고치면 다음 회의 말투가 달라져요.</p><div style="margin-top:8px">${list.map((a) => `<div class="agent" data-id="${esc(a.id)}">${ava(a)}<input data-a="name" value="${esc(a.name)}" aria-label="이름"><select data-a="rank" aria-label="직급">${RANKS.map((r) => `<option ${a.rank === r ? 'selected' : ''}>${r}</option>`).join('')}</select><select data-a="pillar" aria-label="소속"><option value="">총괄</option>${HQ.pillars.map((p) => `<option value="${esc(p.id)}" ${a.pillar === p.id ? 'selected' : ''}>${esc(p.dept || p.name)}</option>`).join('')}</select><button class="x" style="color:var(--ink-4)" aria-label="삭제">✕</button><input data-a="persona" value="${esc(a.persona || '')}" style="grid-column:2 / -1" aria-label="성격" placeholder="성격·맡은 일"></div>`).join('')}</div>
+  box.innerHTML = `<p class="note">줄기마다 전담 에이전트가 하나씩 있고, 부서장이 그 얼굴이에요. 전담 에이전트는 자기 줄기의 데이터만 보고 서로 부르지 않아요. 지운 제안은 기억해서 다시 내지 않아요.</p><div style="margin-top:8px">${list.map((a) => `<div class="agent" data-id="${esc(a.id)}">${ava(a)}<input data-a="name" value="${esc(a.name)}" aria-label="이름"><select data-a="rank" aria-label="직급">${RANKS.map((r) => `<option ${a.rank === r ? 'selected' : ''}>${r}</option>`).join('')}</select><select data-a="pillar" aria-label="소속"><option value="">총괄</option>${HQ.pillars.map((p) => `<option value="${esc(p.id)}" ${a.pillar === p.id ? 'selected' : ''}>${esc(p.dept || p.name)}</option>`).join('')}</select><button class="x" style="color:var(--ink-4)" aria-label="삭제">✕</button><input data-a="persona" value="${esc(a.persona || '')}" style="grid-column:2 / -1" aria-label="성격" placeholder="성격·맡은 일"></div>`).join('')}</div>
     <p style="margin-top:12px"><button class="btn sm" id="addAgent">＋ 직원 추가</button></p>`;
   box.querySelectorAll('.agent').forEach((row) => { const a = agentOf(row.dataset.id);
     row.querySelectorAll('[data-a]').forEach((inp) => inp.onchange = () => { a[inp.dataset.a] = inp.value; if (inp.dataset.a === 'pillar') a.dept = pillarOf(a.pillar)?.dept || '총괄'; touch(); if (inp.dataset.a !== 'persona') { renderOrg(); renderPillar(); } });
@@ -232,7 +232,7 @@ async function load() {
   HQ = await api('/api/admin/hq'); if (!sel || !pillarOf(sel)) sel = HQ.pillars[0]?.id || null;
   build3D(); renderPillar(); renderOrg(); renderLog(); setState();
 }
-$('#cycleBtn').onclick = async (e) => { const b = e.currentTarget; b.disabled = true; b.textContent = '회의 중…'; try { const r = await api('/api/admin/hq/cycle', {}); toast(`회의 끝 · 새 제안 ${r.added}건`); await load(); showTab('log'); } catch (err) { toast(err.message); } b.disabled = false; b.textContent = '지금 회의'; };
+$('#cycleBtn').onclick = async (e) => { const b = e.currentTarget; b.disabled = true; b.textContent = '회의 중…'; try { const r = await api('/api/admin/hq/cycle', {}); toast(`회의 끝 · 새 제안 ${r.added}건${r.ai ? '' : ' (AI 없이 진행)'}`); await load(); showTab('log'); } catch (err) { toast(err.message); } b.disabled = false; b.textContent = '지금 회의'; };
 $('#addPillar').onclick = () => { const name = prompt('새 줄기 이름'); if (!name) return; const id = 'p' + Date.now().toString(36); HQ.pillars.push({ id, name: name.slice(0, 20), dept: name.slice(0, 16) + '부', color: '#888888', goal: '', kpi: '' }); touch(); build3D(); select(id); renderOrg(); };
 
 /* ── 들어가기 ── */

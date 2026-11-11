@@ -46,7 +46,7 @@ mountShell({ active: 'jeju', sub: 'travel' }).then(async () => {
   if (p.image) { $('#pImage').src = p.image; $('#pImage').hidden = false; }
   const facts = [['주소', p.address], ['이런 분께', (p.tags || []).join(' · ')], ['팁', p.tip]].filter(([, v]) => v);
   $('#pFacts').innerHTML = facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('');
-  $('#mapBtn').href = `https://map.kakao.com/link/search/${encodeURIComponent(p.name + ' ' + (p.area || '제주'))}`;
+  $('#mapBtn').href = `./map.html?focus=${encodeURIComponent(p.id)}`; $('#mapBtn').removeAttribute('target');
   if (p.source?.url) $('#pSources').innerHTML = `<b>출처</b><ul><li><a href="${esc(p.source.url)}" target="_blank" rel="noopener">${esc(p.source.label || p.source.url)}</a></li></ul>`;
   $('#upSlot').replaceChildren(upBtn('place', p.id, p.votes, true));
   mountComments($('#talk'), 'place', p.id);

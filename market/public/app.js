@@ -12,11 +12,11 @@ let CONFIG = null;
 
 // 큰 줄기(목차). 제일 앞이 본업인 '거래'. 보조 탭이 2개 이상일 때만 둘째 줄이 보인다.
 const PRIMARY = [
-  { key: 'deal', label: '거래', icon: 'puzzle', href: './market.html?type=project', subs: [['./market.html?type=project', '프로젝트', 'project'], ['./sell.html?type=project', '내 프로젝트 올리기', 'sell']] },
+  { key: 'deal', label: '거래', icon: 'puzzle', href: './market.html?type=project', subs: [['./market.html?type=project', '프로젝트', 'project'], ['./map.html?show=deal', '지도에서 보기', 'mapdeal'], ['./sell.html?type=project', '내 프로젝트 올리기', 'sell']] },
   { key: 'program', label: '창업정보', icon: 'coins', href: './board.html?kind=program', subs: [] },
   { key: 'insight', label: '인사이트', icon: 'bulb', href: './board.html?kind=insight', subs: [] },
   { key: 'hackathon', label: '해커톤', icon: 'trophy', href: './hackathon.html', subs: [['./hackathon.html', '열린 해커톤', 'hackathon'], ['./winners.html', '수상작 도감', 'winners']] },
-  { key: 'jeju', label: '제주살이', icon: 'leaf', href: './jeju.html', subs: [['./jeju.html', '생활정보', 'jeju'], ['./places.html?type=spot', '여행', 'travel'], ['./market.html?type=home', '집·물건', 'market']] },
+  { key: 'jeju', label: '제주살이', icon: 'leaf', href: './jeju.html', subs: [['./jeju.html', '생활정보', 'jeju'], ['./places.html?type=spot', '여행', 'travel'], ['./market.html?type=home', '집·물건', 'market'], ['./map.html', '지도', 'map']] },
 ];
 
 const won = (n) => {
