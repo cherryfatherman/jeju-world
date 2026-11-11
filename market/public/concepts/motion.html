@@ -1,0 +1,126 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>body{margin:0}[hidden]{display:none!important}</style></head><body><title>섬업 움직이는 시안</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap">
+<style>
+/* 배치: 위에 시안 고르는 탭, 아래에 그 시안이 바로 움직이는 무대 하나. 페이지를 옮기지 않는다 */
+:root { --bg: #f7f4ee; --ink: #1b1915; --mute: #7d756b; --line: #e3dccf; --chip: #ffffff; --accent: #ff6b1a;
+  --font: "Noto Sans KR", system-ui, -apple-system, sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #12100d; --ink: #f4efe8; --mute: #a39a8e; --line: #332d25; --chip: #1f1b16; --accent: #ff7d36; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #12100d; --ink: #f4efe8; --mute: #a39a8e; --line: #332d25; --chip: #1f1b16; --accent: #ff7d36; color-scheme: dark }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); letter-spacing: -0.02em; word-break: keep-all; }
+.page { max-width: 1160px; margin: 0 auto; padding-block: 24px 40px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 14px; }
+.top { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.top h1 { margin: 0; font-size: 20px; font-weight: 900; margin-right: auto; }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.tabs button { font: inherit; font-weight: 700; font-size: 14px; height: 38px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--chip); color: var(--ink); cursor: pointer; }
+.tabs button:hover { border-color: var(--accent); }
+.tabs button[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.stage { position: relative; height: min(74vh, 660px); min-height: 440px; border-radius: 22px; overflow: hidden; background: #0b1220; }
+.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.ov { position: absolute; inset: 0; pointer-events: none; }
+.word { position: absolute; left: 50%; bottom: 9%; transform: translateX(-50%); font-size: clamp(54px, 10vw, 132px); font-weight: 900; line-height: 1; color: #fff; white-space: nowrap; }
+.cap { position: absolute; left: 0; right: 0; bottom: 5%; text-align: center; font-size: clamp(13px, 1.4vw, 16px); font-weight: 700; color: rgba(255,255,255,.7); }
+.split { display: grid; grid-template-columns: 1.25fr 1fr; height: 100%; background: #fff7ee; }
+.split .l { position: relative; min-height: 0; }
+.split .r { display: grid; align-content: center; gap: 18px; padding: 8% 9%; color: #1b1915; min-width: 0; }
+.split .r b { font-size: clamp(56px, 8vw, 116px); font-weight: 900; line-height: 1; }
+.split .r b i { font-style: normal; color: #ff6b1a; }
+.split .r p { margin: 0; font-size: clamp(16px, 1.6vw, 21px); font-weight: 700; color: #5a534b; line-height: 1.5; }
+.split .r span { justify-self: start; display: inline-flex; align-items: center; height: 50px; padding: 0 24px; border-radius: 999px; background: #ff6b1a; color: #fff; font-weight: 900; font-size: 16px; }
+.s5 .big { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; align-items: flex-end; gap: .06em; font-size: clamp(90px, 19vw, 250px); font-weight: 900; line-height: 1; color: #1b1915; }
+.s5 .big u { text-decoration: none; color: #fff; display: inline-block; animation: lift 2.6s cubic-bezier(.3,1.5,.5,1) infinite; }
+.s5 .big u::before { content: ""; position: absolute; left: 50%; top: -.34em; width: .26em; height: .26em; border-left: .07em solid #fff; border-top: .07em solid #fff; transform: translateX(-50%) rotate(45deg); }
+.s5 .big u { position: relative; }
+@keyframes lift { 0%, 100% { transform: translateY(0); } 45%, 70% { transform: translateY(-.24em); } }
+.say { margin: 0; color: var(--mute); font-size: 14px; line-height: 1.6; }
+.say b { color: var(--ink); }
+@media (max-width: 720px) { .split { grid-template-columns: 1fr; grid-template-rows: 1.15fr auto; } .split .r { padding: 22px 22px 28px; gap: 10px; } .stage { height: 78vh; } }
+@media (prefers-reduced-motion: reduce) { .s5 .big u { animation: none; } }
+</style>
+<div class="page">
+  <div class="top"><h1>섬업 움직이는 시안</h1><div class="tabs" id="tabs" role="tablist"></div></div>
+  <div class="stage" id="stage"></div>
+  <p class="say" id="say"></p>
+</div>
+<script>
+const ease = (x) => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x));
+const rr = (c, x, y, w, h, r) => { c.beginPath(); if (c.roundRect) c.roundRect(x, y, w, h, r); else c.rect(x, y, w, h); };
+const mound = (x, cx, w) => Math.exp(-(((x - cx) / w) ** 2));
+const LIST = [
+  ['모이다', '흩어진 점들이 모여 섬이 됩니다. 글자는 "섬업" 하나뿐이에요.'],
+  ['떠오르다', '왼쪽은 움직이는 그림, 오른쪽은 짧은 글. 섬이 바다에서 올라오고 그 위에 프로젝트가 자라요.'],
+  ['건네다', '만든 사람의 섬에서 다음 주인의 섬으로 프로젝트가 넘어가요. 거래를 그림으로만 설명해요.'],
+  ['한 줄기', '사방에서 온 빛줄기가 한 점으로 모여요. 흩어진 창업 정보가 한곳에 모인다는 뜻이에요.'],
+  ['올리다', '"업"이 위로 튀어 오르고 카드가 계속 떠올라요. 가장 단순하고 밝은 쪽이에요.'],
+];
+const SCENES = [
+  // 1. 모이다
+  (e) => {
+    e.ov.innerHTML = '<b class="word">섬업</b>'; const w = e.ov.firstChild, P = [];
+    const h = (x) => .55 * mound(x, .57, .2) + .3 * mound(x, .27, .11);
+    for (let i = 0; i < 1200; i++) { let x, y; do { x = Math.random(); y = Math.random() * .6; } while (y > h(x)); P.push({ tx: x, ty: y, sx: Math.random(), sy: Math.random(), ph: Math.random() * 6.28, sp: .3 + Math.random(), col: ['#ff6b1a', '#ff6b1a', '#ffb347', '#19e0c8', '#ffffff'][i % 5], r: .8 + Math.random() * 1.7 }); }
+    return (t) => { const { c, W, H } = e; c.fillStyle = '#0b1220'; c.fillRect(0, 0, W, H);
+      const T = t % 10, k = T < 1.5 ? 0 : T < 4.5 ? ease((T - 1.5) / 3) : T < 8.5 ? 1 : 1 - ease((T - 8.5) / 1.5);
+      w.style.opacity = Math.max(0, (k - .6) / .4); w.style.transform = `translate(-50%, ${(1 - k) * 24}px)`;
+      const bw = Math.min(W * .86, 920), bx = (W - bw) / 2, base = H * .6, bh = H * .7;
+      for (const p of P) { const sx = p.sx * W + Math.cos(t * p.sp + p.ph) * 34, sy = p.sy * H + Math.sin(t * p.sp * 1.3 + p.ph) * 34, tx = bx + p.tx * bw, ty = base - p.ty * bh + Math.sin(t * 1.5 + p.ph) * 1.6;
+        c.globalAlpha = .35 + .65 * k; c.fillStyle = p.col; c.beginPath(); c.arc(sx + (tx - sx) * k, sy + (ty - sy) * k, p.r, 0, 6.3); c.fill(); }
+      c.globalAlpha = k * .6; c.strokeStyle = '#19e0c8'; c.lineWidth = 1.5; c.beginPath(); for (let x = 0; x <= W; x += 10) { const y = base + 8 + Math.sin(x * .02 + t * 1.4) * 3; x ? c.lineTo(x, y) : c.moveTo(x, y); } c.stroke(); c.globalAlpha = 1; };
+  },
+  // 2. 떠오르다 (왼쪽 그림 + 오른쪽 글)
+  (e) => (t) => { const { c, W, H } = e; const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#fff3e3'); g.addColorStop(1, '#ffd9b8'); c.fillStyle = g; c.fillRect(0, 0, W, H);
+    const T = t % 10, k = T < 4 ? ease(T / 4) : T < 8.5 ? 1 : 1 - ease((T - 8.5) / 1.5), sea = H * .66, cx = W * .5, mw = W * .2;
+    c.fillStyle = '#ff6b1a'; c.globalAlpha = .9; c.beginPath(); c.arc(W * .76, H * .24 - k * H * .04, Math.min(W, H) * .085, 0, 6.3); c.fill(); c.globalAlpha = 1;
+    const top = (x) => sea + H * .12 - (H * .12 + H * .34 * k) * mound(x, cx, mw) - H * .1 * k * mound(x, cx - W * .26, W * .09);
+    c.fillStyle = '#1f6f63'; c.beginPath(); c.moveTo(0, H); for (let x = 0; x <= W; x += 6) c.lineTo(x, top(x)); c.lineTo(W, H); c.fill();
+    [[-.1, 34, '#ffffff'], [-.04, 52, '#ff6b1a'], [.03, 42, '#ffffff'], [.09, 28, '#ffb347'], [-.26, 24, '#ffffff']].forEach(([dx, bhh, col], i) => { const kk = ease((k - .55 - i * .05) / .3); if (kk <= 0) return; const x = cx + dx * W, y = top(x) + 3, bw2 = Math.max(14, W * .036), hh = bhh * (H / 520) * kk; c.fillStyle = col; rr(c, x - bw2 / 2, y - hh, bw2, hh + 4, 5); c.fill(); });
+    [['#19b3a6', .9, 0, 9], ['#0f8f86', .85, 1.7, 7], ['#0a6f6c', .9, 3.1, 5]].forEach(([col, al, ph, amp], i) => { c.fillStyle = col; c.globalAlpha = al; c.beginPath(); c.moveTo(0, H); for (let x = 0; x <= W; x += 8) c.lineTo(x, sea + i * H * .075 + Math.sin(x * .014 + t * (1.1 + i * .3) + ph) * amp); c.lineTo(W, H); c.fill(); }); c.globalAlpha = 1;
+    for (let i = 0; i < 3; i++) { const u = ((t * .35 + i / 3) % 1), y = top(cx) - 30 - u * H * .16; c.globalAlpha = k * (1 - u); c.strokeStyle = '#ff6b1a'; c.lineWidth = 4; c.lineCap = 'round'; c.lineJoin = 'round'; c.beginPath(); c.moveTo(cx - 13, y + 11); c.lineTo(cx, y); c.lineTo(cx + 13, y + 11); c.stroke(); } c.globalAlpha = 1; },
+  // 3. 건네다
+  (e) => { e.ov.innerHTML = '<b class="word" style="font-size:clamp(34px,5vw,64px);bottom:13%">섬업</b><span class="cap">만든 사람 → 다음 주인</span>'; const trail = []; let last = -1;
+    return (t) => { const { c, W, H } = e; const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#06202a'); g.addColorStop(1, '#0b3a44'); c.fillStyle = g; c.fillRect(0, 0, W, H);
+      const base = H * .62, A = W * .2, B = W * .8, mw = W * .1, top = (x) => base - H * .2 * (mound(x, A, mw) + mound(x, B, mw));
+      const n = Math.floor(t / 3.2), u = ease(((t % 3.2) - .3) / 2.3), dir = n % 2, from = dir ? B : A, to = dir ? A : B; if (n !== last) { trail.length = 0; last = n; }
+      c.fillStyle = '#134e5a'; c.beginPath(); c.moveTo(0, H); for (let x = 0; x <= W; x += 6) c.lineTo(x, top(x)); c.lineTo(W, H); c.fill();
+      [A, B].forEach((ix, s) => { const cnt = 1 + ((n + s) % 4); for (let i = 0; i < cnt; i++) { const x = ix + (i - (cnt - 1) / 2) * W * .028; c.fillStyle = i % 2 ? '#ffb347' : '#ffffff'; rr(c, x - W * .011, top(x) - 16 - (i % 3) * 9, W * .022, 20 + (i % 3) * 9, 4); c.fill(); } });
+      c.fillStyle = '#0b3a44'; c.globalAlpha = .9; c.beginPath(); c.moveTo(0, H); for (let x = 0; x <= W; x += 8) c.lineTo(x, base + 6 + Math.sin(x * .016 + t * 1.3) * 5); c.lineTo(W, H); c.fill(); c.globalAlpha = 1;
+      c.setLineDash([4, 10]); c.strokeStyle = 'rgba(255,255,255,.22)'; c.lineWidth = 2; c.beginPath(); c.moveTo(A, top(A) - 30); c.quadraticCurveTo(W / 2, H * .02, B, top(B) - 30); c.stroke(); c.setLineDash([]);
+      const q = (a, b, cc) => (1 - u) * (1 - u) * a + 2 * (1 - u) * u * b + u * u * cc, x = q(from, W / 2, to), y = q(top(from) - 30, H * .02, top(to) - 30); trail.push([x, y]); if (trail.length > 22) trail.shift();
+      trail.forEach(([px, py], i) => { c.globalAlpha = i / trail.length * .5; c.fillStyle = '#ff6b1a'; c.beginPath(); c.arc(px, py, 3 + i * .35, 0, 6.3); c.fill(); }); c.globalAlpha = 1;
+      c.save(); c.translate(x, y); c.rotate((u - .5) * (dir ? -1 : 1) * .9); c.shadowColor = '#ff6b1a'; c.shadowBlur = 28; c.fillStyle = '#ff6b1a'; rr(c, -22, -15, 44, 30, 7); c.fill(); c.shadowBlur = 0; c.fillStyle = '#fff'; rr(c, -14, -7, 16, 4, 2); c.fill(); rr(c, -14, 2, 26, 4, 2); c.fill(); c.restore();
+      if (u > .96) { const pu = Math.max(0, Math.min(1, (t % 3.2 - 2.5) / .7)); c.globalAlpha = Math.max(0, 1 - pu); c.strokeStyle = '#19e0c8'; c.lineWidth = 3; c.beginPath(); c.arc(to, top(to) - 30, 20 + pu * 60, 0, 6.3); c.stroke(); c.globalAlpha = 1; } }; },
+  // 4. 한 줄기
+  (e) => { e.ov.innerHTML = '<b class="word" style="bottom:auto;top:50%;transform:translate(-50%,-50%);text-shadow:0 0 60px rgba(255,107,26,.9)">섬업</b>';
+    const S = Array.from({ length: 170 }, () => ({ a: Math.random() * 6.28, r: .55 + Math.random() * .6, sp: .2 + Math.random() * .6, w: .4 + Math.random() * 1.5, hue: Math.random(), bend: (Math.random() - .5) * 1.6 })); let first = true;
+    return (t) => { const { c, W, H } = e; c.fillStyle = first ? '#07060a' : 'rgba(7,6,10,.2)'; first = false; c.fillRect(0, 0, W, H); c.globalCompositeOperation = 'lighter'; const cx = W / 2, cy = H / 2, R = Math.hypot(W, H) * .6;
+      for (const s of S) { const a = s.a + Math.sin(t * s.sp * .5 + s.a) * .12, x0 = cx + Math.cos(a) * R * s.r, y0 = cy + Math.sin(a) * R * s.r * .8, mx = cx + Math.cos(a + s.bend) * R * .28, my = cy + Math.sin(a + s.bend) * R * .28;
+        const col = s.hue < .62 ? `255,${110 + (s.hue * 120 | 0)},26` : s.hue < .86 ? '255,200,120' : '25,224,200', g = c.createLinearGradient(x0, y0, cx, cy); g.addColorStop(0, `rgba(${col},0)`); g.addColorStop(.6, `rgba(${col},.16)`); g.addColorStop(1, `rgba(${col},.6)`);
+        c.strokeStyle = g; c.lineWidth = s.w; c.beginPath(); c.moveTo(x0, y0); c.quadraticCurveTo(mx, my, cx, cy); c.stroke(); }
+      const rad = Math.min(W, H) * .32 + Math.sin(t * 2) * 8, g2 = c.createRadialGradient(cx, cy, 0, cx, cy, rad); g2.addColorStop(0, 'rgba(255,170,90,.35)'); g2.addColorStop(1, 'rgba(255,107,26,0)'); c.fillStyle = g2; c.beginPath(); c.arc(cx, cy, rad, 0, 6.3); c.fill(); c.globalCompositeOperation = 'source-over'; }; },
+  // 5. 올리다
+  (e) => { e.ov.innerHTML = '<div class="big">섬<u>업</u></div>'; const C = Array.from({ length: 16 }, (_, i) => ({ x: Math.random(), ph: Math.random(), sp: .05 + Math.random() * .07, s: .6 + Math.random() * .9, rot: (Math.random() - .5) * .5, white: i % 3 !== 0 }));
+    return (t) => { const { c, W, H } = e; c.fillStyle = '#ff6b1a'; c.fillRect(0, 0, W, H);
+      for (const k of C) { const u = (t * k.sp + k.ph) % 1, y = H * 1.15 - u * H * 1.35, w = 92 * k.s, h = 62 * k.s; c.save(); c.translate(k.x * W, y); c.rotate(k.rot + Math.sin(t + k.ph * 9) * .08); c.globalAlpha = .9;
+        c.fillStyle = k.white ? '#ffffff' : '#1b1915'; rr(c, -w / 2, -h / 2, w, h, 12 * k.s); c.fill(); c.fillStyle = k.white ? '#ff6b1a' : '#ffffff'; rr(c, -w / 2 + 12 * k.s, -h / 2 + 12 * k.s, w * .34, 8 * k.s, 4); c.fill(); c.globalAlpha = .35; rr(c, -w / 2 + 12 * k.s, -h / 2 + 28 * k.s, w * .62, 6 * k.s, 3); c.fill(); c.restore(); } c.globalAlpha = 1; }; },
+];
+const stage = document.getElementById('stage'), tabs = document.getElementById('tabs'), say = document.getElementById('say'); let stop = null;
+function show(i) {
+  if (stop) stop(); stage.innerHTML = ''; stage.className = 'stage s' + (i + 1);
+  [...tabs.children].forEach((b, k) => b.setAttribute('aria-selected', String(k === i)));
+  say.innerHTML = `<b>${i + 1}. ${LIST[i][0]}</b> · ${LIST[i][1]}`;
+  const cv = document.createElement('canvas'), ov = document.createElement('div'); ov.className = 'ov';
+  if (i === 1) { stage.innerHTML = '<div class="split"><div class="l"></div><div class="r"><b>섬<i>업</i></b><p>제주에서 만든 것을<br>제주에서 사고팝니다.</p><span>둘러보기 →</span></div></div>'; stage.querySelector('.l').append(cv); } else stage.append(cv, ov);
+  const c = cv.getContext('2d'); let W = 1, H = 1, D = 1, alive = true;
+  const fit = () => { D = Math.min(window.devicePixelRatio || 1, 2); W = Math.max(1, cv.clientWidth); H = Math.max(1, cv.clientHeight); cv.width = W * D; cv.height = H * D; };
+  fit(); const ro = new ResizeObserver(fit); ro.observe(cv);
+  const draw = SCENES[i]({ c, ov, get W() { return W; }, get H() { return H; } }), t0 = performance.now();
+  const loop = (t) => { if (!alive) return; c.setTransform(D, 0, 0, D, 0, 0); draw((t - t0) / 1000 + 3); requestAnimationFrame(loop); }; requestAnimationFrame(loop);
+  stop = () => { alive = false; ro.disconnect(); };
+  try { history.replaceState(null, '', '#s' + (i + 1)); } catch (err) {}
+}
+tabs.innerHTML = LIST.map(([n], i) => `<button type="button" role="tab" id="tab${i + 1}">${i + 1}. ${n}</button>`).join('');
+[...tabs.children].forEach((b, i) => b.addEventListener('click', () => show(i)));
+const m = /^#s([1-5])$/.exec(location.hash || ''); show(m ? Number(m[1]) - 1 : 0);
+</script>
+</body></html>
