@@ -35,8 +35,10 @@ const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2
 
 const CONFIG_FILE = path.join(__dirname, 'config.json');
 const readConfig = () => JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'baton1234'; // 배포할 때 환경변수로 꼭 바꾸세요
-const DEFAULT_PW = !process.env.ADMIN_PASSWORD;
+// 인터넷에 올린 서버(HOSTED)에서는 기본 비밀번호를 쓰지 않는다. ADMIN_PASSWORD가 없으면 관리자 로그인이 아예 막힌다.
+const HOSTED = !!process.env.RENDER || process.env.NODE_ENV === 'production';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || (HOSTED ? '' : 'baton1234');
+const DEFAULT_PW = !process.env.ADMIN_PASSWORD && !HOSTED;
 // 아주 단순한 속도 제한: IP별 1분에 N회
 const hits = new Map();
 const limit = (n) => (req, res, next) => {
@@ -51,7 +53,7 @@ function countVisit(page) {
   const m = load('metrics.json', {}); const day = new Date().toISOString().slice(0, 10);
   m[day] = m[day] || { views: 0, pages: {} }; m[day].views++; m[day].pages[page] = (m[day].pages[page] || 0) + 1; save('metrics.json', m);
 }
-const adminOnly = (req, res, next) => (req.get('x-admin-password') === ADMIN_PASSWORD ? next() : res.status(401).json({ error: '관리자 비밀번호가 틀려요.' }));
+const adminOnly = (req, res, next) => (ADMIN_PASSWORD && req.get('x-admin-password') === ADMIN_PASSWORD ? next() : res.status(401).json({ error: '관리자 비밀번호가 틀려요.' }));
 
 const app = express();
 app.use(express.json({ limit: '25mb' })); // 사진 업로드(base64) 때문에 넉넉히
@@ -106,7 +108,7 @@ app.get('/api/admin/metrics', adminOnly, (req, res) => {
     interest: projects.reduce((a, p) => a + (p.interest || 0), 0), views: projects.reduce((a, p) => a + (p.views || 0), 0),
   } });
 });
-app.post('/api/admin/login', limit(10), (req, res) => (req.body.password === ADMIN_PASSWORD ? res.json({ ok: true, defaultPassword: DEFAULT_PW }) : res.status(401).json({ error: '비밀번호가 틀려요.' })));
+app.post('/api/admin/login', limit(10), (req, res) => (ADMIN_PASSWORD && req.body.password === ADMIN_PASSWORD ? res.json({ ok: true, defaultPassword: DEFAULT_PW }) : res.status(401).json({ error: '비밀번호가 틀려요.' })));
 app.put('/api/config', adminOnly, (req, res) => {
   const c = req.body;
   if (!c || typeof c !== 'object' || !c.site || !c.banner) return res.status(400).json({ error: '설정 형식이 맞지 않아요.' });
@@ -570,6 +572,7 @@ app.get('/api/threads-drafts', async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`섬업 실행 중: http://localhost:${PORT}`);
+  if (HOSTED && !ADMIN_PASSWORD) console.warn('⚠️  ADMIN_PASSWORD가 없어 관리자 로그인이 막혀 있어요. 호스팅 설정에서 환경변수를 넣어 주세요.');
   if (DEFAULT_PW) console.warn('⚠️  관리자 비밀번호가 기본값이에요. 배포 전에 ADMIN_PASSWORD 환경변수를 설정하세요.');
   // 자동 갱신: 피드마다 마지막 실행이 주기보다 오래됐으면 지금 돌리고, 이후 1시간마다 점검
   const tick = () => { for (const [id, f] of Object.entries(FEEDS)) { const last = new Date(feedState(id).lastRun || 0).getTime(); if (Date.now() - last > f.every) runFeed(id); } };

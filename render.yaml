@@ -1,0 +1,22 @@
+# 섬업을 Render(무료)에 올리는 설정. 저장소를 Render에 연결하면 이 파일대로 서버가 만들어진다.
+# 비밀번호와 키는 여기에 적지 않는다. 만들 때 Render 화면에서 직접 입력한다(sync: false).
+services:
+  - type: web
+    name: seomup
+    runtime: node
+    plan: free
+    region: singapore
+    rootDir: market
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /api/config
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: ADMIN_PASSWORD   # 관리자 비밀번호. 꼭 새로 정해서 입력
+        sync: false
+      - key: GEMINI_API_KEY   # AI 글쓰기용. 새로 발급한 키만. 비워 두면 AI 글쓰기만 꺼짐
+        sync: false
