@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>섬업</title>
+<link rel="stylesheet" href="./style.css">
+<script src="./app.js"></script>
+</head>
+<body>
+<main class="wrap" style="max-width:860px">
+  <article class="guide" id="post">
+    <p class="crumb"><a id="crumb" href="#"></a> <span>›</span> <span id="crumbCat"></span></p>
+    <div class="post-head"><div><h1 id="title"></h1><p class="lead" id="summary"></p></div><span id="upSlot"></span></div>
+    <div class="gmeta" id="meta"></div>
+    <img class="ghero" id="image" alt="" hidden>
+    <dl class="post-facts" id="facts"></dl>
+    <div class="prose" id="body" hidden></div>
+    <div class="post-actions"><a class="btn primary big" id="srcBtn" target="_blank" rel="noopener"></a><button class="btn big" id="shareBtn">공유</button></div>
+    <section id="talk"></section>
+  </article>
+  <section>
+    <div class="sec-head"><h2 id="moreH"></h2><a class="more" id="moreLink">전체 보기</a></div>
+    <div class="rlist" id="more"></div>
+  </section>
+</main>
+<script>
+const Q = new URLSearchParams(location.search);
+const kind = Q.get('kind') === 'insight' ? 'insight' : 'program', id = Q.get('id') || '';
+const NAME = { program: '창업정보', insight: '인사이트' }[kind];
+mountShell({ active: kind }).then(async () => {
+  let p; try { p = await api(`/api/posts/${kind}/${encodeURIComponent(id)}`); } catch { $('#post').innerHTML = `<div class="empty">글을 찾을 수 없어요. <a href="./board.html?kind=${kind}">${NAME}(으)로</a></div>`; return; }
+  document.title = `${p.title} · 섬업`;
+  $('#crumb').textContent = NAME; $('#crumb').href = $('#moreLink').href = `./board.html?kind=${kind}`; $('#crumbCat').textContent = p.category || '';
+  $('#title').textContent = p.title; $('#summary').textContent = p.summary || '';
+  $('#upSlot').replaceChildren(upBtn(kind, p.id, p.votes, true));
+  $('#meta').innerHTML = `${kind === 'program' ? `<i class="rbadge ${p.status}">${PROGRAM_STATUS[p.status]}</i>` : ''}<span class="badge">${esc(p.org || '')}</span>${p.region ? `<span class="badge">${esc(p.region)}</span>` : ''}<span class="note">업데이트 ${esc(p.updatedAt || '')}</span>`;
+  if (p.image) { $('#image').src = p.image; $('#image').hidden = false; }
+  const facts = kind === 'program' ? [['기간', periodOf(p)], ['대상', p.target], ['지원', p.benefit], ['주관', p.org]] : [['출처', p.org], ['시기', p.date], ['핵심', (p.points || []).length ? `<span class="points">${p.points.map((x) => `<i>${esc(x)}</i>`).join(' ')}</span>` : '']];
+  $('#facts').innerHTML = facts.filter(([, v]) => v).map(([k, v]) => `<div><dt>${k}</dt><dd>${k === '핵심' ? v : esc(v)}</dd></div>`).join('');
+  if (p.body) { $('#body').innerHTML = md(p.body); $('#body').hidden = false; }
+  const src = p.url || p.source?.url;
+  if (src) { $('#srcBtn').href = src; $('#srcBtn').innerHTML = `${kind === 'program' ? '공고 원문 보기' : '원문 보기'} ${icon('arrow')}`; } else $('#srcBtn').hidden = true;
+  $('#shareBtn').onclick = () => share(`${p.title} · 섬업`, p.summary, location.href);
+  mountComments($('#talk'), kind, p.id);
+  $('#moreH').textContent = kind === 'program' ? '다른 지원사업' : '다른 인사이트';
+  const d = await api(`/api/posts/${kind}`);
+  $('#more').replaceChildren(...d.items.filter((x) => x.id !== p.id && (kind !== 'program' || x.status === 'open')).slice(0, 4).map((x, i) => (kind === 'program' ? programRow : insightRow)(x, i + 1)));
+});
+</script>
+</body>
+</html>

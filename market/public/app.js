@@ -1,4 +1,5 @@
-/* 탐라도감 공통 틀 v3 (오늘의집식 구조): 상단(로고·큰 메뉴·검색·올리기) · 보조 탭 · 모바일 하단 탭 · 푸터
+/* 섬업(부제 탐라도감) 공통 틀 v4: 상단(로고·큰 메뉴·검색·올리기) · 보조 탭 · 모바일 하단 탭 · 푸터
+   섬업다움 세 가지: ① 모든 글 오른쪽의 '업'(추천) 버튼 ② 고리(링)로 이어진 큰 줄기 ③ 주황 + 민트, 둥근 모서리
    문구·메뉴는 /admin.html 에서 고친다. 디자인 원칙: docs/design/principles.md */
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -9,12 +10,13 @@ const TYPE_LABEL = { home: '집', item: '물건', project: '프로젝트' };
 const TYPE_ICON = { home: 'home', item: 'box', project: 'puzzle' };
 let CONFIG = null;
 
-// 큰 메뉴 3개와 각 메뉴의 보조 탭 (오늘의집: 집구경 · 쇼핑 · 인테리어/생활 → 탐라도감: 구경 · 장터 · 제주생활)
+// 큰 줄기(목차). 제일 앞이 본업인 '거래'. 보조 탭이 2개 이상일 때만 둘째 줄이 보인다.
 const PRIMARY = [
-  { key: 'travel', label: '제주여행', href: './places.html?type=spot', subs: [['./places.html?type=spot', '관광지', 'spot'], ['./places.html?type=cafe', '카페', 'cafe'], ['./places.html?type=food', '맛집', 'food']] },
-  { key: 'project', label: '프로젝트', href: './market.html?type=project', subs: [['./market.html?type=project', '넘길 프로젝트', 'project'], ['./market.html#hackathons', '열린 해커톤'], ['./winners.html', '수상작 도감', 'winners']] },
-  { key: 'market', label: '장터', href: './market.html?type=home', subs: [['./market.html?type=home', '집', 'home'], ['./market.html?type=item', '물건', 'item']] },
-  { key: 'jeju', label: '제주살이', href: './jeju.html', subs: [['./jeju.html#waste', '이거 어디 버려요?'], ['./jeju.html#sec-days', '요일별 배출'], ['./jeju.html#sec-guides', '생활 가이드'], ['./jeju.html#sec-tips', '생활 꿀팁']] },
+  { key: 'deal', label: '거래', icon: 'puzzle', href: './market.html?type=project', subs: [['./market.html?type=project', '프로젝트', 'project'], ['./sell.html?type=project', '내 프로젝트 올리기', 'sell']] },
+  { key: 'program', label: '창업정보', icon: 'coins', href: './board.html?kind=program', subs: [] },
+  { key: 'insight', label: '인사이트', icon: 'bulb', href: './board.html?kind=insight', subs: [] },
+  { key: 'hackathon', label: '해커톤', icon: 'trophy', href: './hackathon.html', subs: [['./hackathon.html', '열린 해커톤', 'hackathon'], ['./winners.html', '수상작 도감', 'winners']] },
+  { key: 'jeju', label: '제주살이', icon: 'leaf', href: './jeju.html', subs: [['./jeju.html', '생활정보', 'jeju'], ['./places.html?type=spot', '여행', 'travel'], ['./market.html?type=home', '집·물건', 'market']] },
 ];
 
 const won = (n) => {
@@ -47,6 +49,10 @@ const ICONS = {
   grid: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
   leaf: '<path d="M5 20c0-9 5-14 14-14 0 9-5 14-14 14z"/><path d="M5 20c3-5 6-8 10-10"/>',
   check: '<path d="M5 12l5 5L20 7"/>',
+  chev: '<path d="M6 15l6-6 6 6"/>',
+  coins: '<circle cx="9" cy="9" r="5"/><path d="M14.5 10.5a5 5 0 1 1-4 8"/>',
+  bulb: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/>',
+  link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
 };
 const icon = (name, cls = 'ic') => ICONS[name] ? `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>` : esc(name);
 
@@ -92,7 +98,7 @@ function listingCard(p) {
     <div class="meta"><span>${esc(oneLabel(p))}</span>${p.sample ? '<span class="badge sample">예시</span>' : ''}${p.origin && p.type === 'project' ? `<span>${esc(p.origin)}</span>` : ''}</div>
     <h3>${esc(p.name)}</h3><p class="tag">${esc(sub)}</p>
     <div class="foot"><span class="price">${esc(listPrice(p))}</span><span class="heart">추천 ${p.interest || 0}${p.comments ? ` · 댓글 ${p.comments}` : ''}</span></div>`;
-  a.querySelector('.save').onclick = async (e) => { e.preventDefault(); e.stopPropagation(); if (localStorage.getItem('int-' + p.id)) return toast('이미 추천했어요'); try { const d = await api(`/api/projects/${p.id}/interest`, {}); localStorage.setItem('int-' + p.id, '1'); e.currentTarget.classList.add('on'); toast(`추천했어요 · ${d.interest}`); } catch (err) { toast(err.message); } };
+  a.querySelector('.save').onclick = async (e) => { e.preventDefault(); e.stopPropagation(); const btn = e.currentTarget; const v = await doUp('project', p.id); if (v !== null) btn.classList.add('on'); };
   return a;
 }
 /* 피드형 카드 (홈 "새로 올라온 글") — 정사각 사진, 오버레이 추천, 올린 분, 한 줄, 반응 수 */
@@ -103,21 +109,61 @@ function photoCard(p) {
     <div class="pwho"><span class="avatar">${esc(initial(p.seller))}</span><span class="who">${esc(p.seller || '익명')}</span>${p.sample ? '<span class="badge sample">예시</span>' : ''}</div>
     <p class="ptext">${esc(p.name)} <span class="muted">${esc(p.tagline || '')}</span></p>
     <div class="pmeta"><span class="price">${esc(listPrice(p))}</span><span>추천 ${p.interest || 0} · 댓글 ${p.comments || 0}</span></div>`;
-  a.querySelector('.save').onclick = async (e) => { e.preventDefault(); e.stopPropagation(); if (localStorage.getItem('int-' + p.id)) return toast('이미 추천했어요'); try { const d = await api(`/api/projects/${p.id}/interest`, {}); localStorage.setItem('int-' + p.id, '1'); e.currentTarget.classList.add('on'); toast(`추천했어요 · ${d.interest}`); } catch (err) { toast(err.message); } };
+  a.querySelector('.save').onclick = async (e) => { e.preventDefault(); e.stopPropagation(); const btn = e.currentTarget; const v = await doUp('project', p.id); if (v !== null) btn.classList.add('on'); };
   return a;
 }
+
+/* ── 섬업 부품 ① '업' 버튼: 모든 글 오른쪽에 붙는 추천. 한 사람이 글 하나에 한 번 ── */
+const upKey = (kind, id) => (kind === 'project' ? 'int-' + id : kind === 'place' ? 'pv-' + id : `up-${kind}:${id}`);
+const didUp = (kind, id) => { try { return !!localStorage.getItem(upKey(kind, id)); } catch { return false; } };
+async function doUp(kind, id) {
+  if (didUp(kind, id)) { toast('이미 업 했어요'); return null; }
+  try { const d = await api(`/api/up/${kind}/${encodeURIComponent(id)}`, {}); try { localStorage.setItem(upKey(kind, id), '1'); } catch {} toast('업! 고마워요'); return d.votes; }
+  catch (err) { toast(err.message); return null; }
+}
+function upBtn(kind, id, votes, big) {
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'up' + (big ? ' big' : '') + (didUp(kind, id) ? ' on' : ''); b.setAttribute('aria-label', `추천 ${votes || 0}`);
+  b.innerHTML = `${icon('chev')}<b>${(votes || 0).toLocaleString('ko-KR')}</b>${big ? '<span>업</span>' : ''}`;
+  b.onclick = async (e) => { e.preventDefault(); e.stopPropagation(); const v = await doUp(kind, id); if (v !== null) { b.classList.add('on'); b.querySelector('b').textContent = v.toLocaleString('ko-KR'); } };
+  return b;
+}
+/* ── 섬업 부품 ② 순위 줄: 번호 · 사진 · 제목/한 줄 · 오른쪽에 업 ── */
+function rankRow({ rank, href, external, image, iconName, title, sub, meta, badge, badgeTone, kind, id, votes }) {
+  const d = document.createElement('div'); d.className = 'rrow';
+  const link = (cls, inner) => `<a class="${cls}" href="${esc(href)}"${external ? ' target="_blank" rel="noopener"' : ''}>${inner}</a>`;
+  d.innerHTML = `${rank ? `<span class="rk${rank <= 3 ? ' top' : ''}">${rank}</span>` : ''}${link('rthumb', image ? `<img src="${esc(image)}" alt="" loading="lazy">` : icon(iconName || 'puzzle'))}${link('rbody', `<span class="rtitle">${badge ? `<i class="rbadge ${badgeTone || ''}">${esc(badge)}</i>` : ''}<b>${esc(title)}</b></span>${sub ? `<p>${esc(sub)}</p>` : ''}${meta ? `<small>${esc(meta)}</small>` : ''}`)}`;
+  d.append(upBtn(kind, id, votes));
+  return d;
+}
+/* ── 섬업 부품 ③ 이야기(댓글): 어떤 글에도 붙인다 ── */
+async function mountComments(el, kind, id) {
+  el.classList.add('cbox');
+  el.innerHTML = `<div class="sec-head"><h2>이야기</h2><span class="more" data-n></span></div>
+    <form><input name="name" placeholder="닉네임" maxlength="20" aria-label="닉네임"><input name="text" placeholder="한마디 남기기" required maxlength="300" aria-label="댓글"><button class="btn primary">남기기</button></form>
+    <div class="comments"></div>`;
+  const draw = (list) => { el.querySelector('[data-n]').textContent = list.length ? `${list.length}개` : ''; el.querySelector('.comments').innerHTML = list.length ? list.map((c) => `<div class="comment"><b>${esc(c.name || '익명')}</b>${esc(c.text)}<small>${new Date(c.createdAt).toLocaleDateString('ko-KR')}</small></div>`).join('') : '<p class="note">첫 이야기를 남겨 주세요.</p>'; };
+  el.querySelector('form').onsubmit = async (e) => { e.preventDefault(); try { draw(await api(`/api/comments/${kind}/${encodeURIComponent(id)}`, Object.fromEntries(new FormData(e.target)))); e.target.text.value = ''; toast('남겼어요'); } catch (err) { toast(err.message); } };
+  try { draw(await api(`/api/comments/${kind}/${encodeURIComponent(id)}`)); } catch { draw([]); }
+}
+const PROGRAM_STATUS = { open: '진행', done: '완료' };
+const periodOf = (p) => p.periodText || (p.always ? '상시' : [p.start, p.end].filter(Boolean).join(' ~ '));
+const programRow = (p, rank) => rankRow({ rank, href: `./post.html?kind=program&id=${encodeURIComponent(p.id)}`, image: p.image, iconName: 'coins', title: p.title, sub: p.summary, meta: [p.org, periodOf(p), p.comments ? `이야기 ${p.comments}` : ''].filter(Boolean).join(' · '), badge: PROGRAM_STATUS[p.status], badgeTone: p.status, kind: 'program', id: p.id, votes: p.votes });
+const insightRow = (p, rank) => rankRow({ rank, href: `./post.html?kind=insight&id=${encodeURIComponent(p.id)}`, image: p.image, iconName: 'bulb', title: p.title, sub: p.summary, meta: [p.category, p.org, p.comments ? `이야기 ${p.comments}` : ''].filter(Boolean).join(' · '), kind: 'insight', id: p.id, votes: p.votes });
+const projectRow = (p, rank) => rankRow({ rank, href: `./project.html?id=${encodeURIComponent(p.id)}`, image: (p.photos || [])[0], iconName: TYPE_ICON[p.type], title: p.name, sub: p.tagline, meta: [listPrice(p), oneLabel(p), p.origin, p.sample ? '예시' : '', p.comments ? `이야기 ${p.comments}` : ''].filter(Boolean).join(' · '), badge: p.type === 'project' ? (p.deal === 'done' ? '완료' : '거래 중') : '', badgeTone: p.deal === 'done' ? 'done' : 'open', kind: 'project', id: p.id, votes: p.interest });
+const guideRow = (g, rank) => rankRow({ rank, href: `./guide.html?id=${encodeURIComponent(g.id)}`, image: g.image, iconName: 'leaf', title: g.title, sub: g.summary, meta: [g.tag, g.comments ? `이야기 ${g.comments}` : ''].filter(Boolean).join(' · '), kind: 'guide', id: g.id, votes: g.votes });
+const hackRow = (h, rank) => rankRow({ rank, href: h.url, external: true, iconName: 'trophy', title: h.title, sub: [h.dates, h.location].filter(Boolean).join(' · '), meta: [h.source === 'local' ? '국내 · 직접 등록' : 'Devpost', h.participants ? `${h.participants.toLocaleString()}명 참가` : '', h.prize ? `상금 ${h.prize}` : ''].filter(Boolean).join(' · '), kind: 'hackathon', id: h.id, votes: h.votes });
 
 const PLACE_LABEL = { spot: '관광지', cafe: '카페', food: '맛집' };
 /* 장소 카드 (관광지·카페·맛집): 사진 · 순위 · 이름 · 동네 · 추천 수 */
 function placeCard(p, rank) {
   const a = document.createElement('a'); a.className = 'gcard pcard2'; a.href = `./place.html?id=${encodeURIComponent(p.id)}`;
-  a.innerHTML = `<div class="gimg">${p.image ? `<img src="${esc(p.image)}" alt="" loading="lazy">` : ''}${rank ? `<span class="rank-n">${rank}</span>` : `<span class="gtag">${esc(PLACE_LABEL[p.type] || '')}</span>`}</div><b>${esc(p.name)}</b><p>${esc(p.summary || '')}</p><small>${esc(p.area || '')} · 추천 ${p.votes || 0}</small>`;
+  a.innerHTML = `<div class="gimg">${p.image ? `<img src="${esc(p.image)}" alt="" loading="lazy">` : ''}${rank ? `<span class="rank-n">${rank}</span>` : `<span class="gtag">${esc(PLACE_LABEL[p.type] || '')}</span>`}</div><b>${esc(p.name)}</b><p>${esc(p.summary || '')}</p><small>${esc(p.area || '')} · 업 ${p.votes || 0}</small>`;
   return a;
 }
 /* 가이드 카드 */
 function guideCard(g) {
   const a = document.createElement('a'); a.className = 'gcard'; a.href = `./guide.html?id=${encodeURIComponent(g.id)}`;
-  a.innerHTML = `<div class="gimg">${g.image ? `<img src="${esc(g.image)}" alt="" loading="lazy">` : ''}<span class="gtag">${esc(g.tag || '가이드')}</span></div><b>${esc(g.title)}</b><p>${esc(g.summary || '')}</p><small>${g.verified ? '<span style="color:var(--ok)">확인됨</span>' : '확인 필요'} · ${esc(g.lastChecked || '')}</small>`;
+  a.innerHTML = `<div class="gimg">${g.image ? `<img src="${esc(g.image)}" alt="" loading="lazy">` : ''}<span class="gtag">${esc(g.tag || '가이드')}</span></div><b>${esc(g.title)}</b><p>${esc(g.summary || '')}</p><small>업 ${g.votes || 0} · ${esc(g.lastChecked || '')}</small>`;
   return a;
 }
 /* 아주 작은 마크다운: ## 제목, - 목록, 1. 목록, **굵게**, [글](주소), > 메모, 빈 줄 = 문단 */
@@ -177,29 +223,33 @@ async function mountShell({ active, primary, sub, banner = false } = {}) {
   if (!$('link[rel=icon]')) { const l = document.createElement('link'); l.rel = 'icon'; l.href = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#fff"/><rect x="22" y="12" width="56" height="76" rx="9" fill="#ff6b1a"/><path d="M60 12h11v28l-5.5-4.5L60 40z" fill="#1b1915" opacity=".28"/><circle cx="46" cy="58" r="15" fill="#fff"/><path d="M46 44c0-4.5 4.5-8.2 10.5-7.5-1 5.5-5.5 8.2-10.5 7.5z" fill="#19b3a6"/></svg>')}`; document.head.append(l); }
   for (const [k, v] of [['og:title', document.title], ['og:description', $('meta[name=description]')?.content || S.slogan], ['og:type', 'website'], ['og:site_name', S.name]]) { if (!$(`meta[property="${k}"]`)) { const m = document.createElement('meta'); m.setAttribute('property', k); m.content = v; document.head.append(m); } }
 
-  const pkey = primary || ({ winners: 'project', market: 'market', jeju: 'jeju' }[active] || '');
+  const pkey = primary || ({ winners: 'hackathon', hackathon: 'hackathon', market: 'jeju', jeju: 'jeju', project: 'deal', deal: 'deal', program: 'program', insight: 'insight' }[active] || '');
   const header = document.createElement('header'); header.className = 'top';
   header.innerHTML = `<div class="wrap bar">
-      <a class="logo" href="./"><span class="mark"><svg viewBox="0 0 100 100" aria-hidden="true"><rect x="18" y="10" width="64" height="80" rx="9" fill="#ff6b1a"/><path d="M62 10h12v30l-6-5-6 5z" fill="#1b1915" opacity=".28"/><circle cx="46" cy="58" r="16" fill="#fff"/><path d="M46 43c0-4.8 4.8-8.8 11.2-8-1.1 5.9-5.9 8.8-11.2 8z" fill="#19b3a6"/></svg></span>${esc(S.name)}</a>
+      <a class="logo" href="./"><span class="mark"><svg viewBox="0 0 100 100" aria-hidden="true"><rect x="18" y="10" width="64" height="80" rx="9" fill="#ff6b1a"/><path d="M62 10h12v30l-6-5-6 5z" fill="#1b1915" opacity=".28"/><circle cx="46" cy="58" r="16" fill="#fff"/><path d="M46 43c0-4.8 4.8-8.8 11.2-8-1.1 5.9-5.9 8.8-11.2 8z" fill="#19b3a6"/></svg></span><span class="lname">${esc(S.name)}</span>${S.sub ? `<small class="lsub">${esc(S.sub)}</small>` : ''}</a>
       <nav class="primary">${PRIMARY.map((p) => `<a href="${p.href}" class="${p.key === pkey ? 'on' : ''}">${p.label}</a>`).join('')}</nav>
-      <form class="search" role="search" action="./search.html"><span class="sic">${icon('search')}</span><input name="q" placeholder="관광지, 카페, 버리는 법, 프로젝트 검색" autocomplete="off" aria-label="검색"></form>
+      <form class="search" role="search" action="./search.html"><span class="sic">${icon('search')}</span><input name="q" placeholder="프로젝트, 지원사업, 인사이트 검색" autocomplete="off" aria-label="검색"></form>
       <div class="acts"><a class="btn write" href="./sell.html">${icon('plus')}<span>올리기</span></a></div>
     </div>`;
   document.body.prepend(header);
   // 보조 탭
+  // 휴대폰: 큰 메뉴를 가로로 미는 한 줄로
+  const mnav = document.createElement('nav'); mnav.className = 'mnav';
+  mnav.innerHTML = `<div class="wrap">${PRIMARY.map((p) => `<a href="${p.href}" class="${p.key === pkey ? 'on' : ''}">${p.label}</a>`).join('')}</div>`;
+  header.after(mnav);
   const P = PRIMARY.find((p) => p.key === pkey);
-  if (P) {
+  if (P && P.subs.length > 1) {
     const bar = document.createElement('div'); bar.className = 'subnav';
     const here = location.pathname.split('/').pop() || 'index.html';
     bar.innerHTML = `<div class="wrap">${P.subs.map(([href, label, key]) => { const on = sub ? key === sub : (href.split('?')[0].split('#')[0].replace('./', '') || 'index.html') === here && !href.includes('?') && !href.includes('#'); return `<a href="${href}" class="${on ? 'on' : ''}">${label}</a>`; }).join('')}</div>`;
-    header.after(bar);
+    mnav.after(bar);
   }
   if (banner) { const b = document.createElement('div'); b.className = 'banner'; b.innerHTML = bannerSVG(); (document.querySelector('.subnav') || header).after(b); }
 
   // 모바일 하단 탭 (홈 · 장터 · 올리기 · 제주생활 · 도감)
   const tabs = document.createElement('nav'); tabs.className = 'tabbar';
-  const t = [['./', 'home', '홈', 'home'], ['./places.html?type=spot', 'sun', '여행', 'travel'], ['./sell.html', 'plus', '올리기', 'sell'], ['./jeju.html', 'leaf', '제주살이', 'jeju'], ['./market.html?type=project', 'puzzle', '프로젝트', 'project']];
-  tabs.innerHTML = t.map(([href, ic, label, key]) => `<a href="${href}" class="${key === 'sell' ? 'write' : ''} ${key === active ? 'on' : ''}">${icon(ic)}<span>${label}</span></a>`).join('');
+  const t = [['./', 'home', '홈', 'home'], ['./market.html?type=project', 'puzzle', '거래', 'deal'], ['./sell.html', 'plus', '올리기', 'sell'], ['./board.html?kind=program', 'coins', '창업정보', 'program'], ['./jeju.html', 'leaf', '제주살이', 'jeju']];
+  tabs.innerHTML = t.map(([href, ic, label, key]) => `<a href="${href}" class="${key === 'sell' ? 'write' : ''} ${key === active || key === pkey ? 'on' : ''}">${icon(ic)}<span>${label}</span></a>`).join('');
   document.body.append(tabs);
   // 맨 위로
   const up = document.createElement('button'); up.className = 'totop'; up.setAttribute('aria-label', '맨 위로'); up.innerHTML = icon('up'); up.onclick = () => scrollTo({ top: 0, behavior: 'smooth' }); document.body.append(up);
@@ -208,7 +258,7 @@ async function mountShell({ active, primary, sub, banner = false } = {}) {
   // 광고: 넓은 화면은 좌우에 따라다니는 배너, 좁은 화면은 본문 끝 카드
   mountAds(CONFIG.ads);
   const footer = document.createElement('footer');
-  footer.innerHTML = `<div class="wrap"><div><b>${esc(S.name)}</b> · ${esc(S.slogan)}<br><span class="small">${esc(CONFIG.footer?.note || '')}</span></div><div class="links"><a href="${esc(S.threads)}" target="_blank" rel="noopener">스레드</a><a href="${esc(S.openchat)}">오픈채팅</a><a href="./admin.html">관리자</a></div></div>`;
+  footer.innerHTML = `<div class="wrap"><div><b>${esc(S.name)}</b>${S.sub ? ` <span class="small">${esc(S.sub)}</span>` : ''} · ${esc(S.slogan)}<br><span class="small">${esc(CONFIG.footer?.note || '')}</span></div><div class="links"><a href="${esc(S.threads)}" target="_blank" rel="noopener">스레드</a><a href="${esc(S.openchat)}">오픈채팅</a><a href="./admin.html">관리자</a></div></div>`;
   document.body.append(footer);
   return CONFIG;
 }

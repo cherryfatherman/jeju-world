@@ -1,10 +1,12 @@
-// 탐라도감 서버: AI로 만든 서비스·해커톤 프로젝트 거래 장터
+// 섬업(부제 탐라도감) 서버: 제주(섬)에서 창업을 거래하다
 // DB 없이 data/*.json 파일에 저장한다 (1차 버전).
 const path = require('path');
 const fs = require('fs');
 const express = require('express');
 const { generateListing, generateHome, generateItem, answerWaste, generateThreadsPosts } = require('./lib/ai');
 const { fetchHackathons } = require('./lib/hackathons');
+const crypto = require('crypto');
+const agents = require('./lib/agents');
 
 // .env 파일이 있으면 읽는다 (예: GEMINI_API_KEY=..., ADMIN_PASSWORD=...). 이 파일은 GitHub에 올라가지 않는다.
 try {
@@ -56,6 +58,39 @@ app.use(express.static(path.join(__dirname, 'public')));
 const UPLOADS = path.join(DATA, 'uploads'); fs.mkdirSync(UPLOADS, { recursive: true });
 app.use('/uploads', express.static(UPLOADS));
 
+// ---- 추천(업)·댓글: 모든 글 공통 ----
+// 추천 수 = 글에 적힌 기본값 + votes.json의 실시간 증가분. 댓글은 comments.json 한 파일에 key('종류:id')로 모은다.
+const hid = (x) => crypto.createHash('md5').update(String(x)).digest('hex').slice(0, 10);
+const liveVotes = () => load('votes.json', {});
+const voteOf = (V, kind, id, base) => (Number(base) || 0) + (V[`${kind}:${id}`] || 0);
+const cKey = (c) => c.key || (c.projectId ? `project:${c.projectId}` : '');
+function commentCounts() { const m = {}; for (const c of load('comments.json', [])) { if (c.hidden) continue; const k = cKey(c); m[k] = (m[k] || 0) + 1; } return m; }
+const hackItems = () => (load('hackathons.json', { items: [] }).items || []).map((h) => ({ ...h, id: hid(h.url) }));
+const FIND = {
+  project: (id) => load('projects.json', []).find((x) => x.id === id && x.status === 'live'),
+  place: (id) => load('places.json', []).find((x) => x.id === id && x.hidden !== true),
+  guide: (id) => load('guides.json', []).find((x) => x.id === id && x.hidden !== true),
+  program: (id) => load('programs.json', []).find((x) => x.id === id && x.hidden !== true),
+  insight: (id) => load('insights.json', []).find((x) => x.id === id && x.hidden !== true),
+  winner: (id) => WINNERS.find((w) => w.id === id),
+  hackathon: (id) => hackItems().find((h) => h.id === id),
+};
+const baseVotes = (kind, item) => (kind === 'project' ? item.interest : kind === 'winner' || kind === 'hackathon' ? 0 : item.votes);
+const titleOf = (item) => item.name || item.title || '';
+function upVote(kind, id) {
+  const item = FIND[kind]?.(id); if (!item) return null;
+  const V = liveVotes(); const k = `${kind}:${id}`; V[k] = (V[k] || 0) + 1; save('votes.json', V);
+  return voteOf(V, kind, id, baseVotes(kind, item));
+}
+const listComments = (kind, id) => load('comments.json', []).filter((c) => !c.hidden && cKey(c) === `${kind}:${id}`).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(({ id: cid, name, text, createdAt }) => ({ id: cid, name, text, createdAt }));
+function addComment(kind, id, body) {
+  const item = FIND[kind]?.(id); if (!item) return { error: 404 };
+  const text = clean(body.text, 300); if (!text) return { error: 400 };
+  const all = load('comments.json', []);
+  all.push({ id: newId(), key: `${kind}:${id}`, title: titleOf(item), name: clean(body.name, 20) || '익명', text, createdAt: new Date().toISOString() });
+  save('comments.json', all); return { list: listComments(kind, id) };
+}
+
 // ---- 사이트 설정 (관리자 화면에서 수정) ----
 app.get('/api/config', (req, res) => res.json(readConfig()));
 app.post('/api/ping', limit(60), (req, res) => { countVisit(clean(req.body.page, 40) || '/'); res.json({ ok: true }); });
@@ -83,6 +118,7 @@ app.post('/api/admin/projects/:id', adminOnly, (req, res) => {
   const p = list.find((x) => x.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'not found' });
   if (req.body.action === 'toggle') p.status = p.status === 'live' ? 'hidden' : 'live';
+  if (req.body.action === 'deal') p.deal = p.deal === 'done' ? 'open' : 'done'; // 거래 중 ↔ 거래 완료
   if (req.body.action === 'delete') list.splice(list.indexOf(p), 1);
   save('projects.json', list);
   res.json({ ok: true });
@@ -102,17 +138,18 @@ app.get('/api/projects', (req, res) => {
   const showSamples = readConfig().site.showSamples !== false;
   let list = load('projects.json', []).filter((p) => p.status === 'live' && (showSamples || !p.sample));
   if (TYPES.includes(req.query.type)) list = list.filter((p) => (p.type || 'project') === req.query.type);
-  res.json(list.map(publicProject));
+  res.json(list.map(pubP()));
 });
 app.get('/api/projects/:id', (req, res) => {
   const p = load('projects.json', []).find((x) => x.id === req.params.id && x.status === 'live');
   if (!p) return res.status(404).json({ error: 'not found' });
   res.json(publicProject(p));
 });
-function publicProject(p) {
+function publicProject(p, V = liveVotes(), C = commentCounts()) {
   const { contact, ...rest } = p; // 판매자 연락처는 공개 API에서 뺀다
-  return { type: 'project', ...rest };
+  return { type: 'project', ...rest, interest: voteOf(V, 'project', p.id, p.interest), comments: C[`project:${p.id}`] || 0, deal: p.deal === 'done' ? 'done' : 'open' };
 }
+const pubP = () => { const V = liveVotes(), C = commentCounts(); return (p) => publicProject(p, V, C); };
 
 // ---- AI 소개글 생성 (판매 등록 1단계) ----
 app.post('/api/generate', limit(10), async (req, res) => {
@@ -180,12 +217,8 @@ app.post('/api/projects', limit(5), (req, res) => {
 
 // ---- 관심 등록 / 문의 ----
 app.post('/api/projects/:id/interest', limit(20), (req, res) => {
-  const list = load('projects.json', []);
-  const p = list.find((x) => x.id === req.params.id);
-  if (!p) return res.status(404).json({ error: 'not found' });
-  p.interest = (p.interest || 0) + 1;
-  save('projects.json', list);
-  res.json({ interest: p.interest });
+  const v = upVote('project', req.params.id);
+  v === null ? res.status(404).json({ error: 'not found' }) : res.json({ interest: v });
 });
 app.post('/api/projects/:id/inquiry', limit(5), (req, res) => {
   const list = load('projects.json', []);
@@ -225,18 +258,15 @@ const PLACE_TYPES = ['spot', 'cafe', 'food'];
 const publicPlace = (p) => ({ ...p, hidden: undefined });
 app.get('/api/places', (req, res) => {
   const type = PLACE_TYPES.includes(req.query.type) ? req.query.type : null;
-  const items = load('places.json', []).filter((p) => p.hidden !== true && (!type || p.type === type)).sort((a, b) => (b.votes || 0) - (a.votes || 0)).map(publicPlace);
+  const V = liveVotes(), C = commentCounts();
+  const items = load('places.json', []).filter((p) => p.hidden !== true && (!type || p.type === type)).map((p) => ({ ...publicPlace(p), votes: voteOf(V, 'place', p.id, p.votes), comments: C[`place:${p.id}`] || 0 })).sort((a, b) => b.votes - a.votes);
   res.json({ items, updatedAt: feedState('tour').lastRun || null });
 });
 app.get('/api/places/:id', (req, res) => {
   const p = load('places.json', []).find((x) => x.id === req.params.id && x.hidden !== true);
-  p ? res.json(publicPlace(p)) : res.status(404).json({ error: '장소가 없어요.' });
+  p ? res.json({ ...publicPlace(p), votes: voteOf(liveVotes(), 'place', p.id, p.votes), comments: commentCounts()[`place:${p.id}`] || 0 }) : res.status(404).json({ error: '장소가 없어요.' });
 });
-app.post('/api/places/:id/vote', limit(30), (req, res) => {
-  const list = load('places.json', []); const p = list.find((x) => x.id === req.params.id);
-  if (!p) return res.status(404).json({ error: '장소가 없어요.' });
-  p.votes = (p.votes || 0) + 1; save('places.json', list); res.json({ votes: p.votes });
-});
+app.post('/api/places/:id/vote', limit(30), (req, res) => { const v = upVote('place', req.params.id); v === null ? res.status(404).json({ error: '장소가 없어요.' }) : res.json({ votes: v }); });
 app.post('/api/places/:id/feedback', limit(10), (req, res) => {
   const p = load('places.json', []).find((x) => x.id === req.params.id);
   if (!p) return res.status(404).json({ error: '장소가 없어요.' });
@@ -263,6 +293,8 @@ const FEEDS = {
   hackathons: { name: '해커톤 일정 (Devpost)', every: 6 * 3600e3, run: () => refreshHackathons() },
   waste: { name: '쓰레기 배출 통계 (공공데이터포털)', every: 86400e3, run: () => refreshWasteStats() },
   tour: { name: '관광지·카페·맛집 (관광 API)', every: 86400e3, needs: 'TOUR_API_KEY', run: () => refreshTourPlaces() },
+  kstartup: { name: '창업 지원사업 공고 (K-Startup, 공공데이터포털 15125364)', every: 86400e3, needs: 'DATA_GO_KR_KEY', run: () => refreshKStartup() },
+  agents: { name: '본부 주간 회의 (AI 직원)', every: 86400e3, run: () => agents.runCycle({ load, save, feedState }) },
 };
 const feedState = (id) => (load('feeds.json', {})[id] || {});
 function markFeed(id, ok, note) { const s = load('feeds.json', {}); s[id] = { ...(s[id] || {}), lastRun: new Date().toISOString(), ok, note: note || '' }; save('feeds.json', s); }
@@ -271,17 +303,51 @@ async function runFeed(id) {
   if (f.needs && !process.env[f.needs]) { markFeed(id, false, `${f.needs} 가 .env에 없어요`); return; }
   try { await f.run(); markFeed(id, true); } catch (e) { markFeed(id, false, e.message); }
 }
+// K-Startup 사업공고: 제주·전국 공고를 받아 programs.json에 '자동' 글로 합친다. 손으로 쓴 글과 숨김 표시는 건드리지 않는다.
+// 공공데이터포털에서 15125364 활용신청이 승인돼야 응답이 온다.
+async function refreshKStartup() {
+  const key = process.env.DATA_GO_KR_KEY;
+  const u = `https://apis.data.go.kr/B552735/kisedKstartupService01/getAnnouncementInformation01?serviceKey=${encodeURIComponent(key)}&page=1&perPage=200&returnType=json`;
+  const r = await fetch(u); if (!r.ok) throw new Error(`HTTP ${r.status} (활용신청 승인 여부를 확인하세요)`);
+  const d = await r.json(); const rows = d.data || d.items || d.response?.body?.items || [];
+  if (!Array.isArray(rows) || !rows.length) throw new Error('공고가 비어 있어요');
+  const ymd = (x) => { const m = /^(\d{4})-?(\d{2})-?(\d{2})/.exec(String(x || '')); return m ? `${m[1]}-${m[2]}-${m[3]}` : ''; };
+  const cutoff = new Date(Date.now() - 60 * 86400e3).toISOString().slice(0, 10);
+  const auto = rows.map((x) => ({
+    id: `ks-${x.pbanc_sn || hid(x.biz_pbanc_nm)}`, externalId: String(x.pbanc_sn || ''), auto: true,
+    title: clean(x.biz_pbanc_nm || x.intg_pbanc_biz_nm, 100), org: clean(x.pbanc_ntrp_nm || x.sprv_inst || '', 60), region: clean(x.supt_regin || '전국', 10),
+    category: clean(x.supt_biz_clsfc || '지원사업', 16), summary: clean(String(x.pbanc_ctnt || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' '), 160), target: clean(x.aply_trgt || '', 200), benefit: '',
+    start: ymd(x.pbanc_rcpt_bgng_dt), end: ymd(x.pbanc_rcpt_end_dt), periodText: '', url: isUrl(x.detl_pg_url || '') ? x.detl_pg_url : 'https://www.k-startup.go.kr/',
+    source: { label: 'K-Startup 공고', url: isUrl(x.detl_pg_url || '') ? x.detl_pg_url : 'https://www.k-startup.go.kr/' }, image: '', votes: 0, updatedAt: new Date().toISOString().slice(0, 10),
+  })).filter((p) => p.title && /제주|전국/.test(p.region) && (!p.end || p.end >= cutoff));
+  const old = load('programs.json', []); const hidden = new Set(old.filter((p) => p.hidden).map((p) => p.id));
+  const manual = old.filter((p) => !p.auto);
+  save('programs.json', [...manual, ...auto.map((p) => ({ ...p, hidden: hidden.has(p.id) }))]);
+  console.log(`K-Startup 공고 ${auto.length}건 반영`);
+}
 // 관광 API: 키가 들어오면 여기서 받아와 places.json의 externalId로 맞춰 넣는다 (지금은 연결 자리만)
 async function refreshTourPlaces() { throw new Error('관광 API 연결 전이에요. 키를 받으면 이 함수에 호출 주소를 넣습니다.'); }
 app.get('/api/admin/feeds', adminOnly, (req, res) => res.json(Object.entries(FEEDS).map(([id, f]) => ({ id, name: f.name, everyHours: f.every / 3600e3, needs: f.needs || null, ready: !f.needs || !!process.env[f.needs], ...feedState(id) }))));
 app.post('/api/admin/feeds/:id/run', adminOnly, async (req, res) => { await runFeed(req.params.id); res.json(feedState(req.params.id)); });
 
+// ---- 본부(HQ): 큰 줄기(기둥)·부서·AI 직원·할 일·회의록. 3D 대시보드(/hq.html)가 쓴다 ----
+app.get('/api/admin/hq', adminOnly, (req, res) => res.json({ ...load('hq.json', { pillars: [], agents: [], tasks: [], log: [] }), facts: agents.sense({ load, save, feedState }) }));
+app.put('/api/admin/hq', adminOnly, (req, res) => {
+  const b = req.body || {}; const hq = load('hq.json', { pillars: [], agents: [], tasks: [], log: [] });
+  const color = (c) => (/^#[0-9a-fA-F]{6}$/.test(c || '') ? c : '#ff6b1a');
+  if (Array.isArray(b.pillars)) hq.pillars = b.pillars.map((p) => ({ id: clean(p.id, 30).toLowerCase().replace(/[^a-z0-9-]/g, '-') || newId(), name: clean(p.name, 20), dept: clean(p.dept, 20), color: color(p.color), goal: clean(p.goal, 120), kpi: clean(p.kpi, 80) })).filter((p) => p.name).slice(0, 12);
+  if (Array.isArray(b.agents)) hq.agents = b.agents.map((a) => ({ id: clean(a.id, 30).toLowerCase().replace(/[^a-z0-9-]/g, '-') || newId(), name: clean(a.name, 12), rank: ['본부장', '부서장', '팀장', '팀원'].includes(a.rank) ? a.rank : '팀원', dept: clean(a.dept, 20), pillar: clean(a.pillar, 30), persona: clean(a.persona, 120) })).filter((a) => a.name).slice(0, 40);
+  if (Array.isArray(b.tasks)) hq.tasks = b.tasks.map((t) => ({ id: clean(t.id, 30) || newId(), pillar: clean(t.pillar, 30), owner: clean(t.owner, 30), title: clean(t.title, 100), why: clean(t.why, 240), status: ['proposed', 'doing', 'done'].includes(t.status) ? t.status : 'proposed', by: t.by === 'agent' ? 'agent' : 'admin', createdAt: clean(t.createdAt, 30) || new Date().toISOString() })).filter((t) => t.title).slice(0, 200);
+  save('hq.json', hq); res.json({ ok: true });
+});
+app.post('/api/admin/hq/cycle', adminOnly, async (req, res) => { try { const r = await agents.runCycle({ load, save, feedState }); markFeed('agents', true); res.json(r); } catch (e) { res.status(500).json({ error: e.message }); } });
+
 // ---- 제주 생활 가이드 (글 하나 = 독립 정보 페이지, 관리자에서 편집) ----
-const guideSummary = ({ id, title, summary, image, tag, verified, lastChecked }) => ({ id, title, summary, image, tag, verified, lastChecked });
-app.get('/api/guides', (req, res) => res.json(load('guides.json', []).filter((g) => g.hidden !== true).map(guideSummary)));
+const guideSummary = ({ id, title, summary, image, tag, lastChecked, votes }) => ({ id, title, summary, image, tag, lastChecked, votes });
+app.get('/api/guides', (req, res) => { const V = liveVotes(), C = commentCounts(); res.json(load('guides.json', []).filter((g) => g.hidden !== true).map((g) => ({ ...guideSummary(g), votes: voteOf(V, 'guide', g.id, g.votes), comments: C[`guide:${g.id}`] || 0 })).sort((a, b) => b.votes - a.votes)); });
 app.get('/api/guides/:id', (req, res) => {
   const g = load('guides.json', []).find((x) => x.id === req.params.id && x.hidden !== true);
-  g ? res.json(g) : res.status(404).json({ error: '가이드가 없어요.' });
+  g ? res.json({ ...g, votes: voteOf(liveVotes(), 'guide', g.id, g.votes), comments: commentCounts()[`guide:${g.id}`] || 0 }) : res.status(404).json({ error: '가이드가 없어요.' });
 });
 app.get('/api/admin/guides', adminOnly, (req, res) => res.json(load('guides.json', [])));
 app.put('/api/admin/guides', adminOnly, (req, res) => {
@@ -291,7 +357,7 @@ app.put('/api/admin/guides', adminOnly, (req, res) => {
     id: clean(g.id, 40).toLowerCase().replace(/[^a-z0-9-]/g, '-') || newId(),
     title: clean(g.title, 80), summary: clean(g.summary, 160), tag: clean(g.tag, 12),
     image: isImg(g.image) ? g.image : '',
-    verified: g.verified === true, hidden: g.hidden === true, lastChecked: clean(g.lastChecked, 10),
+    verified: g.verified === true, hidden: g.hidden === true, lastChecked: clean(g.lastChecked, 10), votes: Number(g.votes) || 0,
     body: clean(g.body, 20000),
     sources: (Array.isArray(g.sources) ? g.sources : []).map((s) => ({ label: clean(s.label, 60), url: clean(s.url, 300) })).filter((s) => s.label && isUrl(s.url)).slice(0, 10),
   })).filter((g) => g.title && !seen.has(g.id) && seen.add(g.id));
@@ -344,42 +410,87 @@ app.get('/api/jeju/waste-data', (req, res) => {
 const { localWaste } = require('./lib/ai');
 app.get('/api/search', limit(60), (req, res) => {
   const q = clean(req.query.q, 60).toLowerCase();
-  if (!q) return res.json({ listings: [], winners: [], waste: null });
+  if (!q) return res.json({ listings: [], winners: [], waste: null, programs: [], insights: [], guides: [], places: [] });
   const words = q.split(/\s+/).filter(Boolean);
   const hit = (txt) => words.every((w) => txt.toLowerCase().includes(w));
   const showSamples = readConfig().site.showSamples !== false;
   const listings = load('projects.json', []).filter((p) => p.status === 'live' && (showSamples || !p.sample))
-    .filter((p) => hit([p.name, p.tagline, p.description, p.category, (p.tags || []).join(' '), p.home?.dong || ''].join(' '))).slice(0, 24).map(publicProject);
-  const winners = load('winners.json', []).filter((w) => hit([w.name, w.tagline, w.category, (w.themes || []).join(' ')].join(' '))).slice(0, 40);
+    .filter((p) => hit([p.name, p.tagline, p.description, p.category, (p.tags || []).join(' '), p.home?.dong || ''].join(' '))).slice(0, 24).map(pubP());
+  const V0 = liveVotes();
+  const winners = WINNERS.filter((w) => hit([w.name, w.tagline, w.category, (w.themes || []).join(' ')].join(' '))).slice(0, 40).map((w) => ({ ...w, votes: voteOf(V0, 'winner', w.id, 0) }));
   const jeju = readConfig().jeju || {};
   const waste = /버리|배출|분리|쓰레기|재활용/.test(q) || words.length <= 2 ? localWaste(q, { ...(jeju.waste || {}), area: jeju.area || '제주시' }) : null;
-  res.json({ listings, winners, waste });
+  const V = liveVotes(), C = commentCounts();
+  const posts = (kind) => load(POSTS[kind], []).filter((p) => p.hidden !== true && hit([p.title, p.org, p.category, p.summary, p.target || ''].join(' '))).slice(0, 12).map((p) => publicPost(kind, p, V, C));
+  const guides = load('guides.json', []).filter((g) => g.hidden !== true && hit([g.title, g.summary, g.tag, g.body || ''].join(' '))).slice(0, 8).map((g) => ({ ...guideSummary(g), votes: voteOf(V, 'guide', g.id, g.votes) }));
+  const places = load('places.json', []).filter((p) => p.hidden !== true && hit([p.name, p.area, p.summary, (p.tags || []).join(' ')].join(' '))).slice(0, 8).map((p) => ({ ...publicPlace(p), votes: voteOf(V, 'place', p.id, p.votes) }));
+  res.json({ listings, winners, waste, programs: posts('program'), insights: posts('insight'), guides, places });
 });
 
 // ---- 수상작 도감 ----
-const WINNERS = load('winners.json', []);
-app.get('/api/winners', (req, res) => res.json(WINNERS));
+const WINNERS = load('winners.json', []).map((w) => ({ ...w, id: hid(w.url) }));
+app.get('/api/winners', (req, res) => { const V = liveVotes(); res.json(WINNERS.map((w) => ({ ...w, votes: voteOf(V, 'winner', w.id, 0) }))); });
 
-// ---- 한 줄 추천(댓글) ----
-app.get('/api/projects/:id/comments', (req, res) => {
-  res.json(load('comments.json', []).filter((c) => c.projectId === req.params.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+// ---- 추천(업)·댓글 API (모든 종류 공통) ----
+app.post('/api/up/:kind/:id', limit(40), (req, res) => {
+  const v = upVote(req.params.kind, req.params.id);
+  v === null ? res.status(404).json({ error: '글을 찾을 수 없어요.' }) : res.json({ votes: v });
 });
-app.post('/api/projects/:id/comments', limit(5), (req, res) => {
-  const list = load('projects.json', []);
-  const p = list.find((x) => x.id === req.params.id);
-  if (!p) return res.status(404).json({ error: 'not found' });
-  const text = clean(req.body.text, 140);
-  if (!text) return res.status(400).json({ error: '내용이 필요해요.' });
-  const all = load('comments.json', []);
-  all.push({ id: newId(), projectId: p.id, name: clean(req.body.name, 20) || '익명', text, createdAt: new Date().toISOString() });
-  save('comments.json', all);
-  p.comments = all.filter((c) => c.projectId === p.id).length;
-  save('projects.json', list);
-  res.json(all.filter((c) => c.projectId === p.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+app.get('/api/comments/:kind/:id', (req, res) => res.json(listComments(req.params.kind, req.params.id)));
+app.post('/api/comments/:kind/:id', limit(6), (req, res) => {
+  const r = addComment(req.params.kind, req.params.id, req.body || {});
+  if (r.error === 404) return res.status(404).json({ error: '글을 찾을 수 없어요.' });
+  if (r.error === 400) return res.status(400).json({ error: '내용이 필요해요.' });
+  res.json(r.list);
+});
+// 예전 주소도 그대로 동작
+app.get('/api/projects/:id/comments', (req, res) => res.json(listComments('project', req.params.id)));
+app.post('/api/projects/:id/comments', limit(6), (req, res) => { const r = addComment('project', req.params.id, req.body || {}); r.error ? res.status(r.error).json({ error: r.error === 404 ? 'not found' : '내용이 필요해요.' }) : res.json(r.list); });
+// 관리자: 댓글 숨기기·보이기·삭제
+app.get('/api/admin/comments', adminOnly, (req, res) => res.json(load('comments.json', []).map((c) => ({ ...c, key: cKey(c) })).sort((a, b) => b.createdAt.localeCompare(a.createdAt))));
+app.post('/api/admin/comments/:id', adminOnly, (req, res) => {
+  const all = load('comments.json', []); const c = all.find((x) => x.id === req.params.id);
+  if (!c) return res.status(404).json({ error: 'not found' });
+  if (req.body.action === 'delete') all.splice(all.indexOf(c), 1); else c.hidden = req.body.action === 'hide';
+  save('comments.json', all); res.json({ ok: true });
+});
+
+// ---- 창업정보(지원사업·자금) · 인사이트: 같은 틀의 글 묶음 ----
+const POSTS = { program: 'programs.json', insight: 'insights.json' };
+function publicPost(kind, p, V, C) {
+  const out = { ...p, votes: voteOf(V, kind, p.id, p.votes), comments: C[`${kind}:${p.id}`] || 0 };
+  if (kind === 'program') out.status = agents.programStatus(p);
+  delete out.hidden; return out;
+}
+app.get('/api/posts/:kind', (req, res) => {
+  const file = POSTS[req.params.kind]; if (!file) return res.status(404).json({ error: 'not found' });
+  const V = liveVotes(), C = commentCounts();
+  const items = load(file, []).filter((p) => p.hidden !== true).map((p) => publicPost(req.params.kind, p, V, C)).sort((a, b) => b.votes - a.votes);
+  res.json({ items, updatedAt: req.params.kind === 'program' ? (feedState('kstartup').ok ? feedState('kstartup').lastRun : null) : null });
+});
+app.get('/api/posts/:kind/:id', (req, res) => {
+  const file = POSTS[req.params.kind]; const p = file && load(file, []).find((x) => x.id === req.params.id && x.hidden !== true);
+  p ? res.json(publicPost(req.params.kind, p, liveVotes(), commentCounts())) : res.status(404).json({ error: '글을 찾을 수 없어요.' });
+});
+app.get('/api/admin/posts/:kind', adminOnly, (req, res) => (POSTS[req.params.kind] ? res.json(load(POSTS[req.params.kind], [])) : res.status(404).json({ error: 'not found' })));
+app.put('/api/admin/posts/:kind', adminOnly, (req, res) => {
+  const kind = req.params.kind; const file = POSTS[kind]; if (!file) return res.status(404).json({ error: 'not found' });
+  const seen = new Set(); const date = (x) => (/^\d{4}-\d{2}-\d{2}$/.test(String(x || '')) ? x : '');
+  const cleaned = (Array.isArray(req.body) ? req.body : []).map((p) => {
+    const o = {
+      id: clean(p.id, 60).toLowerCase().replace(/[^a-z0-9-]/g, '-') || newId(), title: clean(p.title, 100), org: clean(p.org, 60), category: clean(p.category, 16), summary: clean(p.summary, 200),
+      body: clean(p.body, 20000), url: isUrl(p.url || '') ? p.url : '', image: isImg(p.image) ? p.image : '', source: { label: clean(p.source?.label, 60), url: isUrl(p.source?.url || '') ? p.source.url : '' },
+      votes: Number(p.votes) || 0, hidden: p.hidden === true, updatedAt: clean(p.updatedAt, 10) || new Date().toISOString().slice(0, 10), auto: p.auto === true, externalId: clean(p.externalId, 60),
+    };
+    if (kind === 'program') Object.assign(o, { region: clean(p.region, 10), target: clean(p.target, 200), benefit: clean(p.benefit, 300), start: date(p.start), end: date(p.end), always: p.always === true, periodText: clean(p.periodText, 60), status: ['done', 'open'].includes(p.status) ? p.status : '' });
+    else Object.assign(o, { date: clean(p.date, 10), points: (Array.isArray(p.points) ? p.points : String(p.points || '').split('\n')).map((x) => clean(x, 60)).filter(Boolean).slice(0, 4) });
+    return o;
+  }).filter((p) => p.title && !seen.has(p.id) && seen.add(p.id));
+  save(file, cleaned); res.json({ ok: true, count: cleaned.length });
 });
 
 // ---- 해커톤 일정 ----
-app.get('/api/hackathons', (req, res) => res.json(load('hackathons.json', { updatedAt: null, items: [] })));
+app.get('/api/hackathons', (req, res) => { const V = liveVotes(); const d = load('hackathons.json', { updatedAt: null, items: [] }); res.json({ updatedAt: d.updatedAt, items: hackItems().map((h) => ({ ...h, votes: voteOf(V, 'hackathon', h.id, 0) })) }); });
 async function refreshHackathons() {
   try {
     const items = await fetchHackathons();
@@ -402,6 +513,9 @@ app.get('/api/stats', (req, res) => {
     waitSell: waitlist.filter((w) => w.role !== 'buy').length,
     hackathons: (load('hackathons.json', { items: [] }).items || []).length,
     winners: WINNERS.length,
+    programs: load('programs.json', []).filter((p) => !p.hidden && agents.programStatus(p) === 'open').length,
+    insights: load('insights.json', []).filter((p) => !p.hidden).length,
+    guides: load('guides.json', []).filter((p) => !p.hidden).length,
   });
 });
 app.get('/api/threads-drafts', async (req, res) => {
@@ -413,7 +527,7 @@ app.get('/api/threads-drafts', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`탐라도감 실행 중: http://localhost:${PORT}`);
+  console.log(`섬업 실행 중: http://localhost:${PORT}`);
   if (DEFAULT_PW) console.warn('⚠️  관리자 비밀번호가 기본값이에요. 배포 전에 ADMIN_PASSWORD 환경변수를 설정하세요.');
   // 자동 갱신: 피드마다 마지막 실행이 주기보다 오래됐으면 지금 돌리고, 이후 1시간마다 점검
   const tick = () => { for (const [id, f] of Object.entries(FEEDS)) { const last = new Date(feedState(id).lastRun || 0).getTime(); if (Date.now() - last > f.every) runFeed(id); } };

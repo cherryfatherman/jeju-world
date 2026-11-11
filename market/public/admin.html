@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>관리자 · 탐라도감</title>
+<title>관리자 · 섬업</title>
 <meta name="robots" content="noindex">
 <link rel="stylesheet" href="./style.css">
 <script src="./app.js"></script>
@@ -36,8 +36,9 @@
   </form>
 
   <div id="panel" hidden>
+    <p style="margin:0 0 12px"><a class="btn primary" href="./hq.html">본부 3D 대시보드 열기 ↗</a></p>
     <div class="tabs">
-      <button data-tab="dash" class="on">대시보드</button><button data-tab="site">기본·배너</button><button data-tab="ticker">공지 띠</button><button data-tab="carousel">배너 이미지</button><button data-tab="ads">좌우 광고</button><button data-tab="guides">생활 가이드</button><button data-tab="places">여행 장소</button><button data-tab="feeds">자동 갱신</button><button data-tab="jeju">제주 생활</button><button data-tab="nav">메뉴·도구 상자</button><button data-tab="projects">프로젝트 관리</button><button data-tab="inbox">받은 편지함</button><button data-tab="threads">스레드 글</button>
+      <button data-tab="dash" class="on">대시보드</button><button data-tab="site">기본·배너</button><button data-tab="ticker">공지 띠</button><button data-tab="carousel">배너 이미지</button><button data-tab="ads">좌우 광고</button><button data-tab="program">창업정보</button><button data-tab="insight">인사이트</button><button data-tab="talk">이야기 관리</button><button data-tab="guides">생활 가이드</button><button data-tab="places">여행 장소</button><button data-tab="feeds">자동 갱신</button><button data-tab="jeju">제주 생활</button><button data-tab="nav">메뉴·도구 상자</button><button data-tab="projects">프로젝트 관리</button><button data-tab="inbox">받은 편지함</button><button data-tab="threads">스레드 글</button>
     </div>
 
     <!-- 대시보드 -->
@@ -54,12 +55,12 @@
     <!-- 제주 생활 -->
     <div class="pane" id="pane-jeju"><div class="form">
       <label>지역<input id="j-area" placeholder="제주시"></label>
-      <label>배출표 확인 여부<select id="j-verified"><option value="false">확인 필요 (⚠️ 표시)</option><option value="true">공식 안내로 확인함 (✅ 표시)</option></select></label>
-      <label>출처 문구<input id="j-source"></label>
+      <div class="row2"><label>출처 문구<input id="j-source"></label><label>출처 링크<input id="j-sourceUrl" placeholder="https://..."></label></div>
+      <div class="row2"><label>매일 배출 품목 (쉼표로)<input id="j-daily"></label><label>업데이트 날짜<input id="j-checked" type="date"></label></div>
       <b>요일별 배출 품목</b>
       <div class="row2" id="j-days"></div>
       <label>공통 안내<textarea id="j-notes" style="min-height:80px"></textarea></label>
-      <b>생활 꿀팁</b><p class="help">제목 · 내용 · 확인됨 체크</p>
+      <b>한 줄 팁</b><p class="help">제목 · 내용</p>
       <div id="tipList"></div>
       <button type="button" class="btn" id="addTip">＋ 꿀팁 추가</button>
     </div></div>
@@ -69,6 +70,10 @@
         <label>사이트 이름<input id="f-name"></label>
         <label>슬로건<input id="f-slogan"></label>
       </div>
+      <label>부제 (로고 옆 작은 글)<input id="f-brandSub" placeholder="탐라도감"></label>
+      <label>홈 '제주의 방향' 제목 (강조는 [대괄호])<input id="f-dirTitle"></label>
+      <label>홈 '제주의 방향' 숫자 (한 줄에 하나: 숫자 | 설명 | 출처 | 링크)<textarea id="f-dirFacts" style="min-height:90px;font-size:13px"></textarea></label>
+      <label>홈 '섬업의 고리' (한 줄에 하나: 이름 | 설명 | 링크 | 사진 주소)<textarea id="f-ring" style="min-height:110px;font-size:13px"></textarea></label>
       <div class="row2">
         <label>기본 테마<select id="f-theme"><option value="auto">자동 (18시~6시 밤)</option><option value="day">항상 낮</option><option value="night">항상 밤</option></select></label>
         <label>예시 프로젝트 보이기<select id="f-samples"><option value="true">보이기 (시연용)</option><option value="false">숨기기 (실제 운영)</option></select></label>
@@ -104,10 +109,23 @@
       <p class="help">넓은 화면에서는 좌우에 따라다니고, 휴대폰에서는 본문 끝에 카드로 보여요. 제목에서 줄바꿈은 엔터, 강조는 [대괄호].</p>
       <div class="row2" id="adForms"></div>
     </div></div>
+    <!-- 창업정보 · 인사이트 (같은 편집기) -->
+    <div class="pane" id="pane-program">
+      <div class="form" style="margin-bottom:14px"><p class="help">지원사업·자금 공고예요. 마감일이 지나면 자동으로 '완료'로 옮겨져요. '자동' 표시는 K-Startup API가 넣은 글이라 다음 갱신 때 덮어써요(숨김은 유지).</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button" data-add="program">＋ 새 공고</button><button class="btn primary" type="button" data-save="program">창업정보 저장</button></div></div>
+      <div class="glist" id="list-program"></div>
+    </div>
+    <div class="pane" id="pane-insight">
+      <div class="form" style="margin-bottom:14px"><p class="help">논문·통계·정책·읽을거리. 출처 주소는 꼭 넣어 주세요. 핵심은 한 줄에 하나, 3개까지가 보기 좋아요.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button" data-add="insight">＋ 새 인사이트</button><button class="btn primary" type="button" data-save="insight">인사이트 저장</button></div></div>
+      <div class="glist" id="list-insight"></div>
+    </div>
+    <!-- 이야기(댓글) 관리 -->
+    <div class="pane" id="pane-talk"><div class="form"><p class="help">모든 글의 이야기(댓글)예요. 숨기면 사이트에서 안 보이고, 삭제하면 되돌릴 수 없어요.</p><div id="talkList"></div></div></div>
     <!-- 생활 가이드 -->
     <div class="pane" id="pane-guides">
       <div class="form" style="margin-bottom:14px">
-        <p class="help">글 하나가 독립 페이지(guide.html?id=...)예요. 본문은 간단한 서식: <code>## 제목</code>, <code>- 목록</code>, <code>1. 목록</code>, <code>**굵게**</code>, <code>[글자](주소)</code>, <code>&gt; 메모</code>. 공식 안내와 대조한 뒤 '확인됨'으로 바꾸고 확인일을 적어 주세요.</p>
+        <p class="help">글 하나가 독립 페이지(guide.html?id=...)예요. 본문은 간단한 서식: <code>## 제목</code>, <code>- 목록</code>, <code>1. 목록</code>, <code>**굵게**</code>, <code>[글자](주소)</code>, <code>&gt; 메모</code>. 고친 날은 '업데이트 날짜'에 적어 주세요.</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button" id="gAdd">＋ 새 가이드</button><button class="btn primary" type="button" id="gSave">가이드 저장</button></div>
       </div>
       <div class="glist" id="glist"></div>
@@ -129,7 +147,7 @@
     <div class="pane" id="pane-ticker"><div class="form">
       <label>공지 띠<select id="t-enabled"><option value="true">보이기</option><option value="false">숨기기</option></select></label>
       <label>내용<select id="t-mode"><option value="auto">자동 (국내 해커톤 → 없으면 참가자 최다 대회)</option><option value="custom">직접 쓰기</option></select></label>
-      <label>제목<input id="t-title" placeholder="예: 금요일 발표! 탐라도감 시연 중"></label>
+      <label>제목<input id="t-title" placeholder="예: 금요일 발표! 섬업 시연 중"></label>
       <label>설명<input id="t-text" placeholder="예: 지금 올리면 발표에 소개돼요"></label>
       <label>링크<input id="t-url" placeholder="https://..."></label>
     </div></div>
@@ -183,32 +201,67 @@ $$('.tabs button').forEach((b) => b.onclick = () => { $$('.tabs button').forEach
 
 function fill() {
   const S = cfg.site, B = cfg.banner, T = cfg.ticker || {}, C = cfg.colors || {};
-  v('#f-name', S.name); v('#f-slogan', S.slogan); v('#f-theme', S.defaultTheme || 'auto'); v('#f-samples', String(S.showSamples !== false));
+  v('#f-name', S.name); v('#f-slogan', S.slogan); v('#f-brandSub', S.sub || ''); v('#f-dirTitle', cfg.direction?.title || ''); v('#f-dirFacts', (cfg.direction?.facts || []).map((f) => [f.num, f.label, f.src, f.href].join(' | ')).join('\n')); v('#f-ring', (cfg.ring || []).map((r) => [r.label, r.sub, r.href, r.image].join(' | ')).join('\n')); v('#f-theme', S.defaultTheme || 'auto'); v('#f-samples', String(S.showSamples !== false));
   v('#f-threads', S.threads); v('#f-openchat', S.openchat);
   v('#f-accent', C.accent || '#ff7a1a'); v('#c-accent', C.accent || '#ff7a1a'); v('#f-accent2', C.accent2 || '#f5b942'); v('#c-accent2', C.accent2 || '#f5b942');
   v('#f-kicker', B.kicker); v('#f-title', B.title); v('#f-sub', B.sub); v('#f-primary', B.primaryLabel); v('#f-secondary', B.secondaryLabel);
   v('#f-footer', cfg.footer?.note || '');
   v('#t-enabled', String(T.enabled !== false)); v('#t-mode', T.mode || 'auto'); v('#t-title', T.title); v('#t-text', T.text); v('#t-url', T.url);
-  renderNav(); renderTools(); fillJeju(); loadDash(); renderSlides(); renderAds(); loadGuides(); loadPlaces(); loadFeeds();
+  renderNav(); renderTools(); fillJeju(); loadDash(); renderSlides(); renderAds(); loadGuides(); loadPlaces(); loadFeeds(); loadPosts('program'); loadPosts('insight'); loadTalk();
   v('#supportText', (cfg.support || []).map((s) => [s.org, s.title, s.sub, s.href].join(' | ')).join('\n'));
+}
+/* ── 창업정보 · 인사이트: 같은 편집기 ── */
+const POSTS = { program: [], insight: [] };
+const PFIELDS = {
+  program: [['title', '제목'], ['org', '주관 기관'], ['region', '지역 (제주/전국)'], ['category', '분류 (자금·보육·투자·공간·입주·교육·멘토링·정책·행사)'], ['summary', '한 줄 소개'], ['target', '대상'], ['benefit', '지원 내용'], ['start', '접수 시작', 'date'], ['end', '접수 마감 (지나면 자동 완료)', 'date'], ['periodText', '기간 표시 문구 (비우면 날짜로)'], ['url', '공고 원문 주소'], ['sourceLabel', '출처 이름'], ['votes', '기본 업 수', 'number'], ['updatedAt', '업데이트 날짜', 'date']],
+  insight: [['title', '제목'], ['org', '출처 (기관·저자)'], ['category', '분류 (정책·통계·조사·논문·리포트·읽을거리)'], ['date', '시기'], ['summary', '한 줄 소개'], ['url', '원문 주소'], ['votes', '기본 업 수', 'number'], ['updatedAt', '업데이트 날짜', 'date']],
+};
+async function loadPosts(kind) { try { POSTS[kind] = await api(`/api/admin/posts/${kind}`); } catch { POSTS[kind] = []; } renderPosts(kind); }
+function renderPosts(kind) {
+  $(`#list-${kind}`).replaceChildren(...POSTS[kind].map((p, idx) => {
+    const d = document.createElement('details');
+    const val = (k) => (k === 'sourceLabel' ? p.source?.label : p[k]) ?? '';
+    d.innerHTML = `<summary>${esc(p.title || '(제목 없음)')}${p.auto ? '<span class="badge">자동</span>' : ''}<small>${p.hidden ? '숨김 · ' : ''}업 ${p.votes || 0}${kind === 'program' ? ` · ${p.always ? '상시' : p.end || p.periodText || ''}` : ''}</small></summary><div class="form">
+      <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap"><img src="${esc(p.image || '')}" alt="" style="width:240px;aspect-ratio:3/2;object-fit:cover;border-radius:10px;background:var(--surface-2)"><div style="flex:1;min-width:220px;display:grid;gap:8px"><label>사진 바꾸기<input type="file" accept="image/*"></label><label>또는 사진 주소<input data-k="image" value="${esc(p.image || '')}" placeholder="https://..."></label></div></div>
+      ${PFIELDS[kind].map(([k, l, t]) => `<label>${l}<input data-k="${k}" ${t ? `type="${t}"` : ''} value="${esc(val(k))}"></label>`).join('')}
+      ${kind === 'program' ? `<div class="row2"><label>상시 모집<select data-k="always"><option value="false" ${!p.always ? 'selected' : ''}>아니요 (마감일 기준)</option><option value="true" ${p.always ? 'selected' : ''}>예 (항상 진행)</option></select></label><label>진행 상태 직접 지정<select data-k="status"><option value="" ${!p.status ? 'selected' : ''}>자동</option><option value="open" ${p.status === 'open' ? 'selected' : ''}>진행</option><option value="done" ${p.status === 'done' ? 'selected' : ''}>완료</option></select></label></div>` : `<label>핵심 (한 줄에 하나)<textarea data-k="points" style="min-height:70px">${esc((p.points || []).join('\n'))}</textarea></label>`}
+      <label>본문 (선택 · 간단 서식 가능)<textarea data-k="body" style="min-height:90px">${esc(p.body || '')}</textarea></label>
+      <div style="display:flex;gap:8px;align-items:center"><label style="flex:1">표시<select data-k="hidden"><option value="false" ${!p.hidden ? 'selected' : ''}>보이기</option><option value="true" ${p.hidden ? 'selected' : ''}>숨기기</option></select></label><button class="btn sm" type="button" data-del style="color:var(--danger);margin-top:18px">삭제</button></div>
+    </div>`;
+    d.querySelectorAll('[data-k]').forEach((inp) => inp.oninput = inp.onchange = () => { const k = inp.dataset.k, x = inp.value;
+      if (k === 'hidden' || k === 'always') p[k] = x === 'true'; else if (k === 'votes') p.votes = Number(x) || 0; else if (k === 'points') p.points = x.split('\n').map((t) => t.trim()).filter(Boolean); else if (k === 'sourceLabel') p.source = { label: x, url: p.url || p.source?.url || '' }; else p[k] = x;
+      if (k === 'url') p.source = { label: p.source?.label || '', url: x }; if (k === 'image') d.querySelector('img').src = x; });
+    d.querySelector('input[type=file]').onchange = async (e) => { const f = e.target.files[0]; if (!f) return; try { p.image = await upload(f, 1600); d.querySelector('img').src = p.image; d.querySelector('[data-k=image]').value = p.image; toast('사진을 올렸어요. 저장을 눌러 반영하세요'); } catch (err) { toast(err.message); } };
+    d.querySelector('[data-del]').onclick = () => { if (confirm(`'${p.title}' 글을 삭제할까요?`)) { POSTS[kind].splice(idx, 1); renderPosts(kind); } };
+    return d;
+  }));
+}
+$$('[data-add]').forEach((b) => b.onclick = () => { const kind = b.dataset.add; POSTS[kind].unshift({ id: `${kind}-${Date.now().toString(36)}`, title: '', org: '', category: '', summary: '', url: '', image: '', votes: 0, hidden: false, updatedAt: new Date().toISOString().slice(0, 10), source: { label: '', url: '' } }); renderPosts(kind); $(`#list-${kind} details`).open = true; });
+$$('[data-save]').forEach((b) => b.onclick = async () => { const kind = b.dataset.save; try { const r = await api(`/api/admin/posts/${kind}`, POSTS[kind], 'PUT'); toast(`${r.count}개를 저장했어요`); loadPosts(kind); } catch (err) { toast(err.message); } });
+/* ── 이야기(댓글) 관리 ── */
+const KIND_NAME = { project: '거래', program: '창업정보', insight: '인사이트', guide: '생활정보', place: '여행', winner: '수상작', hackathon: '해커톤' };
+async function loadTalk() {
+  let list = []; try { list = await api('/api/admin/comments'); } catch { return; }
+  $('#talkList').innerHTML = list.length ? list.map((c) => `<div class="trow" style="display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);${c.hidden ? 'opacity:.5' : ''}"><div class="grow" style="flex:1;min-width:0"><b>${esc(c.name || '익명')}</b> ${esc(c.text)}<div class="muted" style="font-size:12px">${esc(KIND_NAME[(c.key || '').split(':')[0]] || '')} · ${esc(c.title || c.key || '')} · ${new Date(c.createdAt).toLocaleString('ko-KR')}${c.hidden ? ' · 숨김' : ''}</div></div><button class="btn sm" data-c="${c.id}" data-act="${c.hidden ? 'show' : 'hide'}">${c.hidden ? '보이기' : '숨기기'}</button><button class="btn sm" data-c="${c.id}" data-act="delete" style="color:var(--danger)">삭제</button></div>`).join('') : '<p class="help">아직 이야기가 없어요.</p>';
+  $$('#talkList [data-c]').forEach((b) => b.onclick = async () => { if (b.dataset.act === 'delete' && !confirm('이 이야기를 삭제할까요?')) return; await api(`/api/admin/comments/${b.dataset.c}`, { action: b.dataset.act }); loadTalk(); });
 }
 let GUIDES = [];
 async function loadGuides() { try { GUIDES = await api('/api/admin/guides'); } catch { GUIDES = []; } renderGuides(); }
 function renderGuides() {
   $('#glist').replaceChildren(...GUIDES.map((g, idx) => {
     const d = document.createElement('details');
-    d.innerHTML = `<summary>${esc(g.title || '(제목 없음)')}<small>${g.hidden ? '숨김 · ' : ''}${g.verified ? '확인됨' : '확인 필요'} · ${esc(g.lastChecked || '')}</small></summary><div class="form">
+    d.innerHTML = `<summary>${esc(g.title || '(제목 없음)')}<small>${g.hidden ? '숨김 · ' : ''}업 ${g.votes || 0} · ${esc(g.lastChecked || '')}</small></summary><div class="form">
       <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap"><img src="${esc(g.image || '')}" alt="" style="width:240px;aspect-ratio:3/2;object-fit:cover;border-radius:10px;background:var(--surface-2)"><div style="flex:1;min-width:220px;display:grid;gap:8px"><label>대표 이미지 바꾸기<input type="file" accept="image/*"></label><label>또는 이미지 주소<input data-k="image" value="${esc(g.image || '')}" placeholder="https://..."></label></div></div>
       <div class="row2"><label>제목<input data-k="title" value="${esc(g.title || '')}"></label><label>주소 이름(영문·숫자·-)<input data-k="id" value="${esc(g.id || '')}"></label></div>
       <label>한 줄 요약<input data-k="summary" value="${esc(g.summary || '')}"></label>
-      <div class="row2"><label>분류<input data-k="tag" value="${esc(g.tag || '')}" placeholder="정착 · 쓰레기 · 집 · 교통 · 건강 · 생활"></label><label>마지막 확인일<input data-k="lastChecked" type="date" value="${esc(g.lastChecked || '')}"></label></div>
-      <div class="row2"><label>상태<select data-k="verified"><option value="false" ${!g.verified ? 'selected' : ''}>확인 필요 (초안)</option><option value="true" ${g.verified ? 'selected' : ''}>공식 안내로 확인됨</option></select></label><label>표시<select data-k="hidden"><option value="false" ${!g.hidden ? 'selected' : ''}>보이기</option><option value="true" ${g.hidden ? 'selected' : ''}>숨기기</option></select></label></div>
+      <div class="row2"><label>분류<input data-k="tag" value="${esc(g.tag || '')}" placeholder="정착 · 쓰레기 · 집 · 교통 · 건강 · 생활"></label><label>업데이트 날짜<input data-k="lastChecked" type="date" value="${esc(g.lastChecked || '')}"></label></div>
+      <div class="row2"><label>기본 업 수<input data-k="votes" type="number" value="${(typeof g !== 'undefined' ? g.votes : p.votes) || 0}"></label><label>표시<select data-k="hidden"><option value="false" ${!g.hidden ? 'selected' : ''}>보이기</option><option value="true" ${g.hidden ? 'selected' : ''}>숨기기</option></select></label></div>
       <label>본문<textarea data-k="body" style="min-height:260px;font-family:ui-monospace,monospace;font-size:13px">${esc(g.body || '')}</textarea></label>
       <label>출처 (한 줄에 하나: 이름 | 주소)<textarea data-k="sources" style="min-height:70px">${esc((g.sources || []).map((s) => `${s.label} | ${s.url}`).join('\n'))}</textarea></label>
       <div style="display:flex;gap:8px"><button class="btn sm" type="button" data-up>위로</button><button class="btn sm" type="button" data-down>아래로</button><button class="btn sm" type="button" data-del style="margin-left:auto;color:var(--danger)">삭제</button></div>
     </div>`;
     d.querySelectorAll('[data-k]').forEach((inp) => inp.oninput = inp.onchange = () => { const k = inp.dataset.k, val = inp.value;
-      if (k === 'verified' || k === 'hidden') g[k] = val === 'true'; else if (k === 'sources') g.sources = val.split('\n').map((l) => l.split('|').map((x) => x.trim())).filter((p) => p[0] && p[1]).map(([label, url]) => ({ label, url })); else g[k] = val;
+      if (k === 'hidden') g[k] = val === 'true'; else if (k === 'votes') g.votes = Number(val) || 0; else if (k === 'sources') g.sources = val.split('\n').map((l) => l.split('|').map((x) => x.trim())).filter((p) => p[0] && p[1]).map(([label, url]) => ({ label, url })); else g[k] = val;
       if (k === 'image') d.querySelector('img').src = val; });
     d.querySelector('input[type=file]').onchange = async (e) => { const f = e.target.files[0]; if (!f) return; try { g.image = await upload(f, 1600); d.querySelector('img').src = g.image; d.querySelector('[data-k=image]').value = g.image; toast('이미지를 올렸어요. 가이드 저장을 눌러 반영하세요'); } catch (err) { toast(err.message); } };
     d.querySelector('[data-up]').onclick = () => { if (idx > 0) { [GUIDES[idx - 1], GUIDES[idx]] = [GUIDES[idx], GUIDES[idx - 1]]; renderGuides(); } };
@@ -224,7 +277,7 @@ async function loadPlaces() { try { PLACES = await api('/api/admin/places'); } c
 function renderPlaces() {
   $('#pllist').replaceChildren(...PLACES.map((p, idx) => {
     const d = document.createElement('details');
-    d.innerHTML = `<summary>${esc(p.name || '(이름 없음)')}<span class="badge">${PL[p.type] || ''}</span><small>${p.hidden ? '숨김 · ' : ''}추천 ${p.votes || 0} · ${p.verified ? '확인됨' : '확인 필요'}</small></summary><div class="form">
+    d.innerHTML = `<summary>${esc(p.name || '(이름 없음)')}<span class="badge">${PL[p.type] || ''}</span><small>${p.hidden ? '숨김 · ' : ''}업 ${p.votes || 0}</small></summary><div class="form">
       <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap"><img src="${esc(p.image || '')}" alt="" style="width:240px;aspect-ratio:3/2;object-fit:cover;border-radius:10px;background:var(--surface-2)"><div style="flex:1;min-width:220px;display:grid;gap:8px"><label>사진 바꾸기<input type="file" accept="image/*"></label><label>또는 사진 주소<input data-k="image" value="${esc(p.image || '')}" placeholder="https://..."></label></div></div>
       <div class="row2"><label>이름<input data-k="name" value="${esc(p.name || '')}"></label><label>분류<select data-k="type">${Object.entries(PL).map(([k, v]) => `<option value="${k}" ${p.type === k ? 'selected' : ''}>${v}</option>`).join('')}</select></label></div>
       <div class="row2"><label>동네 (예: 제주시 애월읍)<input data-k="area" value="${esc(p.area || '')}"></label><label>주소<input data-k="address" value="${esc(p.address || '')}"></label></div>
@@ -232,8 +285,8 @@ function renderPlaces() {
       <label>팁<input data-k="tip" value="${esc(p.tip || '')}"></label>
       <div class="row2"><label>태그 (쉼표로)<input data-k="tags" value="${esc((p.tags || []).join(', '))}"></label><label>주소 이름(영문·숫자·-)<input data-k="id" value="${esc(p.id || '')}"></label></div>
       <div class="row2"><label>출처 이름<input data-k="sourceLabel" value="${esc(p.source?.label || '')}"></label><label>출처 주소<input data-k="sourceUrl" value="${esc(p.source?.url || '')}"></label></div>
-      <div class="row2"><label>상태<select data-k="verified"><option value="false" ${!p.verified ? 'selected' : ''}>확인 필요</option><option value="true" ${p.verified ? 'selected' : ''}>확인됨</option></select></label><label>표시<select data-k="hidden"><option value="false" ${!p.hidden ? 'selected' : ''}>보이기</option><option value="true" ${p.hidden ? 'selected' : ''}>숨기기</option></select></label></div>
-      <div class="row2"><label>마지막 확인일<input data-k="lastChecked" type="date" value="${esc(p.lastChecked || '')}"></label><label>추천 수<input data-k="votes" type="number" value="${p.votes || 0}"></label></div>
+      <div class="row2"><span></span><label>표시<select data-k="hidden"><option value="false" ${!p.hidden ? 'selected' : ''}>보이기</option><option value="true" ${p.hidden ? 'selected' : ''}>숨기기</option></select></label></div>
+      <div class="row2"><label>업데이트 날짜<input data-k="lastChecked" type="date" value="${esc(p.lastChecked || '')}"></label><label>추천 수<input data-k="votes" type="number" value="${p.votes || 0}"></label></div>
       <label>외부 ID (관광 API 연결용)<input data-k="externalId" value="${esc(p.externalId || '')}"></label>
       <div style="display:flex;gap:8px"><button class="btn sm" type="button" data-del style="margin-left:auto;color:var(--danger)">삭제</button></div>
     </div>`;
@@ -285,17 +338,17 @@ $('#addSlide').onclick = () => { cfg.carousel.push({ image: '', kicker: '', titl
 const DAYS = ['월', '화', '수', '목', '금', '토', '일'];
 function fillJeju() {
   const J = cfg.jeju || (cfg.jeju = { area: '제주시', waste: { days: {} }, tips: [] });
-  v('#j-area', J.area); v('#j-verified', String(!!J.waste?.verified)); v('#j-source', J.waste?.source); v('#j-notes', J.waste?.notes);
+  v('#j-area', J.area); v('#j-source', J.waste?.source); v('#j-sourceUrl', J.waste?.sourceUrl || ''); v('#j-daily', (J.waste?.daily || []).join(', ')); v('#j-checked', J.waste?.lastChecked || ''); v('#j-notes', J.waste?.notes);
   $('#j-days').replaceChildren(...DAYS.map((d) => { const l = document.createElement('label'); l.innerHTML = `${d}요일<input data-day="${d}" value="${esc((J.waste?.days || {})[d] || '')}">`; return l; }));
   renderTips();
 }
 function renderTips() {
   $('#tipList').replaceChildren(...(cfg.jeju.tips || []).map((t, i) => { const d = document.createElement('div'); d.className = 'item nav'; d.style.gridTemplateColumns = '1fr 2fr 70px 40px';
-    d.innerHTML = `<input value="${esc(t.title)}" placeholder="제목" data-k="title"><input value="${esc(t.body)}" placeholder="내용" data-k="body"><label style="flex-direction:row;align-items:center;gap:4px;font-size:11px"><input type="checkbox" style="width:auto" ${t.check ? 'checked' : ''}>확인됨</label><button type="button" class="del">✕</button>`;
-    d.querySelectorAll('input[data-k]').forEach((inp) => inp.oninput = () => { t[inp.dataset.k] = inp.value; }); d.querySelector('input[type=checkbox]').onchange = (e) => { t.check = e.target.checked; }; d.querySelector('.del').onclick = () => { cfg.jeju.tips.splice(i, 1); renderTips(); }; return d; }));
+    d.innerHTML = `<input value="${esc(t.title)}" placeholder="제목" data-k="title"><input value="${esc(t.body)}" placeholder="내용" data-k="body"><span></span><button type="button" class="del">✕</button>`;
+    d.querySelectorAll('input[data-k]').forEach((inp) => inp.oninput = () => { t[inp.dataset.k] = inp.value; }); d.querySelector('.del').onclick = () => { cfg.jeju.tips.splice(i, 1); renderTips(); }; return d; }));
 }
 $('#addTip').onclick = () => { (cfg.jeju.tips = cfg.jeju.tips || []).push({ title: '', body: '', check: false }); renderTips(); };
-const TODOS = ['스레드에 오늘 글 1개 올리기 (스레드 글 탭에서 생성)', '받은 편지함 확인하고 문의에 답하기', '분리배출 요일표를 제주시 공식 안내와 대조하기', '집주인·공인중개사 1명에게 탐라도감 소개하기', '농가·소상공인 1곳에 물건 올리기 권하기', '해커톤 참가자에게 프로젝트 등록 링크 보내기', '예시 글을 실제 글로 바꾸기 (관리자 → 예시 숨기기)'];
+const TODOS = ['스레드에 오늘 글 1개 올리기 (스레드 글 탭에서 생성)', '받은 편지함 확인하고 문의에 답하기', '분리배출 요일표를 제주시 공식 안내와 대조하기', '집주인·공인중개사 1명에게 섬업 소개하기', '농가·소상공인 1곳에 물건 올리기 권하기', '해커톤 참가자에게 프로젝트 등록 링크 보내기', '예시 글을 실제 글로 바꾸기 (관리자 → 예시 숨기기)'];
 function renderTodos() {
   let done = {}; try { done = JSON.parse(localStorage.getItem('todos') || '{}'); } catch {}
   $('#todos').replaceChildren(...TODOS.map((t, i) => { const d = document.createElement('label'); d.className = 'todo' + (done[i] ? ' done' : ''); d.innerHTML = `<input type="checkbox" ${done[i] ? 'checked' : ''}><span>${esc(t)}</span>`; d.querySelector('input').onchange = (e) => { done[i] = e.target.checked; try { localStorage.setItem('todos', JSON.stringify(done)); } catch {} renderTodos(); }; return d; }));
@@ -332,25 +385,29 @@ $('#addNav').onclick = () => { cfg.nav.push({ label: '새 메뉴', href: './', k
 $('#addTool').onclick = () => { cfg.tools.push({ icon: '🆕', label: '새 도구', sub: '', href: '' }); renderTools(); };
 
 $('#save').onclick = async () => {
-  cfg.site = { ...cfg.site, name: v('#f-name'), slogan: v('#f-slogan'), defaultTheme: v('#f-theme'), showSamples: v('#f-samples') === 'true', threads: v('#f-threads'), openchat: v('#f-openchat') };
+  const lines = (id, n) => v(id).split('\n').map((l) => l.split('|').map((x) => x.trim())).filter((p) => p.length >= n && p[0]);
+  cfg.direction = { ...(cfg.direction || {}), title: v('#f-dirTitle'), facts: lines('#f-dirFacts', 2).map(([num, label, src, href]) => ({ num, label, src: src || '', href: href || '' })) };
+  cfg.ring = lines('#f-ring', 3).map(([label, sub, href, image], i) => ({ key: (cfg.ring || [])[i]?.key || `r${i}`, label, sub, href, image: image || '' }));
+  cfg.site = { ...cfg.site, name: v('#f-name'), sub: v('#f-brandSub'), slogan: v('#f-slogan'), defaultTheme: v('#f-theme'), showSamples: v('#f-samples') === 'true', threads: v('#f-threads'), openchat: v('#f-openchat') };
   cfg.colors = { accent: v('#f-accent'), accent2: v('#f-accent2') };
   cfg.banner = { kicker: v('#f-kicker'), title: v('#f-title'), sub: v('#f-sub'), primaryLabel: v('#f-primary'), secondaryLabel: v('#f-secondary') };
   cfg.footer = { note: v('#f-footer') };
   cfg.ticker = { enabled: v('#t-enabled') === 'true', mode: v('#t-mode'), title: v('#t-title'), text: v('#t-text'), url: v('#t-url') };
   cfg.ads = { ...cfg.ads, enabled: v('#ad-enabled') === 'true' };
   cfg.support = v('#supportText').split('\n').map((l) => l.split('|').map((x) => x.trim())).filter((p) => p.length >= 4 && p[3]).map(([org, title, sub, href]) => ({ org, title, sub, href }));
-  cfg.jeju = { ...cfg.jeju, area: v('#j-area'), waste: { ...(cfg.jeju.waste || {}), verified: v('#j-verified') === 'true', source: v('#j-source'), notes: v('#j-notes'), days: Object.fromEntries($$('#j-days input').map((i) => [i.dataset.day, i.value])) }, tips: (cfg.jeju.tips || []).filter((t) => t.title || t.body) };
+  cfg.jeju = { ...cfg.jeju, area: v('#j-area'), waste: { ...(cfg.jeju.waste || {}), source: v('#j-source'), sourceUrl: v('#j-sourceUrl'), daily: v('#j-daily').split(',').map((x) => x.trim()).filter(Boolean), lastChecked: v('#j-checked'), notes: v('#j-notes'), days: Object.fromEntries($$('#j-days input').map((i) => [i.dataset.day, i.value])) }, tips: (cfg.jeju.tips || []).filter((t) => t.title || t.body) };
   try { await api('/api/config', cfg, 'PUT'); toast('저장했어요. 사이트에 바로 반영돼요'); } catch (err) { toast(err.message); }
 };
 
 async function loadProjects() {
   const list = await api('/api/admin/projects');
   $('#projList').replaceChildren(...list.map((p) => { const d = document.createElement('div'); d.className = 'trow';
-    d.innerHTML = `<div class="grow"><b>${esc(p.name)}</b> ${p.sample ? '<span class="badge sample">예시</span>' : ''} <span class="badge">${p.status === 'live' ? '공개' : '숨김'}</span><div class="muted">${esc(p.tagline)} · 추천 ${p.interest || 0} · 연락처 ${esc(p.contact)}</div>
+    d.innerHTML = `<div class="grow"><b>${esc(p.name)}</b> ${p.sample ? '<span class="badge sample">예시</span>' : ''} <span class="badge">${p.status === 'live' ? '공개' : '숨김'}</span>${(p.type || 'project') === 'project' ? ` <span class="badge">${p.deal === 'done' ? '거래 완료' : '거래 중'}</span>` : ''}<div class="muted">${esc(p.tagline)} · 추천 ${p.interest || 0} · 연락처 ${esc(p.contact)}</div>
       <div class="thumbs" style="margin-top:8px">${(p.photos || []).map((src, i) => `<div class="thumb"><img src="${esc(src)}" alt=""><button type="button" data-rm="${i}">✕</button></div>`).join('')}<label class="thumb" style="display:grid;place-items:center;border:1px dashed var(--line-strong);border-radius:8px;cursor:pointer;font-size:12px;color:var(--ink-3)">＋ 사진<input type="file" accept="image/*" multiple hidden></label></div>
       <div style="display:flex;gap:6px;margin-top:8px"><input class="urlIn" placeholder="사진 주소(https://…)를 붙여넣어도 돼요" style="min-height:36px;padding:6px 10px;font-size:13px"><button type="button" class="btn sm addUrl">추가</button></div></div>
-      <a class="btn sm" href="./project.html?id=${p.id}" target="_blank">보기</a><button class="btn sm" data-a="toggle">${p.status === 'live' ? '숨기기' : '공개'}</button><button class="btn sm" data-a="delete" style="color:var(--danger)">삭제</button>`;
+      <a class="btn sm" href="./project.html?id=${p.id}" target="_blank">보기</a>${(p.type || 'project') === 'project' ? `<button class="btn sm" data-a="deal">${p.deal === 'done' ? '거래 중으로' : '완료로'}</button>` : ''}<button class="btn sm" data-edit>수정</button><button class="btn sm" data-a="toggle">${p.status === 'live' ? '숨기기' : '공개'}</button><button class="btn sm" data-a="delete" style="color:var(--danger)">삭제</button>`;
     d.querySelectorAll('[data-a]').forEach((b) => b.onclick = async () => { if (b.dataset.a === 'delete' && !confirm(`"${p.name}"을(를) 정말 삭제할까요?`)) return; await api(`/api/admin/projects/${p.id}`, { action: b.dataset.a }); loadProjects(); });
+    d.querySelector('[data-edit]').onclick = async () => { const name = prompt('제목', p.name); if (name === null) return; const tagline = prompt('한 줄 소개', p.tagline || ''); if (tagline === null) return; const description = prompt('설명', p.description || ''); if (description === null) return; await api(`/api/admin/projects/${p.id}`, { name, tagline, description }, 'PUT'); toast('고쳤어요'); loadProjects(); };
     d.querySelectorAll('[data-rm]').forEach((b) => b.onclick = async () => { const photos = (p.photos || []).filter((_, i) => i !== Number(b.dataset.rm)); await api(`/api/admin/projects/${p.id}`, { photos }, 'PUT'); loadProjects(); });
     d.querySelector('.addUrl').onclick = async () => { const u = d.querySelector('.urlIn').value.trim(); if (!/^https:\/\//.test(u)) return toast('https:// 로 시작하는 주소를 넣어 주세요'); await api(`/api/admin/projects/${p.id}`, { photos: [...(p.photos || []), u].slice(0, 8) }, 'PUT'); loadProjects(); };
     d.querySelector('input[type=file]').onchange = async (e) => { try { const urls = []; for (const f of [...e.target.files].slice(0, 8)) urls.push(await upload(f, 1200)); await api(`/api/admin/projects/${p.id}`, { photos: [...(p.photos || []), ...urls].slice(0, 8) }, 'PUT'); toast('사진을 올렸어요'); loadProjects(); } catch (err) { toast(err.message); } };

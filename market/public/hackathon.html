@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>해커톤 · 섬업</title>
+<meta name="description" content="지금 열려 있는 해커톤 일정. 끝난 뒤 결과물은 섬업에서 다음 주인을 찾아요.">
+<link rel="stylesheet" href="./style.css">
+<script src="./app.js"></script>
+</head>
+<body>
+<main class="wrap" style="max-width:860px">
+  <div class="page-title"><h1>해커톤</h1><p>지금 열려 있는 해커톤이에요. 끝나면 결과물을 올려 다음 주인을 찾아 보세요.</p></div>
+  <div class="listbar" style="margin-top:16px"><span id="count"></span><a class="btn primary sm" href="./sell.html?type=project" style="margin-left:auto">결과물 올리기</a></div>
+  <div class="rlist" id="list"></div>
+  <p class="note" id="foot" style="margin-top:16px"></p>
+</main>
+<script>
+mountShell({ active: 'hackathon', sub: 'hackathon' }).then(async () => {
+  const d = await api('/api/hackathons');
+  const list = (d.items || []).sort((a, b) => b.votes - a.votes || (b.source === 'local') - (a.source === 'local') || (b.participants || 0) - (a.participants || 0));
+  $('#count').textContent = `${list.length}개`;
+  $('#list').replaceChildren(...list.map((h, i) => hackRow(h, i + 1)));
+  if (!list.length) $('#list').innerHTML = '<div class="empty">지금 열린 해커톤이 없어요.</div>';
+  $('#foot').textContent = `해외 일정은 Devpost에서 6시간마다 자동으로 모아요.${d.updatedAt ? ` 마지막 수집 ${new Date(d.updatedAt).toLocaleString('ko-KR')}` : ''}`;
+});
+</script>
+</body>
+</html>

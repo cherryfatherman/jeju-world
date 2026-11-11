@@ -3,33 +3,32 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>탐라도감</title>
+<title>섬업</title>
 <link rel="stylesheet" href="./style.css">
 <script src="./app.js"></script>
 </head>
 <body>
 <main class="wrap" style="max-width:860px">
   <article class="guide" id="place">
-    <p class="crumb"><a href="./places.html">제주여행</a> <span>›</span> <a id="crumbType" href="#"></a></p>
-    <h1 id="pName"></h1>
-    <p class="lead" id="pSummary"></p>
+    <p class="crumb"><a href="./places.html">여행</a> <span>›</span> <a id="crumbType" href="#"></a></p>
+    <div class="post-head"><div><h1 id="pName"></h1><p class="lead" id="pSummary"></p></div><span id="upSlot"></span></div>
     <div class="gmeta" id="pMeta"></div>
     <img class="ghero" id="pImage" alt="" hidden>
     <div class="pfacts" id="pFacts"></div>
     <div class="pactions">
-      <button class="btn primary" id="voteBtn">추천하기</button>
       <a class="btn" id="mapBtn" target="_blank" rel="noopener">지도에서 보기</a>
       <button class="btn" id="shareBtn">공유</button>
     </div>
     <section class="pfeedback">
       <h2>틀린 정보가 있나요?</h2>
-      <p class="note">운영시간·요금·위치가 바뀌었으면 알려 주세요. 확인 후 고치고 '확인됨'으로 바꿉니다.</p>
+      <p class="note">운영시간·요금·위치가 바뀌었으면 알려 주세요. 확인하고 고칠게요.</p>
       <form class="form" id="fbForm" style="padding:16px">
         <textarea name="text" required maxlength="500" placeholder="예: 주차장이 유료로 바뀌었어요 (2026년 11월)"></textarea>
         <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn primary sm">보내기</button></div>
       </form>
     </section>
     <div class="gsources" id="pSources"></div>
+    <section id="talk"></section>
   </article>
   <section>
     <div class="sec-head"><h2>같이 보면 좋은 곳</h2><a class="more" id="moreLink" href="./places.html">전체 보기</a></div>
@@ -38,21 +37,20 @@
 </main>
 <script>
 const id = new URLSearchParams(location.search).get('id');
-mountShell({ active: 'travel', primary: 'travel' }).then(async () => {
+mountShell({ active: 'jeju', sub: 'travel' }).then(async () => {
   let p; try { p = await api(`/api/places/${encodeURIComponent(id || '')}`); } catch { $('#place').innerHTML = '<div class="empty">찾는 장소가 없어요. <a href="./places.html">제주여행으로 돌아가기</a></div>'; return; }
-  document.title = `${p.name} · 탐라도감`;
+  document.title = `${p.name} · 섬업`;
   $('#crumbType').textContent = PLACE_LABEL[p.type]; $('#crumbType').href = `./places.html?type=${p.type}`; $('#moreLink').href = `./places.html?type=${p.type}`;
   $('#pName').textContent = p.name; $('#pSummary').textContent = p.summary || '';
-  $('#pMeta').innerHTML = `<span class="badge">${esc(p.area || '')}</span>${p.verified ? '<span class="badge" style="color:var(--ok)">확인됨</span>' : '<span class="badge sample">확인 필요</span>'}<span class="note">마지막 확인 ${esc(p.lastChecked || '-')}</span><span class="note" id="voteCount">추천 ${p.votes || 0}</span>`;
+  $('#pMeta').innerHTML = `<span class="badge">${esc(p.area || '')}</span><span class="note">업데이트 ${esc(p.lastChecked || '-')}</span>`;
   if (p.image) { $('#pImage').src = p.image; $('#pImage').hidden = false; }
   const facts = [['주소', p.address], ['이런 분께', (p.tags || []).join(' · ')], ['팁', p.tip]].filter(([, v]) => v);
   $('#pFacts').innerHTML = facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('');
   $('#mapBtn').href = `https://map.kakao.com/link/search/${encodeURIComponent(p.name + ' ' + (p.area || '제주'))}`;
-  if (p.source?.url) $('#pSources').innerHTML = `<b>출처·공식 안내</b><ul><li><a href="${esc(p.source.url)}" target="_blank" rel="noopener">${esc(p.source.label || p.source.url)}</a></li></ul>`;
-  const key = 'pv-' + p.id;
-  if (localStorage.getItem(key)) { $('#voteBtn').textContent = '추천했어요'; $('#voteBtn').disabled = true; }
-  $('#voteBtn').onclick = async () => { try { const d = await api(`/api/places/${p.id}/vote`, {}); localStorage.setItem(key, '1'); $('#voteBtn').textContent = '추천했어요'; $('#voteBtn').disabled = true; $('#voteCount').textContent = `추천 ${d.votes}`; toast('추천했어요. 고마워요!'); } catch (e) { toast(e.message); } };
-  $('#shareBtn').onclick = () => share(`${p.name} · 탐라도감`, p.summary, location.href);
+  if (p.source?.url) $('#pSources').innerHTML = `<b>출처</b><ul><li><a href="${esc(p.source.url)}" target="_blank" rel="noopener">${esc(p.source.label || p.source.url)}</a></li></ul>`;
+  $('#upSlot').replaceChildren(upBtn('place', p.id, p.votes, true));
+  mountComments($('#talk'), 'place', p.id);
+  $('#shareBtn').onclick = () => share(`${p.name} · 섬업`, p.summary, location.href);
   $('#fbForm').onsubmit = async (e) => { e.preventDefault(); const text = new FormData(e.target).get('text').trim(); if (!text) return; try { await api(`/api/places/${p.id}/feedback`, { text }); e.target.reset(); toast('보냈어요. 확인 후 반영할게요'); } catch (err) { toast(err.message); } };
   const d = await api(`/api/places?type=${p.type}`);
   $('#more').replaceChildren(...(d.items || []).filter((x) => x.id !== p.id).slice(0, 4).map((x) => placeCard(x)));

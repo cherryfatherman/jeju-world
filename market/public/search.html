@@ -3,29 +3,32 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>검색 · 탐라도감</title>
+<title>검색 · 섬업</title>
 <link rel="stylesheet" href="./style.css">
 <script src="./app.js"></script>
 </head>
 <body>
-<main class="wrap">
+<main class="wrap" style="max-width:860px">
   <div class="page-title"><h1 id="title">검색</h1><p id="summary" class="muted"></p></div>
-  <section id="secWaste" hidden><div class="sec-head"><h2>버리는 법</h2></div><div id="waste"></div></section>
-  <section id="secList" hidden><div class="sec-head"><h2>장터</h2><span class="more" id="cntList"></span></div><div class="grid" id="list"></div></section>
-  <section id="secWin" hidden><div class="sec-head"><h2>수상작 도감</h2><span class="more" id="cntWin"></span></div><div class="list" id="win"></div></section>
+  <div id="out"></div>
   <div class="empty" id="none" hidden>검색 결과가 없어요. 다른 말로 찾아보거나 <a href="./sell.html">직접 올려 보세요</a>.</div>
 </main>
 <script>
 const q = (new URLSearchParams(location.search).get('q') || '').trim();
 mountShell({ active: 'search' }).then(async () => {
   $('.search input').value = q;
-  if (!q) { $('#title').textContent = '무엇을 찾으세요?'; $('#summary').textContent = '집, 물건, 프로젝트, 수상작, 버리는 법을 한 번에 찾아요.'; return; }
+  if (!q) { $('#title').textContent = '무엇을 찾으세요?'; $('#summary').textContent = '프로젝트, 지원사업, 인사이트, 수상작, 생활정보를 한 번에 찾아요.'; return; }
   $('#title').textContent = `"${q}" 검색 결과`;
   const d = await api(`/api/search?q=${encodeURIComponent(q)}`);
-  let total = 0;
-  if (d.waste) { $('#secWaste').hidden = false; $('#waste').innerHTML = `<div class="ai-box"><b>${esc(q)}</b><p style="margin-top:6px;white-space:pre-line">${esc(d.waste.answer)}</p><p class="note" style="margin-top:6px">${esc(d.waste.caution || '')} <a href="./jeju.html#waste" style="color:var(--accent);font-weight:600">요일표 보기</a></p></div>`; total++; }
-  if (d.listings.length) { $('#secList').hidden = false; $('#cntList').textContent = `${d.listings.length}개`; $('#list').replaceChildren(...d.listings.map(listingCard)); total += d.listings.length; }
-  if (d.winners.length) { $('#secWin').hidden = false; $('#cntWin').textContent = `${d.winners.length}개`; $('#win').replaceChildren(...d.winners.slice(0, 20).map((w) => { const r = document.createElement('div'); r.className = 'row'; r.innerHTML = `<div class="body"><b>${esc(w.name)}</b><p>${esc(w.tagline)}</p></div><div class="right"><span class="pill">추천 ${w.likes}</span><a class="btn sm" href="${esc(w.url)}" target="_blank" rel="noopener">원문</a></div>`; return r; })); total += d.winners.length; }
+  let total = 0; const out = $('#out');
+  const sec = (title, rows) => { if (!rows.length) return; total += rows.length; const s = document.createElement('section'); s.innerHTML = `<div class="sec-head"><h2>${title}</h2><span class="more">${rows.length}개</span></div>`; const l = document.createElement('div'); l.className = 'rlist'; l.append(...rows); s.append(l); out.append(s); };
+  if (d.waste) { total++; const s = document.createElement('section'); s.innerHTML = `<div class="sec-head"><h2>버리는 법</h2></div><div class="ai-box"><b>${esc(q)}</b><p style="margin-top:6px;white-space:pre-line">${esc(d.waste.answer)}</p><p class="note" style="margin-top:6px"><a href="./jeju.html#sec-days" style="color:var(--accent);font-weight:600">요일표 보기</a></p></div>`; out.append(s); }
+  sec('거래 · 장터', d.listings.map((p) => projectRow(p)));
+  sec('창업정보', d.programs.map((p) => programRow(p)));
+  sec('인사이트', d.insights.map((p) => insightRow(p)));
+  sec('생활정보', d.guides.map((g) => guideRow(g)));
+  sec('여행', d.places.map((p) => rankRow({ href: `./place.html?id=${encodeURIComponent(p.id)}`, image: p.image, title: p.name, sub: p.summary, meta: p.area, kind: 'place', id: p.id, votes: p.votes })));
+  sec('해커톤 수상작', d.winners.slice(0, 20).map((w) => rankRow({ href: w.url, external: true, iconName: 'trophy', title: w.name, sub: w.tagline, meta: `${w.category} · Devpost 좋아요 ${w.likes}`, kind: 'winner', id: w.id, votes: w.votes })));
   $('#summary').textContent = total ? `${total}개를 찾았어요` : '';
   $('#none').hidden = total > 0;
 });

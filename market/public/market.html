@@ -2,50 +2,46 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>장터 · 탐라도감</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>거래 · 섬업</title>
+<meta name="description" content="AI로 만든 서비스와 해커톤 프로젝트를 거래하는 곳. 많이 업 받은 순서로 보여요.">
 <link rel="stylesheet" href="./style.css">
 <script src="./app.js"></script>
 </head>
 <body>
-<main class="wrap">
-  <div class="page-title"><h1 id="pageH1">장터</h1><p id="pageSub">집·물건·프로젝트. 모두 AI가 정리한 글이라 읽기 편해요.</p></div>
-  <div class="typetabs" id="typetabs">
-    <button data-t="home">집</button><button data-t="item">물건</button><button data-t="project">프로젝트</button>
-  </div>
+<main class="wrap" id="main">
+  <div class="page-title"><h1 id="pageH1"></h1><p id="pageSub"></p></div>
+  <div class="typetabs" id="typetabs" hidden><button data-t="home">집</button><button data-t="item">물건</button></div>
+  <div class="listbar" style="margin-top:16px"><div class="stabs" id="stabs" hidden></div><span id="count"></span><div class="sort" id="sort"><button data-s="hot" class="on">업순</button><button data-s="new">최신순</button></div><a class="btn primary sm" id="addBtn" href="./sell.html">올리기</a></div>
   <div class="chips" id="chips"></div>
-  <div class="sec-head"><span class="more" id="count"></span><div class="sortbar" id="sort"><button data-s="new" class="on">최신순</button><button data-s="hot">추천순</button></div><a class="btn primary sm" id="addBtn" href="./sell.html">올리기</a></div>
-  <div class="grid" id="grid"></div>
-
-  <section id="hackathons">
-    <div class="sec-head"><h2>지금 열려 있는 해커톤</h2><span class="more" id="hackUpdated"></span></div>
-    <p class="note" style="margin-bottom:12px">탐라도감이 자동으로 모아요. 참가하고 나면 결과물을 프로젝트 장터에 올려 주세요.</p>
-    <div class="hack" id="hackList"></div>
-  </section>
+  <div class="rlist" id="rows" hidden></div>
+  <div class="grid" id="grid" hidden></div>
 </main>
 <script>
-let all = [], type = new URLSearchParams(location.search).get('type') || 'home', cat = '전체', sort = 'new';
-function setTitle() { const pj = type === 'project'; $('#pageH1').textContent = pj ? '프로젝트' : '장터'; $('#pageSub').textContent = pj ? '멈춘 해커톤·사이드 프로젝트를 다음 주인에게. 사용자·매출·코드 상태가 정리돼 있어요.' : '집·물건. 사진만 올리면 AI가 정리한 글이라 읽기 편해요.'; document.title = `${pj ? '프로젝트' : '장터'} · 탐라도감`; }
-function render() { setTitle();
-  const list = all.filter((p) => p.type === type && (cat === '전체' || p.category === cat)).sort((a, b) => sort === 'hot' ? (b.interest || 0) - (a.interest || 0) : b.createdAt.localeCompare(a.createdAt));
+let all = [], type = ['home', 'item', 'project'].includes(new URLSearchParams(location.search).get('type')) ? new URLSearchParams(location.search).get('type') : 'project', cat = '전체', sort = 'hot', deal = 'open';
+const isDeal = () => type === 'project';
+function render() {
+  const pj = isDeal();
+  $('#pageH1').textContent = pj ? '거래' : '집·물건 장터'; document.title = `${pj ? '거래' : '집·물건 장터'} · 섬업`;
+  $('#pageSub').textContent = pj ? 'AI로 만든 서비스와 해커톤 프로젝트가 다음 주인을 만나요. 많이 업 받은 순서예요.' : '사진만 올리면 글은 AI가 써요.';
+  $('#typetabs').hidden = pj; $('#stabs').hidden = !pj; $('#rows').hidden = !pj; $('#grid').hidden = pj; $('#count').hidden = pj;
+  $('#main').style.maxWidth = pj ? '860px' : '';
   $$('#typetabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === type));
   $('#addBtn').href = `./sell.html?type=${type}`;
-  const cats = ['전체', ...new Set(all.filter((p) => p.type === type).map((p) => p.category))];
+  const mine = all.filter((p) => p.type === type);
+  if (pj) $('#stabs').innerHTML = [['open', '거래 중'], ['done', '완료']].map(([k, l]) => `<button data-k="${k}" class="${k === deal ? 'on' : ''}">${l}<small>${mine.filter((p) => p.deal === k).length}</small></button>`).join(''), $$('#stabs button').forEach((b) => b.onclick = () => { deal = b.dataset.k; render(); });
+  const pool = mine.filter((p) => !pj || p.deal === deal);
+  const cats = ['전체', ...new Set(pool.map((p) => p.category))]; if (!cats.includes(cat)) cat = '전체';
   $('#chips').replaceChildren(...cats.map((c) => { const b = document.createElement('button'); b.className = 'chip' + (c === cat ? ' on' : ''); b.textContent = c; b.onclick = () => { cat = c; render(); }; return b; }));
-  $('#grid').replaceChildren(...list.map(listingCard));
-  if (!list.length) $('#grid').innerHTML = '<div class="empty">아직 올라온 글이 없어요. 첫 번째로 올려 보세요!</div>';
+  const list = pool.filter((p) => cat === '전체' || p.category === cat).sort((a, b) => sort === 'hot' ? (b.interest || 0) - (a.interest || 0) : b.createdAt.localeCompare(a.createdAt));
   $('#count').textContent = `${list.length}개`;
+  const empty = `<div class="empty">아직 올라온 글이 없어요. <a href="./sell.html?type=${type}">첫 번째로 올려 보세요</a></div>`;
+  if (pj) { $('#rows').replaceChildren(...list.map((p, i) => projectRow(p, i + 1))); if (!list.length) $('#rows').innerHTML = empty; }
+  else { $('#grid').replaceChildren(...list.map(listingCard)); if (!list.length) $('#grid').innerHTML = empty; }
 }
 $$('#sort button').forEach((b) => b.onclick = () => { sort = b.dataset.s; $$('#sort button').forEach((x) => x.classList.toggle('on', x === b)); render(); });
-$$('#typetabs button').forEach((b) => b.onclick = () => { type = b.dataset.t; cat = '전체'; history.replaceState(null, '', `?type=${type}`); render(); $$('.subnav a').forEach((a) => a.classList.toggle('on', a.getAttribute('href').includes(`type=${type}`))); });
-mountShell({ active: type === 'project' ? 'project' : 'market', primary: type === 'project' ? 'project' : 'market', sub: type }).then(async () => {
-  all = await api('/api/projects'); render();
-  const h = await api('/api/hackathons'); const items = h.items || [];
-  $('#hackUpdated').textContent = h.updatedAt ? `자동 수집 · ${new Date(h.updatedAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: 'numeric' })}` : '수집 중…';
-  $('#hackList').replaceChildren(...items.slice(0, 12).map((x) => { const a = document.createElement('a'); a.href = x.url; a.target = '_blank'; a.rel = 'noopener';
-    a.innerHTML = `<span class="src ${x.source}">${x.source === 'local' ? '국내 · 직접 등록' : 'Devpost'}</span><b>${esc(x.title)}</b><span class="d">${esc(x.dates || '')} · ${esc(x.location || '')}${x.participants ? ` · ${x.participants.toLocaleString()}명 참가` : ''}</span><span class="p">${x.prize ? `상금 ${esc(x.prize)}` : ''}</span>`; return a; }));
-  if (location.hash === '#hackathons') $('#hackathons').scrollIntoView();
-});
+$$('#typetabs button').forEach((b) => b.onclick = () => { type = b.dataset.t; cat = '전체'; history.replaceState(null, '', `?type=${type}`); render(); });
+mountShell(isDeal() ? { active: 'deal', sub: 'project' } : { active: 'jeju', sub: 'market' }).then(async () => { all = await api('/api/projects'); render(); });
 </script>
 </body>
 </html>

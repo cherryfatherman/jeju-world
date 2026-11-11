@@ -46,7 +46,7 @@
   "seller": "집주인",
   "contact": "example-owner@example.com",
   "interest": 19,
-  "views": 420
+  "views": 423
  },
  {
   "id": "i01",
@@ -134,7 +134,7 @@
   "seller": "졸업반 개발자",
   "contact": "example-seller-1@example.com",
   "interest": 23,
-  "views": 310,
+  "views": 315,
   "type": "project",
   "photos": [
    "https://images.pexels.com/photos/3952068/pexels-photo-3952068.jpeg?auto=compress&cs=tinysrgb&w=1200&h=900&fit=crop"
@@ -258,7 +258,8 @@
   "type": "project",
   "photos": [
    "https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=1200&h=900&fit=crop&q=80&auto=format"
-  ]
+  ],
+  "deal": "done"
  },
  {
   "id": "s06",

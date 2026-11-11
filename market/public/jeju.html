@@ -2,39 +2,41 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>제주 생활 · 탐라도감</title>
-<meta name="description" content="제주 분리배출 요일, 이거 어디 버려요? AI, 제주 생활 꿀팁">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>제주살이 · 섬업</title>
+<meta name="description" content="제주 요일별 분리배출, 이거 어디 버려요? AI, 도민 생활정보를 한곳에서.">
 <link rel="stylesheet" href="./style.css">
 <script src="./app.js"></script>
 </head>
 <body>
 <main class="wrap" style="max-width:860px">
-  <div class="page-title"><h1>제주 <em>생활</em></h1><p>매일 쓰는 제주 생활 정보. 틀린 게 있으면 알려주세요, 바로 고칠게요.</p></div>
+  <div class="page-title"><h1>제주살이</h1><p>도민이 매일 쓰는 생활정보. 도움이 됐으면 업, 틀렸으면 이야기로 알려 주세요.</p></div>
+  <div class="quick" id="quick" style="margin-top:8px"></div>
 
   <section id="waste">
     <div class="sec-head"><h2>이거 어디 버려요?</h2><span class="more" id="area"></span></div>
     <form class="form" id="wasteForm">
-      <div style="display:flex;gap:8px;flex-wrap:wrap"><input name="q" required maxlength="200" placeholder="예: 깨진 유리컵, 배달 아이스팩, 스티로폼 박스" style="flex:1;min-width:200px"><button class="btn primary" id="askBtn">AI에게 묻기</button></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><input name="q" required maxlength="200" placeholder="예: 깨진 유리컵, 아이스팩, 스티로폼 박스" style="flex:1;min-width:200px"><button class="btn primary" id="askBtn">AI에게 묻기</button></div>
       <div class="chips" style="margin:0"><button type="button" class="chip" data-q="아이스팩">아이스팩</button><button type="button" class="chip" data-q="깨진 유리컵">깨진 유리컵</button><button type="button" class="chip" data-q="택배 상자">택배 상자</button><button type="button" class="chip" data-q="페트병">페트병</button><button type="button" class="chip" data-q="헌 옷">헌 옷</button><button type="button" class="chip" data-q="건전지">건전지</button></div>
       <div id="answer" hidden></div>
     </form>
   </section>
 
   <section id="sec-days">
-    <div class="sec-head"><h2>요일별 배출 (클린하우스)</h2><span class="more" id="today"></span></div>
+    <div class="sec-head"><h2>요일별 배출</h2><span class="more" id="today"></span></div>
     <div class="days" id="days"></div>
+    <div class="chips" id="daily" style="margin:12px 0 0"></div>
     <p class="note" id="wasteNote" style="margin-top:10px"></p>
     <p class="note" id="wasteSource"></p>
   </section>
 
   <section id="sec-guides">
-    <div class="sec-head"><h2>제주 생활 가이드</h2><span class="more">글 하나가 한 가지 답</span></div>
-    <div class="ggrid" id="guides"></div>
+    <div class="sec-head"><h2>생활정보</h2><span class="more">업 많은 순</span></div>
+    <div class="rlist" id="guides"></div>
   </section>
 
   <section id="sec-tips">
-    <div class="sec-head"><h2>생활 꿀팁</h2><span class="more">탐라도감이 정리 · 유저가 보탬</span></div>
+    <div class="sec-head"><h2>한 줄 팁</h2></div>
     <div class="list" id="tips"></div>
   </section>
 </main>
@@ -47,9 +49,11 @@ function renderWaste() {
   $('#area').textContent = `${J.area || '제주시'} 기준`;
   $('#today').textContent = `오늘은 ${DAYS[todayIdx]}요일`;
   $('#days').replaceChildren(...DAYS.map((d, i) => { const el = document.createElement('div'); el.className = 'day' + (i === todayIdx ? ' today' : ''); el.innerHTML = `<b>${d}</b><span>${esc((W.days || {})[d] || '-')}</span>`; return el; }));
+  $('#daily').innerHTML = (W.daily || []).length ? `<span class="note" style="align-self:center;margin-right:4px">매일 배출</span>${W.daily.map((x) => `<span class="chip on" style="cursor:default">${esc(x)}</span>`).join('')}` : '';
   $('#wasteNote').textContent = W.notes || '';
-  $('#wasteSource').innerHTML = `${W.verified ? '공식 안내로 확인됨' : '확인 필요'} · 출처: ${esc(W.source || '')}`;
-  $('#tips').replaceChildren(...(J.tips || []).map((t) => { const d = document.createElement('div'); d.className = 'row'; d.innerHTML = `<div class="body"><b>${esc(t.title)}</b><p>${esc(t.body)}</p></div><div class="right">${t.check ? '<span class="badge">확인됨</span>' : '<span class="badge sample">확인 필요</span>'}</div>`; return d; }));
+  $('#wasteSource').innerHTML = `출처: ${W.sourceUrl ? `<a href="${esc(W.sourceUrl)}" target="_blank" rel="noopener" style="text-decoration:underline">${esc(W.source || '')}</a>` : esc(W.source || '')}${W.lastChecked ? ` · 업데이트 ${esc(W.lastChecked)}` : ''}`;
+  $('#tips').replaceChildren(...(J.tips || []).map((t) => { const d = document.createElement('div'); d.className = 'row'; d.innerHTML = `<div class="body"><b>${esc(t.title)}</b><p>${esc(t.body)}</p></div>`; return d; }));
+  $('#quick').replaceChildren(...(CFG.tools || []).filter((t) => t.key !== 'today').map((t) => { const a = document.createElement('a'); a.href = t.href || '#'; a.innerHTML = `<span class="qic">${icon(t.icon)}</span><span class="ql">${esc(t.label)}</span>${t.sub ? `<small>${esc(t.sub)}</small>` : ''}`; return a; }));
 }
 $('#wasteForm').onsubmit = async (e) => {
   e.preventDefault();
@@ -58,12 +62,12 @@ $('#wasteForm').onsubmit = async (e) => {
   try {
     const d = await api('/api/jeju/waste', { question: q });
     $('#answer').hidden = false;
-    $('#answer').innerHTML = `<div class="ai-box"><b>${esc(q)}</b> ${d.canToday === true ? '<span class="badge" style="color:var(--ok)">오늘 배출 가능</span>' : d.canToday === false ? `<span class="badge">오늘 ✕${d.nextDay ? ` · ${esc(d.nextDay)}요일 가능` : ''}</span>` : ''}<p style="margin:8px 0 0;white-space:pre-line">${esc(d.answer)}</p>${d.caution ? `<p class="note" style="margin-top:6px">${esc(d.caution)}</p>` : ''}<p class="note" style="margin-top:6px">${d.ai ? 'AI 답변 · 요일표를 근거로 했어요' : '기본 답변'} · 정확한 분류는 주민센터 안내가 우선이에요</p></div>`;
+    $('#answer').innerHTML = `<div class="ai-box"><b>${esc(q)}</b> ${d.canToday === true ? '<span class="badge" style="color:var(--ok)">오늘 배출 가능</span>' : d.canToday === false ? `<span class="badge">오늘 ✕${d.nextDay ? ` · ${esc(d.nextDay)}요일 가능` : ''}</span>` : ''}<p style="margin:8px 0 0;white-space:pre-line">${esc(d.answer)}</p>${d.caution ? `<p class="note" style="margin-top:6px">${esc(d.caution)}</p>` : ''}</div>`;
   } catch (err) { toast(err.message); }
   btn.disabled = false; btn.textContent = 'AI에게 묻기';
 };
 $$('[data-q]').forEach((b) => b.onclick = () => { $('#wasteForm [name=q]').value = b.dataset.q; $('#wasteForm').requestSubmit(); });
-mountShell({ active: 'jeju', primary: 'jeju' }).then((c) => { CFG = c; renderWaste(); api('/api/guides').then((g) => $('#guides').replaceChildren(...g.map(guideCard))); });
+mountShell({ active: 'jeju', sub: 'jeju' }).then((c) => { CFG = c; renderWaste(); api('/api/guides').then((g) => $('#guides').replaceChildren(...g.map((x, i) => guideRow(x, i + 1)))); if (location.hash) setTimeout(() => document.querySelector(location.hash)?.scrollIntoView(), 300); });
 </script>
 </body>
 </html>

@@ -2,7 +2,7 @@
   "name": "baton",
   "version": "0.1.0",
   "private": true,
-  "description": "탐라도감: AI로 만든 서비스와 해커톤 프로젝트를 다음 주인에게 넘기는 장터",
+  "description": "섬업: AI로 만든 서비스와 해커톤 프로젝트를 다음 주인에게 넘기는 장터",
   "main": "server.js",
   "scripts": { "start": "node server.js" },
   "engines": { "node": ">=18" },
