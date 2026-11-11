@@ -231,13 +231,13 @@ function bannerSVG() {
 async function mountShell({ active, primary, sub } = {}) {
   // 1) 지난 방문 때 저장해 둔 설정으로 상단을 즉시 그린다. 처음이면 기본값.
   let cached = null; try { cached = JSON.parse(localStorage.getItem('cfg') || 'null'); } catch {}
-  const S0 = cached?.site || { name: '섬업', sub: '탐라도감' };
+  const S0 = cached?.site || { name: '섬업', sub: '' };
   document.documentElement.dataset.theme = 'day'; if (cached) { applyColors(cached.colors); applyTheme(cached.theme); }
   if (!$('link[rel=icon]')) { const l = document.createElement('link'); l.rel = 'icon'; l.href = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#fff"/><rect x="22" y="12" width="56" height="76" rx="9" fill="#ff6b1a"/><path d="M60 12h11v28l-5.5-4.5L60 40z" fill="#1b1915" opacity=".28"/><circle cx="46" cy="58" r="15" fill="#fff"/><path d="M46 44c0-4.5 4.5-8.2 10.5-7.5-1 5.5-5.5 8.2-10.5 7.5z" fill="#19b3a6"/></svg>')}`; document.head.append(l); }
   const pkey = primary || ({ winners: 'hackathon', hackathon: 'hackathon', market: 'jeju', jeju: 'jeju', project: 'deal', deal: 'deal', program: 'program', insight: 'insight' }[active] || '');
   const header = document.createElement('header'); header.className = 'top';
   header.innerHTML = `<div class="wrap bar">
-      <a class="logo" href="./"><span class="mark"><svg viewBox="0 0 100 100" aria-hidden="true"><rect x="18" y="10" width="64" height="80" rx="9" fill="#ff6b1a"/><path d="M62 10h12v30l-6-5-6 5z" fill="#1b1915" opacity=".28"/><circle cx="46" cy="58" r="16" fill="#fff"/><path d="M46 43c0-4.8 4.8-8.8 11.2-8-1.1 5.9-5.9 8.8-11.2 8z" fill="#19b3a6"/></svg></span><span class="lname">${esc(S0.name)}</span><small class="lsub">${esc(S0.sub || '')}</small></a>
+      <a class="logo" href="./"><span class="mark"><svg viewBox="0 0 100 100" aria-hidden="true"><rect x="18" y="10" width="64" height="80" rx="9" fill="#ff6b1a"/><path d="M62 10h12v30l-6-5-6 5z" fill="#1b1915" opacity=".28"/><circle cx="46" cy="58" r="16" fill="#fff"/><path d="M46 43c0-4.8 4.8-8.8 11.2-8-1.1 5.9-5.9 8.8-11.2 8z" fill="#19b3a6"/></svg></span><span class="lname">${esc(S0.name)}</span><small class="lsub" ${S0.sub ? '' : 'hidden'}>${esc(S0.sub || '')}</small></a>
       <nav class="primary">${PRIMARY.map((p) => `<a href="${p.href}" class="${p.key === pkey ? 'on' : ''}">${p.label}</a>`).join('')}</nav>
       <form class="search" role="search" action="./search.html"><span class="sic">${icon('search')}</span><input name="q" placeholder="검색" autocomplete="off" aria-label="검색"></form>
       <div class="acts"><a class="btn write" href="./sell.html">${icon('plus')}<span>올리기</span></a></div>

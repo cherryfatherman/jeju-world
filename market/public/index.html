@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>섬업 · 제주(섬)에서 창업을 거래하다</title>
-<meta name="description" content="섬업(탐라도감). 제주에서 만든 AI 서비스와 해커톤 프로젝트를 사고팔고, 창업 지원사업·인사이트·해커톤 정보를 한곳에서.">
+<meta name="description" content="섬업. 제주에서 만든 AI 서비스와 해커톤 프로젝트를 사고팔고, 창업 지원사업·인사이트·해커톤 정보를 한곳에서.">
 <link rel="stylesheet" href="./style.css">
 <script src="./app.js"></script>
 </head>
@@ -18,10 +18,6 @@
     <p class="home-lead" id="lead" data-edit="lead"></p>
   </section>
   <section><div class="direction" id="direction"></div></section>
-  <section>
-    <div class="sec-head"><h2>창업도시 제주, 지금</h2><a class="more" href="./board.html?kind=insight">인사이트 더 보기</a></div>
-    <div class="stories" id="stories"></div>
-  </section>
 
   <!-- 3. 다섯 줄기로 들어가기 -->
   <section>
@@ -42,7 +38,7 @@ const DAYS = ['월', '화', '수', '목', '금', '토', '일'];
 function renderHero() {
   const s = (CFG.carousel || [])[0] || {}, B = CFG.banner || {};
   if (s.image) $('#hero').style.backgroundImage = `url('${s.image}')`;
-  $('#heroText').innerHTML = `<p class="kicker" data-edit="carousel.0.kicker">${esc(s.kicker || B.kicker || '')}</p><h1 data-edit="carousel.0.title">${rich(s.title || B.title || CFG.site.slogan)}</h1><p class="sub" data-edit="carousel.0.sub">${esc(s.sub || B.sub || '')}</p>
+  $('#heroText').innerHTML = `<p class="kicker" data-edit="carousel.0.kicker">${esc(s.kicker || B.kicker || '')}</p><h1 data-edit="carousel.0.title">${rich(s.title || B.title || CFG.site.slogan)}</h1><p class="sub" data-edit="carousel.0.sub">${rich(s.sub || B.sub || '')}</p>
     <div class="cta"><a class="btn primary big" href="./market.html?type=project"><span data-edit="banner.primaryLabel">${esc(B.primaryLabel || '프로젝트 둘러보기')}</span></a><a class="btn big line" href="./sell.html?type=project"><span data-edit="banner.secondaryLabel">${esc(B.secondaryLabel || '내 프로젝트 올리기')}</span></a></div>`;
   $('#lead').innerHTML = rich(CFG.lead || '');
 }
@@ -51,18 +47,13 @@ function renderRing() {
 }
 function renderDirection() {
   const D = CFG.direction; if (!D) { $('#direction').parentElement.hidden = true; return; }
-  $('#direction').innerHTML = `<div><p class="kicker" data-edit="direction.kicker">${esc(D.kicker || '')}</p><h2 data-edit="direction.title">${rich(D.title || '')}</h2></div><div class="facts">${(D.facts || []).map((f, i) => `<a href="${esc(f.href || '#')}" target="_blank" rel="noopener"><b data-edit="direction.facts.${i}.num">${esc(f.num)}</b><span data-edit="direction.facts.${i}.label">${esc(f.label)}</span><small>출처: ${esc(f.src || '')}</small></a>`).join('')}</div>`;
+  $('#direction').innerHTML = `<div><p class="kicker" data-edit="direction.kicker">${esc(D.kicker || '')}</p><h2 data-edit="direction.title">${rich(D.title || '')}</h2></div><a class="dmore" href="./board.html?kind=insight">인사이트 더 보기 ${icon('arrow')}</a><div class="facts">${(D.facts || []).map((f, i) => `<a href="${f.post ? `./post.html?kind=insight&id=${encodeURIComponent(f.post)}` : esc(f.href || '#')}" ${f.post ? '' : 'target="_blank" rel="noopener"'} style="${f.image ? `background-image:url('${esc(f.image)}')` : ''}"><div><b data-edit="direction.facts.${i}.num">${esc(f.num)}</b><span data-edit="direction.facts.${i}.label">${rich(f.label)}</span><small>${esc(f.src || '')} · 기사 보기 ${icon('arrow')}</small></div></a>`).join('')}</div>`;
 }
 function renderTiles() {
   const today = DAYS[(new Date().getDay() + 6) % 7]; const first = ((CFG.jeju?.waste?.days || {})[today] || '').split(/,\s*/)[0] || '';
   tileGroups($('#tiles'), CFG.tiles, { today: `${today}요일 · ${first}` });
 }
-async function load() {
-  const d = await api('/api/posts/insight');
-  const pick = [...d.items.filter((p) => p.category === '정책').slice(0, 2), ...d.items.filter((p) => p.category === '통계·조사').slice(0, 1)];
-  $('#stories').replaceChildren(...pick.map((p) => { const a = document.createElement('a'); a.className = 'story'; a.href = `./post.html?kind=insight&id=${encodeURIComponent(p.id)}`; if (p.image) a.style.backgroundImage = `url('${p.image}')`; a.innerHTML = `<div><i>${esc(p.category)}</i><b>${esc(p.title)}</b><small>${esc(p.org || '')}</small></div>`; return a; }));
-}
-mountShell({ active: 'home' }).then((c) => { CFG = c; renderHero(); renderRing(); renderDirection(); renderTiles(); load(); });
+mountShell({ active: 'home' }).then((c) => { CFG = c; renderHero(); renderRing(); renderDirection(); renderTiles(); });
 </script>
 </body>
 </html>

@@ -6,12 +6,12 @@
   "threads": "https://www.threads.net/",
   "openchat": "#",
   "showSamples": true,
-  "sub": "탐라도감"
+  "sub": ""
  },
  "banner": {
-  "kicker": "섬업 · 탐라도감",
+  "kicker": "제주 창업 장터",
   "title": "제주(섬)에서\n[창업을 거래하다]",
-  "sub": "AI로 만든 서비스와 해커톤 프로젝트가 다음 주인을 만나는 곳. 지원사업·인사이트·해커톤까지, 제주 창업 정보는 여기서.",
+  "sub": "AI로 만든 서비스와 해커톤 프로젝트가 다음 주인을 만나는 곳.\n지원사업·인사이트·해커톤까지, 제주 창업 정보는 여기서.",
   "primaryLabel": "프로젝트 둘러보기",
   "secondaryLabel": "내 프로젝트 올리기"
  },
@@ -148,9 +148,9 @@
  },
  "carousel": [
   {
-   "kicker": "섬업 · 탐라도감",
+   "kicker": "제주 창업 장터",
    "title": "제주(섬)에서\n[창업을 거래하다]",
-   "sub": "AI로 만든 서비스와 해커톤 프로젝트가 다음 주인을 만나는 곳. 지원사업·인사이트·해커톤까지, 제주 창업 정보는 여기서.",
+   "sub": "AI로 만든 서비스와 해커톤 프로젝트가 다음 주인을 만나는 곳.\n지원사업·인사이트·해커톤까지, 제주 창업 정보는 여기서.",
    "image": "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1600&h=640&fit=crop&q=80&auto=format",
    "ctaLabel": "프로젝트 둘러보기",
    "ctaHref": "./market.html?type=project"
@@ -203,21 +203,24 @@
   "facts": [
    {
     "num": "6곳",
-    "label": "정부가 더 뽑는 창업도시. 2027년 1월 선정",
+    "label": "정부가 더 뽑는 창업도시.\n2027년 1월에 정해져요.",
     "src": "중소벤처기업부",
-    "href": "https://eiec.kdi.re.kr/policy/materialView.do?num=288133"
+    "post": "startup-city-policy",
+    "image": "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1200&h=800&fit=crop&q=80&auto=format"
    },
    {
     "num": "600억",
-    "label": "선정되면 4년간 들어오는 지원 규모",
+    "label": "뽑히면 4년간 들어오는 지원.\n제주가 도전하고 있어요.",
     "src": "파이낸셜뉴스",
-    "href": "https://www.fnnews.com/news/202609291740021613"
+    "post": "jeju-startup-city-bid",
+    "image": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200&h=800&fit=crop&q=80&auto=format"
    },
    {
     "num": "1조",
-    "label": "제주도가 2030년까지 만들 투자 펀드",
+    "label": "제주도가 2030년까지\n만들 투자 펀드.",
     "src": "제주특별자치도",
-    "href": "https://newsseoul.co.kr/news/view/1065612039523731"
+    "post": "jeju-fund-1t",
+    "image": "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=1200&h=800&fit=crop&q=80&auto=format"
    }
   ]
  },
