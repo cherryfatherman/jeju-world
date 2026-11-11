@@ -726,3 +726,33 @@ header.top form.search { margin: 0; }                           /* 검색창이 
 .direction .facts small { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: rgba(255,255,255,.65); margin-top: 6px; }
 .direction .facts small svg { width: 13px; height: 13px; transition: transform .15s; } .direction .facts a:hover small svg { transform: translateX(3px); } .direction .facts a:hover small { color: #fff; }
 @media (max-width: 640px) { .direction .dmore { position: static; order: 3; } .direction .facts a { min-height: 150px; display: flex; grid-template-columns: none; } .direction .facts b { font-size: 30px; grid-row: auto; } .direction .facts span br { display: none; } }
+
+
+/* ════════ v7: 타일 정리 · 세로 광고 ════════ */
+.tgroups { gap: 10px; }
+.tile2 { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.tile2:hover { border-color: var(--ink-3); }
+.tile2:active, .tile2.pressed { background: var(--accent); border-color: var(--accent); transform: scale(.97); box-shadow: none; }
+.tile2:active b, .tile2.pressed b, .tile2:active small { color: #fff; } .tile2:active .ti, .tile2.pressed .ti { background: rgba(255,255,255,.22); color: #fff; }
+.tile2.accent { border-color: #ffc9a8; background: #fff8f3; } .tile2.accent b { color: #c24d0a; } .tile2.accent .ti { background: #ffe6d6; color: #c24d0a; }
+.tile2.accent:active { background: var(--accent); } .tile2.accent:active b { color: #fff; }
+
+.ads-inline { display: none !important; }
+.ad { display: flex; flex-direction: column; gap: 0; width: 168px; min-height: 600px; padding: 0; border-radius: 16px; color: #fff; box-shadow: 0 14px 34px rgba(27,25,21,.18); transition: transform .2s, box-shadow .2s; }
+.ad:hover { transform: translateY(-3px); box-shadow: 0 20px 44px rgba(27,25,21,.24); }
+.ad::after { display: none; }
+.ad.teal { background: linear-gradient(170deg, #00c2a8 0%, #0a7cff 100%); }
+.ad.orange { background: linear-gradient(170deg, #ff7a18 0%, #ff2d6f 100%); }
+.ad .adimg { display: block; height: 230px; background: rgba(255,255,255,.18) center/cover no-repeat; -webkit-mask-image: linear-gradient(180deg, #000 62%, transparent 100%); mask-image: linear-gradient(180deg, #000 62%, transparent 100%); }
+.ad .adlabel { top: 10px; right: 10px; padding: 2px 7px; border-radius: 6px; background: rgba(0,0,0,.4); color: #fff; }
+.ad .adbody { flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 4px 18px 18px; }
+.ad .kicker, .ad.teal .kicker, .ad.orange .kicker { color: rgba(255,255,255,.9); margin: 0; font-size: 11px; }
+.ad h3 { font-size: 28px; line-height: 1.12; font-weight: 900; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,.15); }
+.ad h3 em, .ad.teal h3 em, .ad.orange h3 em { color: #fff59a; }
+.ad ul { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 7px; }
+.ad li { font-size: 13px; font-weight: 700; padding: 7px 10px; border-radius: 9px; background: rgba(255,255,255,.2); }
+.ad .sub { color: rgba(255,255,255,.92); }
+.ad .go, .ad.teal .go, .ad.orange .go { margin-top: auto; justify-content: center; height: 40px; border-radius: 10px; background: #fff; font-size: 14px; }
+.ad.teal .go { color: #0a67d6; } .ad.orange .go { color: #e2305f; }
+@media (min-width: 1440px) { .ads .ad { top: 96px; width: 168px; } .ads .ad.left { left: calc(50% - 540px - 192px); } .ads .ad.right { right: calc(50% - 540px - 192px); } }
+@media (min-width: 1440px) and (max-height: 760px) { .ad { min-height: 520px; } .ad .adimg { height: 170px; } }

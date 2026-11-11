@@ -159,22 +159,32 @@
  "ads": {
   "enabled": true,
   "left": {
+   "theme": "teal",
+   "label": "광고 · 예시",
    "kicker": "제주특별자치도 · 청년",
-   "title": "제주\n청년사업\n들여다보기",
-   "sub": "창업·취업·주거·활동비 지원을 한눈에",
+   "title": "제주\n청년사업\n한눈에",
+   "points": [
+    "창업 지원",
+    "주거 지원",
+    "활동비·일자리"
+   ],
    "cta": "자세히 보기",
    "href": "https://www.jeju.go.kr",
-   "theme": "teal",
-   "label": "광고 · 예시"
+   "image": "https://images.unsplash.com/photo-1552664730-d307ca884978?w=480&h=520&fit=crop&q=80&auto=format"
   },
   "right": {
+   "theme": "orange",
+   "label": "광고 · 예시",
    "kicker": "제주대학교 · 해커톤",
    "title": "제주 AI\n부트캠프\n해커톤",
-   "sub": "11월 13일 발표 · 결과물은 섬업에",
+   "points": [
+    "11월 13일 발표",
+    "주제 자유",
+    "결과물은 섬업에"
+   ],
    "cta": "참가 안내",
    "href": "https://jeju-ai-bootcamp-579712386214.asia-northeast3.run.app/",
-   "theme": "orange",
-   "label": "광고 · 예시"
+   "image": "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=480&h=520&fit=crop&q=80&auto=format"
   }
  },
  "support": [
@@ -270,7 +280,7 @@
      "icon": "plus",
      "label": "프로젝트 올리기",
      "href": "./sell.html?type=project",
-     "badge": "HOT"
+     "accent": true
     },
     {
      "icon": "puzzle",
@@ -280,8 +290,7 @@
     {
      "icon": "coins",
      "label": "지원사업",
-     "href": "./board.html?kind=program",
-     "badge": "NEW"
+     "href": "./board.html?kind=program"
     },
     {
      "icon": "bulb",
@@ -307,8 +316,7 @@
      "icon": "calendar",
      "key": "today",
      "label": "오늘 버릴 것",
-     "href": "./jeju.html#sec-days",
-     "badge": "HOT"
+     "href": "./jeju.html#sec-days"
     },
     {
      "icon": "trash",
@@ -368,8 +376,7 @@
     {
      "icon": "search",
      "label": "지도",
-     "href": "./map.html",
-     "badge": "NEW"
+     "href": "./map.html"
     }
    ]
   }

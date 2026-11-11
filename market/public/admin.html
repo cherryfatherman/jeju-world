@@ -76,7 +76,7 @@
       <label>홈 '제주의 방향' 숫자 (한 줄에 하나: 숫자 | 설명 | 출처 | 링크)<textarea id="f-dirFacts" style="min-height:90px;font-size:13px"></textarea></label>
       <label>홈 '섬업의 고리' (한 줄에 하나: 이름 | 설명 | 링크 | 사진 주소)<textarea id="f-ring" style="min-height:110px;font-size:13px"></textarea></label>
       <label>홈 한 줄 소개 (강조는 [대괄호], 줄바꿈은 엔터)<textarea id="f-lead" style="min-height:60px"></textarea></label>
-      <label>바로 가기 타일 (한 줄에 하나: 묶음 | 아이콘 | 이름 | 링크 | 배지 HOT 또는 NEW)<textarea id="f-tiles" style="min-height:220px;font-size:13px"></textarea></label>
+      <label>홈 맨 아래 타일 (한 줄에 하나: 묶음 | 아이콘 | 이름 | 링크 | 강조하려면 '강조')<textarea id="f-tiles" style="min-height:220px;font-size:13px"></textarea></label>
       <p class="help">아이콘 이름: home box puzzle trash trophy calendar cloud sun heart chat search plus grid leaf coins bulb like</p>
       <div class="row2">
         <label>기본 테마<select id="f-theme"><option value="auto">자동 (18시~6시 밤)</option><option value="day">항상 낮</option><option value="night">항상 밤</option></select></label>
@@ -110,7 +110,7 @@
     <!-- 좌우 광고 -->
     <div class="pane" id="pane-ads"><div class="form">
       <label>광고 표시<select id="ad-enabled"><option value="true">보이기</option><option value="false">숨기기</option></select></label>
-      <p class="help">넓은 화면에서는 좌우에 따라다니고, 휴대폰에서는 본문 끝에 카드로 보여요. 제목에서 줄바꿈은 엔터, 강조는 [대괄호].</p>
+      <p class="help">넓은 화면(가로 1440 이상)에서 좌우에 세로로 길게 따라다녀요. 좁은 화면에서는 보이지 않아요. 제목에서 줄바꿈은 엔터, 강조는 [대괄호].</p>
       <div class="row2" id="adForms"></div>
     </div></div>
     <!-- 창업정보 · 인사이트 (같은 편집기) -->
@@ -205,7 +205,7 @@ $$('.tabs button').forEach((b) => b.onclick = () => { $$('.tabs button').forEach
 
 function fill() {
   const S = cfg.site, B = cfg.banner, T = cfg.ticker || {}, C = cfg.colors || {};
-  v('#f-name', S.name); v('#f-slogan', S.slogan); v('#f-brandSub', S.sub || ''); v('#f-dirTitle', cfg.direction?.title || ''); v('#f-dirFacts', (cfg.direction?.facts || []).map((f) => [f.num, f.label, f.src, f.href].join(' | ')).join('\n')); v('#f-ring', (cfg.ring || []).map((r) => [r.label, r.sub, r.href, r.image].join(' | ')).join('\n')); v('#f-lead', cfg.lead || ''); v('#f-tiles', (cfg.tiles || []).flatMap((g) => g.items.map((t) => [g.name, t.icon, t.label, t.href, t.badge || ''].join(' | '))).join('\n')); v('#f-theme', S.defaultTheme || 'auto'); v('#f-samples', String(S.showSamples !== false));
+  v('#f-name', S.name); v('#f-slogan', S.slogan); v('#f-brandSub', S.sub || ''); v('#f-dirTitle', cfg.direction?.title || ''); v('#f-dirFacts', (cfg.direction?.facts || []).map((f) => [f.num, f.label, f.src, f.href].join(' | ')).join('\n')); v('#f-ring', (cfg.ring || []).map((r) => [r.label, r.sub, r.href, r.image].join(' | ')).join('\n')); v('#f-lead', cfg.lead || ''); v('#f-tiles', (cfg.tiles || []).flatMap((g) => g.items.map((t) => [g.name, t.icon, t.label, t.href, t.accent ? '강조' : ''].join(' | '))).join('\n')); v('#f-theme', S.defaultTheme || 'auto'); v('#f-samples', String(S.showSamples !== false));
   v('#f-threads', S.threads); v('#f-openchat', S.openchat);
   v('#f-accent', C.accent || '#ff7a1a'); v('#c-accent', C.accent || '#ff7a1a'); v('#f-accent2', C.accent2 || '#f5b942'); v('#c-accent2', C.accent2 || '#f5b942');
   v('#f-kicker', B.kicker); v('#f-title', B.title); v('#f-sub', B.sub); v('#f-primary', B.primaryLabel); v('#f-secondary', B.secondaryLabel);
@@ -327,10 +327,13 @@ function renderAds() {
     d.innerHTML = `<h3>${side === 'left' ? '왼쪽' : '오른쪽'} 광고</h3>
       <label>작은 글<input data-k="kicker" value="${esc(ad.kicker || '')}"></label>
       <label>제목<textarea data-k="title" style="min-height:70px">${esc(ad.title || '')}</textarea></label>
-      <label>설명<input data-k="sub" value="${esc(ad.sub || '')}"></label>
+      <label>사진 주소 (위쪽에 크게 보여요)<input data-k="image" value="${esc(ad.image || '')}" placeholder="https://..."></label>
+      <label>사진 올리기<input type="file" accept="image/*"></label>
+      <label>핵심 내용 (한 줄에 하나, 3줄 권장)<textarea data-k="points" style="min-height:70px">${esc((ad.points || []).join('\n'))}</textarea></label>
       <div class="row2"><label>버튼 글자<input data-k="cta" value="${esc(ad.cta || '')}"></label><label>링크<input data-k="href" value="${esc(ad.href || '')}"></label></div>
       <div class="row2"><label>색<select data-k="theme"><option value="teal" ${ad.theme === 'teal' ? 'selected' : ''}>청록</option><option value="orange" ${ad.theme === 'orange' ? 'selected' : ''}>주황</option></select></label><label>표시 라벨<input data-k="label" value="${esc(ad.label || '광고')}"></label></div>`;
-    d.querySelectorAll('[data-k]').forEach((inp) => inp.oninput = inp.onchange = () => { ad[inp.dataset.k] = inp.value; }); return d; }));
+    d.querySelectorAll('[data-k]').forEach((inp) => inp.oninput = inp.onchange = () => { ad[inp.dataset.k] = inp.dataset.k === 'points' ? inp.value.split('\n').map((x) => x.trim()).filter(Boolean) : inp.value; });
+    d.querySelector('input[type=file]').onchange = async (e) => { const f = e.target.files[0]; if (!f) return; try { ad.image = await upload(f, 800); d.querySelector('[data-k=image]').value = ad.image; toast('사진을 올렸어요. 저장을 눌러 반영하세요'); } catch (err) { toast(err.message); } }; return d; }));
 }
 // 사진 줄여서 업로드 → 경로 반환
 function shrinkFile(file, max = 1600) { return new Promise((res, rej) => { const img = new Image(); img.onload = () => { const k = Math.min(1, max / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(img.src); res(c.toDataURL('image/jpeg', 0.85)); }; img.onerror = rej; img.src = URL.createObjectURL(file); }); }
@@ -402,7 +405,7 @@ $('#save').onclick = async () => {
   const lines = (id, n) => v(id).split('\n').map((l) => l.split('|').map((x) => x.trim())).filter((p) => p.length >= n && p[0]);
   cfg.direction = { ...(cfg.direction || {}), title: v('#f-dirTitle'), facts: lines('#f-dirFacts', 2).map(([num, label, src, href]) => ({ num, label, src: src || '', href: href || '' })) };
   cfg.ring = lines('#f-ring', 3).map(([label, sub, href, image], i) => ({ key: (cfg.ring || [])[i]?.key || `r${i}`, label, sub, href, image: image || '' }));
-  cfg.lead = v('#f-lead'); { const old = (cfg.tiles || []).flatMap((g) => g.items); const groups = []; for (const [g, icon, label, href, badge] of lines('#f-tiles', 4)) { let G = groups.find((x) => x.name === g); if (!G) groups.push(G = { name: g, items: [] }); const key = old.find((o) => o.label === label && o.key)?.key; G.items.push({ icon, label, href, ...(badge ? { badge } : {}), ...(key ? { key } : {}) }); } cfg.tiles = groups; }
+  cfg.lead = v('#f-lead'); { const old = (cfg.tiles || []).flatMap((g) => g.items); const groups = []; for (const [g, icon, label, href, badge] of lines('#f-tiles', 4)) { let G = groups.find((x) => x.name === g); if (!G) groups.push(G = { name: g, items: [] }); const key = old.find((o) => o.label === label && o.key)?.key; G.items.push({ icon, label, href, ...(badge ? { accent: true } : {}), ...(key ? { key } : {}) }); } cfg.tiles = groups; }
   cfg.site = { ...cfg.site, name: v('#f-name'), sub: v('#f-brandSub'), slogan: v('#f-slogan'), defaultTheme: v('#f-theme'), showSamples: v('#f-samples') === 'true', threads: v('#f-threads'), openchat: v('#f-openchat') };
   cfg.colors = { accent: v('#f-accent'), accent2: v('#f-accent2') };
   cfg.banner = { kicker: v('#f-kicker'), title: v('#f-title'), sub: v('#f-sub'), primaryLabel: v('#f-primary'), secondaryLabel: v('#f-secondary') };

@@ -162,8 +162,8 @@ const hackRow = (h, rank) => rankRow({ rank, href: h.url, external: true, iconNa
 
 /* ── 바로가기 타일: 아이콘 + 이름 + (HOT/NEW). 설명 없이 누르고 싶게 ── */
 function tileGroups(el, groups, extra = {}) {
-  el.replaceChildren(...(groups || []).map((g) => { const box = document.createElement('div'); box.className = 'tgroup';
-    box.innerHTML = `<h3>${esc(g.name || '')}</h3><div class="tiles2">${(g.items || []).map((t) => `<a href="${esc(t.href || '#')}" class="tile2${t.badge === 'HOT' ? ' hot' : ''}">${t.badge ? `<i class="tb ${t.badge === 'HOT' ? 'hot' : 'new'}">${esc(t.badge)}</i>` : ''}<span class="ti">${icon(t.icon || 'grid')}</span><b>${esc(t.label)}</b>${extra[t.key] ? `<small>${esc(extra[t.key])}</small>` : ''}</a>`).join('')}</div>`; return box; }));
+  el.replaceChildren(...(groups || []).map((g) => { const box = document.createElement('div'); box.className = 'tiles2';
+    box.innerHTML = (g.items || []).map((t) => `<a href="${esc(t.href || '#')}" class="tile2${t.accent ? ' accent' : ''}"><span class="ti">${icon(t.icon || 'grid')}</span><b>${esc(t.label)}</b>${extra[t.key] ? `<small>${esc(extra[t.key])}</small>` : ''}</a>`).join(''); return box; }));
 }
 const PLACE_LABEL = { spot: '관광지', cafe: '카페', food: '맛집' };
 /* 장소 카드 (관광지·카페·맛집): 사진 · 순위 · 이름 · 동네 · 추천 수 */
@@ -277,7 +277,8 @@ async function mountShell({ active, primary, sub } = {}) {
 /* 광고 배너 (디자인은 코드로 그림: 청록/주황 테마, 아이콘 패턴, 노트북 청년) */
 function adCard(ad, side) {
   const a = document.createElement('a'); a.className = `ad ${ad.theme || 'teal'} ${side}`; a.href = ad.href || '#'; a.target = '_blank'; a.rel = 'noopener sponsored';
-  a.innerHTML = `<span class="adlabel">${esc(ad.label || '광고')}</span><p class="kicker">${esc(ad.kicker || '')}</p><h3>${rich(side === 'inline' ? (ad.title || '').replace(/\n/g, ' ') : (ad.title || ''))}</h3><p class="sub">${esc(ad.sub || '')}</p><span class="go">${esc(ad.cta || '자세히')} ${icon('arrow')}</span>`;
+  a.innerHTML = `<span class="adimg" style="${ad.image ? `background-image:url('${esc(ad.image)}')` : ''}"></span><span class="adlabel">${esc(ad.label || '광고')}</span>
+    <div class="adbody"><p class="kicker">${esc(ad.kicker || '')}</p><h3>${rich(ad.title || '')}</h3>${(ad.points || []).length ? `<ul>${ad.points.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ad.sub ? `<p class="sub">${esc(ad.sub)}</p>` : ''}<span class="go">${esc(ad.cta || '자세히')} ${icon('arrow')}</span></div>`;
   return a;
 }
 function mountAds(ads) {
@@ -286,11 +287,6 @@ function mountAds(ads) {
   if (ads.left?.title) wrap.append(adCard(ads.left, 'left'));
   if (ads.right?.title) wrap.append(adCard(ads.right, 'right'));
   document.body.append(wrap);
-  // 좁은 화면: 본문 끝에 가로 카드로
-  const main = document.querySelector('main'); if (!main) return;
-  const inline = document.createElement('div'); inline.className = 'ads-inline';
-  if (ads.left?.title) inline.append(adCard(ads.left, 'inline')); if (ads.right?.title) inline.append(adCard(ads.right, 'inline'));
-  main.append(inline);
 }
 
 /* 알림 받기 모달 (홈·검색 등에서 호출) */
