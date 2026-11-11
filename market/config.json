@@ -224,14 +224,14 @@
  "ring": [
   {
    "key": "deal",
-   "label": "거래",
-   "sub": "AI 서비스·프로젝트",
+   "label": "장터",
+   "sub": "프로젝트 거래",
    "href": "./market.html?type=project",
    "image": "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400&h=400&fit=crop&q=80&auto=format"
   },
   {
    "key": "program",
-   "label": "창업정보",
+   "label": "창업마당",
    "sub": "지원사업·자금",
    "href": "./board.html?kind=program",
    "image": "https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=400&h=400&fit=crop&q=80&auto=format"
@@ -239,7 +239,7 @@
   {
    "key": "insight",
    "label": "인사이트",
-   "sub": "논문·통계·정책",
+   "sub": "논문·통계",
    "href": "./board.html?kind=insight",
    "image": "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=400&fit=crop&q=80&auto=format"
   },
@@ -252,10 +252,123 @@
   },
   {
    "key": "life",
-   "label": "제주살이",
-   "sub": "생활·여행·장터",
+   "label": "제주마당",
+   "sub": "생활·여행",
    "href": "./jeju.html",
    "image": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&h=400&fit=crop&q=80&auto=format"
+  }
+ ],
+ "lead": "창업은 섬 밖에서만 하는 일이 아니에요.\n제주에서 만든 것을 [제주에서 사고팔고 이어 갑니다].",
+ "tiles": [
+  {
+   "name": "창업",
+   "items": [
+    {
+     "icon": "plus",
+     "label": "프로젝트 올리기",
+     "href": "./sell.html?type=project",
+     "badge": "HOT"
+    },
+    {
+     "icon": "puzzle",
+     "label": "프로젝트 장터",
+     "href": "./market.html?type=project"
+    },
+    {
+     "icon": "coins",
+     "label": "지원사업",
+     "href": "./board.html?kind=program",
+     "badge": "NEW"
+    },
+    {
+     "icon": "bulb",
+     "label": "인사이트",
+     "href": "./board.html?kind=insight"
+    },
+    {
+     "icon": "calendar",
+     "label": "열린 해커톤",
+     "href": "./hackathon.html"
+    },
+    {
+     "icon": "trophy",
+     "label": "수상작 도감",
+     "href": "./winners.html"
+    }
+   ]
+  },
+  {
+   "name": "생활",
+   "items": [
+    {
+     "icon": "calendar",
+     "key": "today",
+     "label": "오늘 버릴 것",
+     "href": "./jeju.html#sec-days",
+     "badge": "HOT"
+    },
+    {
+     "icon": "trash",
+     "label": "이거 어디 버려요?",
+     "href": "./jeju.html#waste"
+    },
+    {
+     "icon": "box",
+     "label": "대형폐기물",
+     "href": "./guide.html?id=bulky-waste"
+    },
+    {
+     "icon": "leaf",
+     "label": "재활용도움센터",
+     "href": "./guide.html?id=recycle-center"
+    },
+    {
+     "icon": "cloud",
+     "label": "항공 결항",
+     "href": "./guide.html?id=flight-delay"
+    },
+    {
+     "icon": "heart",
+     "label": "야간 응급·약국",
+     "href": "./guide.html?id=emergency"
+    }
+   ]
+  },
+  {
+   "name": "여행 · 집 · 물건",
+   "items": [
+    {
+     "icon": "sun",
+     "label": "관광지",
+     "href": "./places.html?type=spot"
+    },
+    {
+     "icon": "chat",
+     "label": "카페",
+     "href": "./places.html?type=cafe"
+    },
+    {
+     "icon": "grid",
+     "label": "맛집",
+     "href": "./places.html?type=food"
+    },
+    {
+     "icon": "home",
+     "label": "집",
+     "href": "./market.html?type=home"
+    },
+    {
+     "icon": "box",
+     "label": "물건",
+     "href": "./market.html?type=item"
+    },
+    {
+     "icon": "search",
+     "label": "지도",
+     "href": "./map.html",
+     "badge": "NEW"
+    }
+   ]
   }
  ]
 }

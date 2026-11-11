@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>거래 · 섬업</title>
+<title>장터 · 섬업</title>
 <meta name="description" content="AI로 만든 서비스와 해커톤 프로젝트를 거래하는 곳. 많이 업 받은 순서로 보여요.">
 <link rel="stylesheet" href="./style.css">
 <script src="./app.js"></script>
@@ -12,7 +12,7 @@
 <main class="wrap" id="main">
   <div class="page-title"><h1 id="pageH1"></h1><p id="pageSub"></p></div>
   <div class="typetabs" id="typetabs" hidden><button data-t="home">집</button><button data-t="item">물건</button></div>
-  <div class="listbar" style="margin-top:16px"><div class="stabs" id="stabs" hidden></div><span id="count"></span><div class="sort" id="sort"><button data-s="hot" class="on">업순</button><button data-s="new">최신순</button></div><a class="btn primary sm" id="addBtn" href="./sell.html">올리기</a></div>
+  <div class="listbar" style="margin-top:16px"><div class="stabs" id="stabs" hidden></div><span id="count"></span><div class="sort" id="sort"><button data-s="hot" class="on">추천순</button><button data-s="new">최신순</button></div><a class="btn primary sm" id="addBtn" href="./sell.html">올리기</a></div>
   <div class="chips" id="chips"></div>
   <div class="rlist" id="rows" hidden></div>
   <div class="grid" id="grid" hidden></div>
@@ -22,8 +22,8 @@ let all = [], type = ['home', 'item', 'project'].includes(new URLSearchParams(lo
 const isDeal = () => type === 'project';
 function render() {
   const pj = isDeal();
-  $('#pageH1').textContent = pj ? '거래' : '집·물건 장터'; document.title = `${pj ? '거래' : '집·물건 장터'} · 섬업`;
-  $('#pageSub').textContent = pj ? 'AI로 만든 서비스와 해커톤 프로젝트가 다음 주인을 만나요. 많이 업 받은 순서예요.' : '사진만 올리면 글은 AI가 써요.';
+  $('#pageH1').textContent = pj ? '장터' : '집·물건'; document.title = `${pj ? '장터' : '집·물건'} · 섬업`;
+  $('#pageSub').textContent = pj ? 'AI 서비스·해커톤 프로젝트를 사고팔아요.' : '사진만 올리면 글은 AI가 써요.';
   $('#typetabs').hidden = pj; $('#stabs').hidden = !pj; $('#rows').hidden = !pj; $('#grid').hidden = pj; $('#count').hidden = pj;
   $('#main').style.maxWidth = pj ? '860px' : '';
   $$('#typetabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === type));
@@ -36,12 +36,14 @@ function render() {
   const list = pool.filter((p) => cat === '전체' || p.category === cat).sort((a, b) => sort === 'hot' ? (b.interest || 0) - (a.interest || 0) : b.createdAt.localeCompare(a.createdAt));
   $('#count').textContent = `${list.length}개`;
   const empty = `<div class="empty">아직 올라온 글이 없어요. <a href="./sell.html?type=${type}">첫 번째로 올려 보세요</a></div>`;
-  if (pj) { $('#rows').replaceChildren(...list.map((p, i) => projectRow(p, i + 1))); if (!list.length) $('#rows').innerHTML = empty; }
-  else { $('#grid').replaceChildren(...list.map(listingCard)); if (!list.length) $('#grid').innerHTML = empty; }
+  const ready = all.length > 0 || render.loaded;
+  if (pj) { $('#rows').replaceChildren(...list.map((p, i) => projectRow(p, i + 1))); if (!list.length && ready) $('#rows').innerHTML = empty; }
+  else { $('#grid').replaceChildren(...list.map(listingCard)); if (!list.length && ready) $('#grid').innerHTML = empty; }
 }
 $$('#sort button').forEach((b) => b.onclick = () => { sort = b.dataset.s; $$('#sort button').forEach((x) => x.classList.toggle('on', x === b)); render(); });
 $$('#typetabs button').forEach((b) => b.onclick = () => { type = b.dataset.t; cat = '전체'; history.replaceState(null, '', `?type=${type}`); render(); });
-mountShell(isDeal() ? { active: 'deal', sub: 'project' } : { active: 'jeju', sub: 'market' }).then(async () => { all = await api('/api/projects'); render(); });
+render();
+mountShell(isDeal() ? { active: 'deal', sub: 'project' } : { active: 'jeju', sub: 'market' }).then(async () => { all = await api('/api/projects'); render.loaded = true; render(); });
 </script>
 </body>
 </html>

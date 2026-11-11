@@ -75,6 +75,9 @@
       <label>홈 '제주의 방향' 제목 (강조는 [대괄호])<input id="f-dirTitle"></label>
       <label>홈 '제주의 방향' 숫자 (한 줄에 하나: 숫자 | 설명 | 출처 | 링크)<textarea id="f-dirFacts" style="min-height:90px;font-size:13px"></textarea></label>
       <label>홈 '섬업의 고리' (한 줄에 하나: 이름 | 설명 | 링크 | 사진 주소)<textarea id="f-ring" style="min-height:110px;font-size:13px"></textarea></label>
+      <label>홈 한 줄 소개 (강조는 [대괄호], 줄바꿈은 엔터)<textarea id="f-lead" style="min-height:60px"></textarea></label>
+      <label>바로 가기 타일 (한 줄에 하나: 묶음 | 아이콘 | 이름 | 링크 | 배지 HOT 또는 NEW)<textarea id="f-tiles" style="min-height:220px;font-size:13px"></textarea></label>
+      <p class="help">아이콘 이름: home box puzzle trash trophy calendar cloud sun heart chat search plus grid leaf coins bulb like</p>
       <div class="row2">
         <label>기본 테마<select id="f-theme"><option value="auto">자동 (18시~6시 밤)</option><option value="day">항상 낮</option><option value="night">항상 밤</option></select></label>
         <label>예시 프로젝트 보이기<select id="f-samples"><option value="true">보이기 (시연용)</option><option value="false">숨기기 (실제 운영)</option></select></label>
@@ -202,7 +205,7 @@ $$('.tabs button').forEach((b) => b.onclick = () => { $$('.tabs button').forEach
 
 function fill() {
   const S = cfg.site, B = cfg.banner, T = cfg.ticker || {}, C = cfg.colors || {};
-  v('#f-name', S.name); v('#f-slogan', S.slogan); v('#f-brandSub', S.sub || ''); v('#f-dirTitle', cfg.direction?.title || ''); v('#f-dirFacts', (cfg.direction?.facts || []).map((f) => [f.num, f.label, f.src, f.href].join(' | ')).join('\n')); v('#f-ring', (cfg.ring || []).map((r) => [r.label, r.sub, r.href, r.image].join(' | ')).join('\n')); v('#f-theme', S.defaultTheme || 'auto'); v('#f-samples', String(S.showSamples !== false));
+  v('#f-name', S.name); v('#f-slogan', S.slogan); v('#f-brandSub', S.sub || ''); v('#f-dirTitle', cfg.direction?.title || ''); v('#f-dirFacts', (cfg.direction?.facts || []).map((f) => [f.num, f.label, f.src, f.href].join(' | ')).join('\n')); v('#f-ring', (cfg.ring || []).map((r) => [r.label, r.sub, r.href, r.image].join(' | ')).join('\n')); v('#f-lead', cfg.lead || ''); v('#f-tiles', (cfg.tiles || []).flatMap((g) => g.items.map((t) => [g.name, t.icon, t.label, t.href, t.badge || ''].join(' | '))).join('\n')); v('#f-theme', S.defaultTheme || 'auto'); v('#f-samples', String(S.showSamples !== false));
   v('#f-threads', S.threads); v('#f-openchat', S.openchat);
   v('#f-accent', C.accent || '#ff7a1a'); v('#c-accent', C.accent || '#ff7a1a'); v('#f-accent2', C.accent2 || '#f5b942'); v('#c-accent2', C.accent2 || '#f5b942');
   v('#f-kicker', B.kicker); v('#f-title', B.title); v('#f-sub', B.sub); v('#f-primary', B.primaryLabel); v('#f-secondary', B.secondaryLabel);
@@ -399,6 +402,7 @@ $('#save').onclick = async () => {
   const lines = (id, n) => v(id).split('\n').map((l) => l.split('|').map((x) => x.trim())).filter((p) => p.length >= n && p[0]);
   cfg.direction = { ...(cfg.direction || {}), title: v('#f-dirTitle'), facts: lines('#f-dirFacts', 2).map(([num, label, src, href]) => ({ num, label, src: src || '', href: href || '' })) };
   cfg.ring = lines('#f-ring', 3).map(([label, sub, href, image], i) => ({ key: (cfg.ring || [])[i]?.key || `r${i}`, label, sub, href, image: image || '' }));
+  cfg.lead = v('#f-lead'); { const old = (cfg.tiles || []).flatMap((g) => g.items); const groups = []; for (const [g, icon, label, href, badge] of lines('#f-tiles', 4)) { let G = groups.find((x) => x.name === g); if (!G) groups.push(G = { name: g, items: [] }); const key = old.find((o) => o.label === label && o.key)?.key; G.items.push({ icon, label, href, ...(badge ? { badge } : {}), ...(key ? { key } : {}) }); } cfg.tiles = groups; }
   cfg.site = { ...cfg.site, name: v('#f-name'), sub: v('#f-brandSub'), slogan: v('#f-slogan'), defaultTheme: v('#f-theme'), showSamples: v('#f-samples') === 'true', threads: v('#f-threads'), openchat: v('#f-openchat') };
   cfg.colors = { accent: v('#f-accent'), accent2: v('#f-accent2') };
   cfg.banner = { kicker: v('#f-kicker'), title: v('#f-title'), sub: v('#f-sub'), primaryLabel: v('#f-primary'), secondaryLabel: v('#f-secondary') };

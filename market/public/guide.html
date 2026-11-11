@@ -10,10 +10,10 @@
 <body>
 <main class="wrap" style="max-width:760px">
   <article class="guide" id="guide">
-    <p class="crumb"><a href="./jeju.html">제주살이</a> <span>›</span> <span id="crumbTag"></span></p>
+    <p class="crumb"><a href="./jeju.html">제주마당</a> <span>›</span> <span id="crumbTag"></span></p>
     <div class="post-head"><div><h1 id="gTitle"></h1><p class="lead" id="gSummary"></p></div><span id="upSlot"></span></div>
     <div class="gmeta" id="gMeta"></div>
-    <img class="ghero" id="gImage" alt="" hidden>
+    <img class="ghero" id="gImage" alt="">
     <div class="prose" id="gBody"></div>
     <div class="gsources" id="gSources"></div>
     <section id="talk"></section>
@@ -26,13 +26,13 @@
 <script>
 const id = new URLSearchParams(location.search).get('id');
 mountShell({ active: 'jeju', sub: 'jeju' }).then(async () => {
-  let g; try { g = await api(`/api/guides/${encodeURIComponent(id || '')}`); } catch { $('#guide').innerHTML = '<div class="empty">찾는 글이 없어요. <a href="./jeju.html">제주살이로 돌아가기</a></div>'; return; }
+  let g; try { g = await api(`/api/guides/${encodeURIComponent(id || '')}`); } catch { $('#guide').innerHTML = '<div class="empty">찾는 글이 없어요. <a href="./jeju.html">제주마당으로</a></div>'; return; }
   document.title = `${g.title} · 섬업`;
   $('#crumbTag').textContent = g.tag || '생활정보';
   $('#gTitle').textContent = g.title; $('#gSummary').textContent = g.summary || '';
   $('#upSlot').replaceChildren(upBtn('guide', g.id, g.votes, true));
   $('#gMeta').innerHTML = `<span class="badge">${esc(g.tag || '생활정보')}</span><span class="note">업데이트 ${esc(g.lastChecked || '')}</span>`;
-  if (g.image) { $('#gImage').src = g.image; $('#gImage').hidden = false; }
+  if (g.image) $('#gImage').src = g.image; else $('#gImage').hidden = true;
   $('#gBody').innerHTML = md(g.body || '');
   if (g.sources?.length) $('#gSources').innerHTML = `<b>출처</b><ul>${g.sources.map((s) => `<li><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.label)}</a></li>`).join('')}</ul>`;
   mountComments($('#talk'), 'guide', g.id);

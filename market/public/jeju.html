@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>제주살이 · 섬업</title>
+<title>제주마당 · 섬업</title>
 <meta name="description" content="제주 요일별 분리배출, 이거 어디 버려요? AI, 도민 생활정보를 한곳에서.">
 <link rel="stylesheet" href="./style.css">
 <script src="./app.js"></script>
 </head>
 <body>
 <main class="wrap" style="max-width:860px">
-  <div class="page-title"><h1>제주살이</h1><p>도민이 매일 쓰는 생활정보. 도움이 됐으면 업, 틀렸으면 이야기로 알려 주세요.</p></div>
-  <div class="quick" id="quick" style="margin-top:8px"></div>
+  <div class="page-title"><h1>제주마당</h1><p>도민 생활정보.</p></div>
+  <div class="tgroups" id="tiles" style="margin-top:16px"></div>
 
   <section id="waste">
     <div class="sec-head"><h2>이거 어디 버려요?</h2><span class="more" id="area"></span></div>
@@ -31,7 +31,7 @@
   </section>
 
   <section id="sec-guides">
-    <div class="sec-head"><h2>생활정보</h2><span class="more">업 많은 순</span></div>
+    <div class="sec-head"><h2>생활정보</h2><span class="more">추천순</span></div>
     <div class="rlist" id="guides"></div>
   </section>
 
@@ -53,7 +53,7 @@ function renderWaste() {
   $('#wasteNote').textContent = W.notes || '';
   $('#wasteSource').innerHTML = `출처: ${W.sourceUrl ? `<a href="${esc(W.sourceUrl)}" target="_blank" rel="noopener" style="text-decoration:underline">${esc(W.source || '')}</a>` : esc(W.source || '')}${W.lastChecked ? ` · 업데이트 ${esc(W.lastChecked)}` : ''}`;
   $('#tips').replaceChildren(...(J.tips || []).map((t) => { const d = document.createElement('div'); d.className = 'row'; d.innerHTML = `<div class="body"><b>${esc(t.title)}</b><p>${esc(t.body)}</p></div>`; return d; }));
-  $('#quick').replaceChildren(...(CFG.tools || []).filter((t) => t.key !== 'today').map((t) => { const a = document.createElement('a'); a.href = t.href || '#'; a.innerHTML = `<span class="qic">${icon(t.icon)}</span><span class="ql">${esc(t.label)}</span>${t.sub ? `<small>${esc(t.sub)}</small>` : ''}`; return a; }));
+  const today = DAYS[todayIdx]; tileGroups($('#tiles'), (CFG.tiles || []).filter((g) => g.name !== '창업'), { today: `${today}요일 · ${((W.days || {})[today] || '').split(/,\s*/)[0] || ''}` });
 }
 $('#wasteForm').onsubmit = async (e) => {
   e.preventDefault();

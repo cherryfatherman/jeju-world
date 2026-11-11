@@ -13,7 +13,7 @@
     <p class="crumb"><a href="./places.html">여행</a> <span>›</span> <a id="crumbType" href="#"></a></p>
     <div class="post-head"><div><h1 id="pName"></h1><p class="lead" id="pSummary"></p></div><span id="upSlot"></span></div>
     <div class="gmeta" id="pMeta"></div>
-    <img class="ghero" id="pImage" alt="" hidden>
+    <img class="ghero" id="pImage" alt="">
     <div class="pfacts" id="pFacts"></div>
     <div class="pactions">
       <a class="btn" id="mapBtn" target="_blank" rel="noopener">지도에서 보기</a>
@@ -43,7 +43,7 @@ mountShell({ active: 'jeju', sub: 'travel' }).then(async () => {
   $('#crumbType').textContent = PLACE_LABEL[p.type]; $('#crumbType').href = `./places.html?type=${p.type}`; $('#moreLink').href = `./places.html?type=${p.type}`;
   $('#pName').textContent = p.name; $('#pSummary').textContent = p.summary || '';
   $('#pMeta').innerHTML = `<span class="badge">${esc(p.area || '')}</span><span class="note">업데이트 ${esc(p.lastChecked || '-')}</span>`;
-  if (p.image) { $('#pImage').src = p.image; $('#pImage').hidden = false; }
+  if (p.image) $('#pImage').src = p.image; else $('#pImage').hidden = true;
   const facts = [['주소', p.address], ['이런 분께', (p.tags || []).join(' · ')], ['팁', p.tip]].filter(([, v]) => v);
   $('#pFacts').innerHTML = facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('');
   $('#mapBtn').href = `./map.html?focus=${encodeURIComponent(p.id)}`; $('#mapBtn').removeAttribute('target');

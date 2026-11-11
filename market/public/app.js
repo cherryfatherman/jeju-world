@@ -12,11 +12,11 @@ let CONFIG = null;
 
 // 큰 줄기(목차). 제일 앞이 본업인 '거래'. 보조 탭이 2개 이상일 때만 둘째 줄이 보인다.
 const PRIMARY = [
-  { key: 'deal', label: '거래', icon: 'puzzle', href: './market.html?type=project', subs: [['./market.html?type=project', '프로젝트', 'project'], ['./map.html?show=deal', '지도에서 보기', 'mapdeal'], ['./sell.html?type=project', '내 프로젝트 올리기', 'sell']] },
-  { key: 'program', label: '창업정보', icon: 'coins', href: './board.html?kind=program', subs: [] },
+  { key: 'deal', label: '장터', icon: 'puzzle', href: './market.html?type=project', subs: [['./market.html?type=project', '프로젝트', 'project'], ['./map.html?show=deal', '지도에서 보기', 'mapdeal'], ['./sell.html?type=project', '내 프로젝트 올리기', 'sell']] },
+  { key: 'program', label: '창업마당', icon: 'coins', href: './board.html?kind=program', subs: [] },
   { key: 'insight', label: '인사이트', icon: 'bulb', href: './board.html?kind=insight', subs: [] },
   { key: 'hackathon', label: '해커톤', icon: 'trophy', href: './hackathon.html', subs: [['./hackathon.html', '열린 해커톤', 'hackathon'], ['./winners.html', '수상작 도감', 'winners']] },
-  { key: 'jeju', label: '제주살이', icon: 'leaf', href: './jeju.html', subs: [['./jeju.html', '생활정보', 'jeju'], ['./places.html?type=spot', '여행', 'travel'], ['./market.html?type=home', '집·물건', 'market'], ['./map.html', '지도', 'map']] },
+  { key: 'jeju', label: '제주마당', icon: 'leaf', href: './jeju.html', subs: [['./jeju.html', '생활정보', 'jeju'], ['./places.html?type=spot', '여행', 'travel'], ['./market.html?type=home', '집·물건', 'market'], ['./map.html', '지도', 'map']] },
 ];
 
 const won = (n) => {
@@ -50,6 +50,7 @@ const ICONS = {
   leaf: '<path d="M5 20c0-9 5-14 14-14 0 9-5 14-14 14z"/><path d="M5 20c3-5 6-8 10-10"/>',
   check: '<path d="M5 12l5 5L20 7"/>',
   chev: '<path d="M6 15l6-6 6 6"/>',
+  like: '<path d="M7 11v9H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1z"/><path d="M7 11l4-8a2.5 2.5 0 0 1 2.5 2.5V9h5a2 2 0 0 1 2 2.3l-1.2 7A2 2 0 0 1 17.3 20H7"/>',
   coins: '<circle cx="9" cy="9" r="5"/><path d="M14.5 10.5a5 5 0 1 1-4 8"/>',
   bulb: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/>',
   link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
@@ -98,7 +99,7 @@ function listingCard(p) {
     <div class="meta"><span>${esc(oneLabel(p))}</span>${p.sample ? '<span class="badge sample">예시</span>' : ''}${p.origin && p.type === 'project' ? `<span>${esc(p.origin)}</span>` : ''}</div>
     <h3>${esc(p.name)}</h3><p class="tag">${esc(sub)}</p>
     <div class="foot"><span class="price">${esc(listPrice(p))}</span><span class="heart">추천 ${p.interest || 0}${p.comments ? ` · 댓글 ${p.comments}` : ''}</span></div>`;
-  a.querySelector('.save').onclick = async (e) => { e.preventDefault(); e.stopPropagation(); const btn = e.currentTarget; const v = await doUp('project', p.id); if (v !== null) btn.classList.add('on'); };
+  a.querySelector('.save').onclick = async (e) => { e.preventDefault(); e.stopPropagation(); const btn = e.currentTarget; const r = await doUp('project', p.id); if (r) btn.classList.toggle('on', r.on); };
   return a;
 }
 /* 피드형 카드 (홈 "새로 올라온 글") — 정사각 사진, 오버레이 추천, 올린 분, 한 줄, 반응 수 */
@@ -109,22 +110,28 @@ function photoCard(p) {
     <div class="pwho"><span class="avatar">${esc(initial(p.seller))}</span><span class="who">${esc(p.seller || '익명')}</span>${p.sample ? '<span class="badge sample">예시</span>' : ''}</div>
     <p class="ptext">${esc(p.name)} <span class="muted">${esc(p.tagline || '')}</span></p>
     <div class="pmeta"><span class="price">${esc(listPrice(p))}</span><span>추천 ${p.interest || 0} · 댓글 ${p.comments || 0}</span></div>`;
-  a.querySelector('.save').onclick = async (e) => { e.preventDefault(); e.stopPropagation(); const btn = e.currentTarget; const v = await doUp('project', p.id); if (v !== null) btn.classList.add('on'); };
+  a.querySelector('.save').onclick = async (e) => { e.preventDefault(); e.stopPropagation(); const btn = e.currentTarget; const r = await doUp('project', p.id); if (r) btn.classList.toggle('on', r.on); };
   return a;
 }
 
 /* ── 섬업 부품 ① '업' 버튼: 모든 글 오른쪽에 붙는 추천. 한 사람이 글 하나에 한 번 ── */
 const upKey = (kind, id) => (kind === 'project' ? 'int-' + id : kind === 'place' ? 'pv-' + id : `up-${kind}:${id}`);
 const didUp = (kind, id) => { try { return !!localStorage.getItem(upKey(kind, id)); } catch { return false; } };
+// 누르면 추천, 다시 누르면 취소. 결과 { votes, on } 또는 null
 async function doUp(kind, id) {
-  if (didUp(kind, id)) { toast('이미 업 했어요'); return null; }
-  try { const d = await api(`/api/up/${kind}/${encodeURIComponent(id)}`, {}); try { localStorage.setItem(upKey(kind, id), '1'); } catch {} toast('업! 고마워요'); return d.votes; }
-  catch (err) { toast(err.message); return null; }
+  const was = didUp(kind, id);
+  try {
+    const d = await api(`/api/up/${kind}/${encodeURIComponent(id)}`, { undo: was });
+    try { was ? localStorage.removeItem(upKey(kind, id)) : localStorage.setItem(upKey(kind, id), '1'); } catch {}
+    toast(was ? '추천을 취소했어요' : '추천했어요');
+    return { votes: d.votes, on: !was };
+  } catch (err) { toast(err.message); return null; }
 }
 function upBtn(kind, id, votes, big) {
-  const b = document.createElement('button'); b.type = 'button'; b.className = 'up' + (big ? ' big' : '') + (didUp(kind, id) ? ' on' : ''); b.setAttribute('aria-label', `추천 ${votes || 0}`);
-  b.innerHTML = `${icon('chev')}<b>${(votes || 0).toLocaleString('ko-KR')}</b>${big ? '<span>업</span>' : ''}`;
-  b.onclick = async (e) => { e.preventDefault(); e.stopPropagation(); const v = await doUp(kind, id); if (v !== null) { b.classList.add('on'); b.querySelector('b').textContent = v.toLocaleString('ko-KR'); } };
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'up' + (big ? ' big' : '') + (didUp(kind, id) ? ' on' : '');
+  const label = () => { b.setAttribute('aria-label', `추천 ${b.querySelector('b').textContent}${b.classList.contains('on') ? ' (눌러서 취소)' : ''}`); b.setAttribute('aria-pressed', String(b.classList.contains('on'))); b.title = b.classList.contains('on') ? '다시 누르면 취소돼요' : '추천'; };
+  b.innerHTML = `${icon('like')}<b>${(votes || 0).toLocaleString('ko-KR')}</b>${big ? '<span>추천</span>' : ''}`; label();
+  b.onclick = async (e) => { e.preventDefault(); e.stopPropagation(); const r = await doUp(kind, id); if (!r) return; b.classList.toggle('on', r.on); b.querySelector('b').textContent = r.votes.toLocaleString('ko-KR'); b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); label(); };
   return b;
 }
 /* ── 섬업 부품 ② 순위 줄: 번호 · 사진 · 제목/한 줄 · 오른쪽에 업 ── */
@@ -153,17 +160,22 @@ const projectRow = (p, rank) => rankRow({ rank, href: `./project.html?id=${encod
 const guideRow = (g, rank) => rankRow({ rank, href: `./guide.html?id=${encodeURIComponent(g.id)}`, image: g.image, iconName: 'leaf', title: g.title, sub: g.summary, meta: [g.tag, g.comments ? `이야기 ${g.comments}` : ''].filter(Boolean).join(' · '), kind: 'guide', id: g.id, votes: g.votes });
 const hackRow = (h, rank) => rankRow({ rank, href: h.url, external: true, iconName: 'trophy', title: h.title, sub: [h.dates, h.location].filter(Boolean).join(' · '), meta: [h.source === 'local' ? '국내 · 직접 등록' : 'Devpost', h.participants ? `${h.participants.toLocaleString()}명 참가` : '', h.prize ? `상금 ${h.prize}` : ''].filter(Boolean).join(' · '), kind: 'hackathon', id: h.id, votes: h.votes });
 
+/* ── 바로가기 타일: 아이콘 + 이름 + (HOT/NEW). 설명 없이 누르고 싶게 ── */
+function tileGroups(el, groups, extra = {}) {
+  el.replaceChildren(...(groups || []).map((g) => { const box = document.createElement('div'); box.className = 'tgroup';
+    box.innerHTML = `<h3>${esc(g.name || '')}</h3><div class="tiles2">${(g.items || []).map((t) => `<a href="${esc(t.href || '#')}" class="tile2${t.badge === 'HOT' ? ' hot' : ''}">${t.badge ? `<i class="tb ${t.badge === 'HOT' ? 'hot' : 'new'}">${esc(t.badge)}</i>` : ''}<span class="ti">${icon(t.icon || 'grid')}</span><b>${esc(t.label)}</b>${extra[t.key] ? `<small>${esc(extra[t.key])}</small>` : ''}</a>`).join('')}</div>`; return box; }));
+}
 const PLACE_LABEL = { spot: '관광지', cafe: '카페', food: '맛집' };
 /* 장소 카드 (관광지·카페·맛집): 사진 · 순위 · 이름 · 동네 · 추천 수 */
 function placeCard(p, rank) {
   const a = document.createElement('a'); a.className = 'gcard pcard2'; a.href = `./place.html?id=${encodeURIComponent(p.id)}`;
-  a.innerHTML = `<div class="gimg">${p.image ? `<img src="${esc(p.image)}" alt="" loading="lazy">` : ''}${rank ? `<span class="rank-n">${rank}</span>` : `<span class="gtag">${esc(PLACE_LABEL[p.type] || '')}</span>`}</div><b>${esc(p.name)}</b><p>${esc(p.summary || '')}</p><small>${esc(p.area || '')} · 업 ${p.votes || 0}</small>`;
+  a.innerHTML = `<div class="gimg">${p.image ? `<img src="${esc(p.image)}" alt="" loading="lazy">` : ''}${rank ? `<span class="rank-n">${rank}</span>` : `<span class="gtag">${esc(PLACE_LABEL[p.type] || '')}</span>`}</div><b>${esc(p.name)}</b><p>${esc(p.summary || '')}</p><small>${esc(p.area || '')} · 추천 ${p.votes || 0}</small>`;
   return a;
 }
 /* 가이드 카드 */
 function guideCard(g) {
   const a = document.createElement('a'); a.className = 'gcard'; a.href = `./guide.html?id=${encodeURIComponent(g.id)}`;
-  a.innerHTML = `<div class="gimg">${g.image ? `<img src="${esc(g.image)}" alt="" loading="lazy">` : ''}<span class="gtag">${esc(g.tag || '가이드')}</span></div><b>${esc(g.title)}</b><p>${esc(g.summary || '')}</p><small>업 ${g.votes || 0} · ${esc(g.lastChecked || '')}</small>`;
+  a.innerHTML = `<div class="gimg">${g.image ? `<img src="${esc(g.image)}" alt="" loading="lazy">` : ''}<span class="gtag">${esc(g.tag || '가이드')}</span></div><b>${esc(g.title)}</b><p>${esc(g.summary || '')}</p><small>추천 ${g.votes || 0} · ${esc(g.lastChecked || '')}</small>`;
   return a;
 }
 /* 아주 작은 마크다운: ## 제목, - 목록, 1. 목록, **굵게**, [글](주소), > 메모, 빈 줄 = 문단 */
@@ -216,24 +228,21 @@ function bannerSVG() {
 }
 
 /* ── 상단 · 보조 탭 · 하단 탭 · 푸터 ── */
-async function mountShell({ active, primary, sub, banner = false } = {}) {
-  CONFIG = await api('/api/config');
-  const S = CONFIG.site;
-  document.documentElement.dataset.theme = 'day'; applyColors(CONFIG.colors); applyTheme(CONFIG.theme);
+async function mountShell({ active, primary, sub } = {}) {
+  // 1) 지난 방문 때 저장해 둔 설정으로 상단을 즉시 그린다. 처음이면 기본값.
+  let cached = null; try { cached = JSON.parse(localStorage.getItem('cfg') || 'null'); } catch {}
+  const S0 = cached?.site || { name: '섬업', sub: '탐라도감' };
+  document.documentElement.dataset.theme = 'day'; if (cached) { applyColors(cached.colors); applyTheme(cached.theme); }
   if (!$('link[rel=icon]')) { const l = document.createElement('link'); l.rel = 'icon'; l.href = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#fff"/><rect x="22" y="12" width="56" height="76" rx="9" fill="#ff6b1a"/><path d="M60 12h11v28l-5.5-4.5L60 40z" fill="#1b1915" opacity=".28"/><circle cx="46" cy="58" r="15" fill="#fff"/><path d="M46 44c0-4.5 4.5-8.2 10.5-7.5-1 5.5-5.5 8.2-10.5 7.5z" fill="#19b3a6"/></svg>')}`; document.head.append(l); }
-  for (const [k, v] of [['og:title', document.title], ['og:description', $('meta[name=description]')?.content || S.slogan], ['og:type', 'website'], ['og:site_name', S.name]]) { if (!$(`meta[property="${k}"]`)) { const m = document.createElement('meta'); m.setAttribute('property', k); m.content = v; document.head.append(m); } }
-
   const pkey = primary || ({ winners: 'hackathon', hackathon: 'hackathon', market: 'jeju', jeju: 'jeju', project: 'deal', deal: 'deal', program: 'program', insight: 'insight' }[active] || '');
   const header = document.createElement('header'); header.className = 'top';
   header.innerHTML = `<div class="wrap bar">
-      <a class="logo" href="./"><span class="mark"><svg viewBox="0 0 100 100" aria-hidden="true"><rect x="18" y="10" width="64" height="80" rx="9" fill="#ff6b1a"/><path d="M62 10h12v30l-6-5-6 5z" fill="#1b1915" opacity=".28"/><circle cx="46" cy="58" r="16" fill="#fff"/><path d="M46 43c0-4.8 4.8-8.8 11.2-8-1.1 5.9-5.9 8.8-11.2 8z" fill="#19b3a6"/></svg></span><span class="lname">${esc(S.name)}</span>${S.sub ? `<small class="lsub">${esc(S.sub)}</small>` : ''}</a>
+      <a class="logo" href="./"><span class="mark"><svg viewBox="0 0 100 100" aria-hidden="true"><rect x="18" y="10" width="64" height="80" rx="9" fill="#ff6b1a"/><path d="M62 10h12v30l-6-5-6 5z" fill="#1b1915" opacity=".28"/><circle cx="46" cy="58" r="16" fill="#fff"/><path d="M46 43c0-4.8 4.8-8.8 11.2-8-1.1 5.9-5.9 8.8-11.2 8z" fill="#19b3a6"/></svg></span><span class="lname">${esc(S0.name)}</span><small class="lsub">${esc(S0.sub || '')}</small></a>
       <nav class="primary">${PRIMARY.map((p) => `<a href="${p.href}" class="${p.key === pkey ? 'on' : ''}">${p.label}</a>`).join('')}</nav>
-      <form class="search" role="search" action="./search.html"><span class="sic">${icon('search')}</span><input name="q" placeholder="프로젝트, 지원사업, 인사이트 검색" autocomplete="off" aria-label="검색"></form>
+      <form class="search" role="search" action="./search.html"><span class="sic">${icon('search')}</span><input name="q" placeholder="검색" autocomplete="off" aria-label="검색"></form>
       <div class="acts"><a class="btn write" href="./sell.html">${icon('plus')}<span>올리기</span></a></div>
     </div>`;
   document.body.prepend(header);
-  // 보조 탭
-  // 휴대폰: 큰 메뉴를 가로로 미는 한 줄로
   const mnav = document.createElement('nav'); mnav.className = 'mnav';
   mnav.innerHTML = `<div class="wrap">${PRIMARY.map((p) => `<a href="${p.href}" class="${p.key === pkey ? 'on' : ''}">${p.label}</a>`).join('')}</div>`;
   header.after(mnav);
@@ -244,21 +253,22 @@ async function mountShell({ active, primary, sub, banner = false } = {}) {
     bar.innerHTML = `<div class="wrap">${P.subs.map(([href, label, key]) => { const on = sub ? key === sub : (href.split('?')[0].split('#')[0].replace('./', '') || 'index.html') === here && !href.includes('?') && !href.includes('#'); return `<a href="${href}" class="${on ? 'on' : ''}">${label}</a>`; }).join('')}</div>`;
     mnav.after(bar);
   }
-  if (banner) { const b = document.createElement('div'); b.className = 'banner'; b.innerHTML = bannerSVG(); (document.querySelector('.subnav') || header).after(b); }
-
-  // 모바일 하단 탭 (홈 · 장터 · 올리기 · 제주생활 · 도감)
   const tabs = document.createElement('nav'); tabs.className = 'tabbar';
-  const t = [['./', 'home', '홈', 'home'], ['./market.html?type=project', 'puzzle', '거래', 'deal'], ['./sell.html', 'plus', '올리기', 'sell'], ['./board.html?kind=program', 'coins', '창업정보', 'program'], ['./jeju.html', 'leaf', '제주살이', 'jeju']];
+  const t = [['./', 'home', '홈', 'home'], ['./market.html?type=project', 'puzzle', '장터', 'deal'], ['./sell.html', 'plus', '올리기', 'sell'], ['./board.html?kind=program', 'coins', '창업마당', 'program'], ['./jeju.html', 'leaf', '제주마당', 'jeju']];
   tabs.innerHTML = t.map(([href, ic, label, key]) => `<a href="${href}" class="${key === 'sell' ? 'write' : ''} ${key === active || key === pkey ? 'on' : ''}">${icon(ic)}<span>${label}</span></a>`).join('');
   document.body.append(tabs);
-  // 맨 위로
   const up = document.createElement('button'); up.className = 'totop'; up.setAttribute('aria-label', '맨 위로'); up.innerHTML = icon('up'); up.onclick = () => scrollTo({ top: 0, behavior: 'smooth' }); document.body.append(up);
   addEventListener('scroll', () => up.classList.toggle('show', scrollY > 600), { passive: true });
 
-  // 광고: 넓은 화면은 좌우에 따라다니는 배너, 좁은 화면은 본문 끝 카드
+  // 2) 최신 설정을 받아 반영하고 다음 방문을 위해 저장한다
+  CONFIG = await api('/api/config');
+  const S = CONFIG.site; applyColors(CONFIG.colors); applyTheme(CONFIG.theme);
+  try { localStorage.setItem('cfg', JSON.stringify({ site: { name: S.name, sub: S.sub }, colors: CONFIG.colors, theme: CONFIG.theme })); } catch {}
+  header.querySelector('.lname').textContent = S.name; header.querySelector('.lsub').textContent = S.sub || ''; header.querySelector('.lsub').hidden = !S.sub;
+  for (const [k, v] of [['og:title', document.title], ['og:description', $('meta[name=description]')?.content || S.slogan], ['og:type', 'website'], ['og:site_name', S.name]]) { if (!$(`meta[property="${k}"]`)) { const m = document.createElement('meta'); m.setAttribute('property', k); m.content = v; document.head.append(m); } }
   mountAds(CONFIG.ads);
   const footer = document.createElement('footer');
-  footer.innerHTML = `<div class="wrap"><div><b>${esc(S.name)}</b>${S.sub ? ` <span class="small">${esc(S.sub)}</span>` : ''} · ${esc(S.slogan)}<br><span class="small">${esc(CONFIG.footer?.note || '')}</span></div><div class="links"><a href="${esc(S.threads)}" target="_blank" rel="noopener">스레드</a><a href="${esc(S.openchat)}">오픈채팅</a><a href="./admin.html">관리자</a></div></div>`;
+  footer.innerHTML = `<div class="wrap"><div><b>${esc(S.name)}</b>${S.sub ? ` <span class="small">${esc(S.sub)}</span>` : ''} · ${esc(S.slogan)}<br><span class="small">${esc(CONFIG.footer?.note || '')}</span></div><div class="links"><a href="./about.html">운영 원칙</a><a href="${esc(S.threads)}" target="_blank" rel="noopener">스레드</a><a href="${esc(S.openchat)}">오픈채팅</a><a href="./admin.html">관리자</a></div></div>`;
   document.body.append(footer);
   applyTexts(); mountEditor();
   return CONFIG;

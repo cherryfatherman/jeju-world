@@ -4,54 +4,35 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>섬업 · 제주(섬)에서 창업을 거래하다</title>
-<meta name="description" content="섬업(탐라도감). AI로 만든 서비스와 해커톤 프로젝트를 거래하고, 제주 창업 지원사업·인사이트·해커톤 정보를 한곳에서.">
+<meta name="description" content="섬업(탐라도감). 제주에서 만든 AI 서비스와 해커톤 프로젝트를 사고팔고, 창업 지원사업·인사이트·해커톤 정보를 한곳에서.">
 <link rel="stylesheet" href="./style.css">
 <script src="./app.js"></script>
 </head>
 <body>
 <main class="wrap">
-  <!-- 1. 정체성: 섬업이 뭐 하는 곳인지 한 화면에 -->
+  <!-- 1. 섬업이 무엇인지 -->
   <div class="hero" id="hero"><div class="htext" id="heroText"></div></div>
-  <div class="nums" id="nums"></div>
 
-  <!-- 2. 고리: 하나로 이어진 큰 줄기 -->
+  <!-- 2. 왜 제주인가: 숫자와 자료 -->
   <section>
-    <div class="sec-head"><h2>섬업의 고리</h2><span class="more">하나로 이어진 다섯 줄기</span></div>
+    <p class="home-lead" id="lead" data-edit="lead"></p>
+  </section>
+  <section><div class="direction" id="direction"></div></section>
+  <section>
+    <div class="sec-head"><h2>창업도시 제주, 지금</h2><a class="more" href="./board.html?kind=insight">인사이트 더 보기</a></div>
+    <div class="stories" id="stories"></div>
+  </section>
+
+  <!-- 3. 다섯 줄기로 들어가기 -->
+  <section>
+    <div class="sec-head"><h2>어디로 갈까요</h2></div>
     <div class="ring" id="ring"></div>
   </section>
 
-  <!-- 3. 제주의 방향 -->
-  <section><div class="direction" id="direction"></div></section>
-
-  <!-- 4. 거래 (본업) -->
+  <!-- 4. 맨 아래: 바로 가기 -->
   <section>
-    <div class="sec-head"><h2>지금 업 많은 프로젝트</h2><a class="more" href="./market.html?type=project">전체 보기</a></div>
-    <div class="rlist" id="deals"></div>
-  </section>
-
-  <!-- 5. 창업정보 + 인사이트 -->
-  <div class="two">
-    <section>
-      <div class="sec-head"><h2>진행 중인 지원사업</h2><a class="more" href="./board.html?kind=program">전체 보기</a></div>
-      <div class="rlist" id="programs"></div>
-    </section>
-    <section>
-      <div class="sec-head"><h2>인사이트</h2><a class="more" href="./board.html?kind=insight">전체 보기</a></div>
-      <div class="rlist" id="insights"></div>
-    </section>
-  </div>
-
-  <!-- 6. 해커톤 -->
-  <section>
-    <div class="sec-head"><h2>열려 있는 해커톤</h2><a class="more" href="./hackathon.html">전체 보기</a></div>
-    <div class="rlist" id="hacks"></div>
-  </section>
-
-  <!-- 7. 맨 아래: 제주도민 생활정보. 누르면 바로 답이 나오는 페이지로 -->
-  <section id="life">
-    <div class="sec-head"><h2>제주도민 생활정보</h2><a class="more" href="./jeju.html">전체 보기</a></div>
-    <div class="quick" id="quick"></div>
-    <div class="rlist cols2" id="guides" style="margin-top:8px"></div>
+    <div class="sec-head"><h2>바로 가기</h2></div>
+    <div class="tgroups" id="tiles"></div>
   </section>
 </main>
 
@@ -63,6 +44,7 @@ function renderHero() {
   if (s.image) $('#hero').style.backgroundImage = `url('${s.image}')`;
   $('#heroText').innerHTML = `<p class="kicker" data-edit="carousel.0.kicker">${esc(s.kicker || B.kicker || '')}</p><h1 data-edit="carousel.0.title">${rich(s.title || B.title || CFG.site.slogan)}</h1><p class="sub" data-edit="carousel.0.sub">${esc(s.sub || B.sub || '')}</p>
     <div class="cta"><a class="btn primary big" href="./market.html?type=project"><span data-edit="banner.primaryLabel">${esc(B.primaryLabel || '프로젝트 둘러보기')}</span></a><a class="btn big line" href="./sell.html?type=project"><span data-edit="banner.secondaryLabel">${esc(B.secondaryLabel || '내 프로젝트 올리기')}</span></a></div>`;
+  $('#lead').innerHTML = rich(CFG.lead || '');
 }
 function renderRing() {
   $('#ring').replaceChildren(...(CFG.ring || []).map((r, i) => { const a = document.createElement('a'); a.href = r.href; a.innerHTML = `<span class="rimg">${r.image ? `<img src="${esc(r.image)}" alt="" loading="lazy">` : ''}</span><b data-edit="ring.${i}.label">${esc(r.label)}</b><small data-edit="ring.${i}.sub">${esc(r.sub || '')}</small>`; return a; }));
@@ -71,26 +53,16 @@ function renderDirection() {
   const D = CFG.direction; if (!D) { $('#direction').parentElement.hidden = true; return; }
   $('#direction').innerHTML = `<div><p class="kicker" data-edit="direction.kicker">${esc(D.kicker || '')}</p><h2 data-edit="direction.title">${rich(D.title || '')}</h2></div><div class="facts">${(D.facts || []).map((f, i) => `<a href="${esc(f.href || '#')}" target="_blank" rel="noopener"><b data-edit="direction.facts.${i}.num">${esc(f.num)}</b><span data-edit="direction.facts.${i}.label">${esc(f.label)}</span><small>출처: ${esc(f.src || '')}</small></a>`).join('')}</div>`;
 }
-function renderQuick() {
-  const today = DAYS[(new Date().getDay() + 6) % 7];
-  const W = CFG.jeju?.waste || {};
-  const todayItems = [...((W.days || {})[today] || '').split(/,\s*/).filter(Boolean)];
-  $('#quick').replaceChildren(...(CFG.tools || []).map((t) => {
-    const a = document.createElement('a'); a.href = t.href || '#';
-    const sub = t.key === 'today' ? `${today}요일 · ${todayItems.join(' · ') || '요일표 보기'}` : (t.sub || '');
-    a.innerHTML = `<span class="qic">${icon(t.icon)}</span><span class="ql">${esc(t.label)}</span>${sub ? `<small>${esc(sub)}</small>` : ''}`; return a;
-  }));
+function renderTiles() {
+  const today = DAYS[(new Date().getDay() + 6) % 7]; const first = ((CFG.jeju?.waste?.days || {})[today] || '').split(/,\s*/)[0] || '';
+  tileGroups($('#tiles'), CFG.tiles, { today: `${today}요일 · ${first}` });
 }
 async function load() {
-  api('/api/stats').then((s) => { $('#nums').innerHTML = [['프로젝트', s.projects, './market.html?type=project'], ['진행 중 지원사업', s.programs, './board.html?kind=program'], ['인사이트', s.insights, './board.html?kind=insight'], ['해커톤 수상작', s.winners, './winners.html'], ['열린 해커톤', s.hackathons, './hackathon.html']].map(([l, n, h]) => `<a href="${h}"><b>${(n ?? 0).toLocaleString('ko-KR')}</b><span>${l}</span></a>`).join(''); });
-  api('/api/projects?type=project').then((all) => { const list = all.sort((a, b) => (a.deal === 'done') - (b.deal === 'done') || b.interest - a.interest).slice(0, 5); $('#deals').replaceChildren(...list.map((p, i) => projectRow(p, i + 1))); if (!list.length) $('#deals').innerHTML = '<div class="empty">아직 올라온 프로젝트가 없어요. <a href="./sell.html?type=project">첫 프로젝트를 올려 보세요</a></div>'; });
-  api('/api/posts/program').then((d) => $('#programs').replaceChildren(...d.items.filter((p) => p.status === 'open').slice(0, 4).map((p, i) => programRow(p, i + 1))));
-  api('/api/posts/insight').then((d) => $('#insights').replaceChildren(...d.items.slice(0, 4).map((p, i) => insightRow(p, i + 1))));
-  api('/api/hackathons').then((d) => $('#hacks').replaceChildren(...(d.items || []).sort((a, b) => b.votes - a.votes || (b.source === 'local') - (a.source === 'local')).slice(0, 4).map((h, i) => hackRow(h, i + 1))));
-  api('/api/guides').then((g) => $('#guides').replaceChildren(...g.slice(0, 8).map((x, i) => guideRow(x, i + 1))));
+  const d = await api('/api/posts/insight');
+  const pick = [...d.items.filter((p) => p.category === '정책').slice(0, 2), ...d.items.filter((p) => p.category === '통계·조사').slice(0, 1)];
+  $('#stories').replaceChildren(...pick.map((p) => { const a = document.createElement('a'); a.className = 'story'; a.href = `./post.html?kind=insight&id=${encodeURIComponent(p.id)}`; if (p.image) a.style.backgroundImage = `url('${p.image}')`; a.innerHTML = `<div><i>${esc(p.category)}</i><b>${esc(p.title)}</b><small>${esc(p.org || '')}</small></div>`; return a; }));
 }
-mountShell({ active: 'home' }).then((c) => { CFG = c; renderHero(); renderRing(); renderDirection(); renderQuick(); load(); });
-// 홈의 큰 글자는 설정에서 그려지므로, 수정 모드가 켜진 뒤에도 고칠 수 있게 data-edit로 표시해 둔다
+mountShell({ active: 'home' }).then((c) => { CFG = c; renderHero(); renderRing(); renderDirection(); renderTiles(); load(); });
 </script>
 </body>
 </html>

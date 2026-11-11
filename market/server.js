@@ -78,9 +78,10 @@ const FIND = {
 };
 const baseVotes = (kind, item) => (kind === 'project' ? item.interest : kind === 'winner' || kind === 'hackathon' ? 0 : item.votes);
 const titleOf = (item) => item.name || item.title || '';
-function upVote(kind, id) {
+function upVote(kind, id, undo) {
   const item = FIND[kind]?.(id); if (!item) return null;
-  const V = liveVotes(); const k = `${kind}:${id}`; V[k] = (V[k] || 0) + 1; save('votes.json', V);
+  // 취소는 실시간 증가분 안에서만 깎는다 (글에 적힌 기본값 아래로는 내려가지 않는다)
+  const V = liveVotes(); const k = `${kind}:${id}`; V[k] = undo ? Math.max(0, (V[k] || 0) - 1) : (V[k] || 0) + 1; save('votes.json', V);
   return voteOf(V, kind, id, baseVotes(kind, item));
 }
 const listComments = (kind, id) => load('comments.json', []).filter((c) => !c.hidden && cKey(c) === `${kind}:${id}`).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(({ id: cid, name, text, createdAt }) => ({ id: cid, name, text, createdAt }));
@@ -225,7 +226,7 @@ app.post('/api/projects', limit(5), (req, res) => {
 
 // ---- 관심 등록 / 문의 ----
 app.post('/api/projects/:id/interest', limit(20), (req, res) => {
-  const v = upVote('project', req.params.id);
+  const v = upVote('project', req.params.id, req.body?.undo === true);
   v === null ? res.status(404).json({ error: 'not found' }) : res.json({ interest: v });
 });
 app.post('/api/projects/:id/inquiry', limit(5), (req, res) => {
@@ -474,7 +475,7 @@ app.get('/api/winners', (req, res) => { const V = liveVotes(); res.json(WINNERS.
 
 // ---- 추천(업)·댓글 API (모든 종류 공통) ----
 app.post('/api/up/:kind/:id', limit(40), (req, res) => {
-  const v = upVote(req.params.kind, req.params.id);
+  const v = upVote(req.params.kind, req.params.id, req.body?.undo === true);
   v === null ? res.status(404).json({ error: '글을 찾을 수 없어요.' }) : res.json({ votes: v });
 });
 app.get('/api/comments/:kind/:id', (req, res) => res.json(listComments(req.params.kind, req.params.id)));
