@@ -150,7 +150,7 @@
   {
    "kicker": "제주 창업 장터",
    "title": "제주(섬)에서\n[창업을 거래하다]",
-   "sub": "AI로 만든 서비스와 해커톤 프로젝트가 다음 주인을 만나는 곳.\n지원사업·인사이트·해커톤까지, 제주 창업 정보는 여기서.",
+   "sub": "AI로 만든 서비스와 해커톤 프로젝트가 다음 주인을 만나는 곳.\n흩어진 창업 정보가 한 줄기로 모입니다.",
    "image": "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1600&h=640&fit=crop&q=80&auto=format",
    "ctaLabel": "프로젝트 둘러보기",
    "ctaHref": "./market.html?type=project"

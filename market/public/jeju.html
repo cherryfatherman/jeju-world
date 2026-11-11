@@ -49,7 +49,7 @@ function renderWaste() {
   $('#area').textContent = `${J.area || '제주시'} 기준`;
   $('#today').textContent = `오늘은 ${DAYS[todayIdx]}요일`;
   $('#days').replaceChildren(...DAYS.map((d, i) => { const el = document.createElement('div'); el.className = 'day' + (i === todayIdx ? ' today' : ''); el.innerHTML = `<b>${d}</b><span>${esc((W.days || {})[d] || '-')}</span>`; return el; }));
-  $('#daily').innerHTML = (W.daily || []).length ? `<span class="note" style="align-self:center;margin-right:4px">매일 배출</span>${W.daily.map((x) => `<span class="chip on" style="cursor:default">${esc(x)}</span>`).join('')}` : '';
+  $('#daily').innerHTML = (W.daily || []).length ? `<span class="note" style="align-self:center;margin-right:4px">매일 배출</span>${W.daily.map((x) => `<span class="chip" style="cursor:default">${esc(x)}</span>`).join('')}` : '';
   $('#wasteNote').textContent = W.notes || '';
   $('#wasteSource').innerHTML = `출처: ${W.sourceUrl ? `<a href="${esc(W.sourceUrl)}" target="_blank" rel="noopener" style="text-decoration:underline">${esc(W.source || '')}</a>` : esc(W.source || '')}${W.lastChecked ? ` · 업데이트 ${esc(W.lastChecked)}` : ''}`;
   $('#tips').replaceChildren(...(J.tips || []).map((t) => { const d = document.createElement('div'); d.className = 'row'; d.innerHTML = `<div class="body"><b>${esc(t.title)}</b><p>${esc(t.body)}</p></div>`; return d; }));

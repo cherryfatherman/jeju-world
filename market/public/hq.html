@@ -70,7 +70,7 @@
   .msg { display: grid; grid-template-columns: 28px 1fr; gap: 8px; padding: 8px 0; }
   .msg .who { font-size: 12px; font-weight: 800; } .msg .who small { color: var(--ink-3); font-weight: 600; }
   .msg p { font-size: 14px; line-height: 1.5; background: var(--surface); border: 1px solid var(--line); padding: 8px 10px; border-radius: 4px 12px 12px 12px; margin-top: 3px; }
-  .msg.all p { background: var(--accent-soft); border-color: #ffd9c2; font-weight: 600; }
+  .msg.all p { background: var(--accent-soft); border-color: rgba(255,107,26,.4); font-weight: 600; }
   .round { font-size: 11px; font-weight: 800; color: var(--ink-3); text-align: center; margin: 14px 0 4px; }
   .login { position: fixed; inset: 0; display: grid; place-items: center; background: #14110d; z-index: 50; }
   .login form { width: min(340px, 90vw); display: grid; gap: 12px; color: var(--ink); }
@@ -79,7 +79,7 @@
   @media (max-width: 860px) {
     body { overflow: auto; height: auto; } .hq { grid-template-columns: 1fr; grid-template-rows: 56px 46vh auto; height: auto; }
     .side { border-left: 0; } .side .scroll { overflow: visible; } .hqbar .state { display: none; } .hqbar { gap: 6px; padding: 0 10px; } .hqbar .btn { padding: 0 10px; }
-    .legend { display: none; } .gleft { width: 150px; } #glegend button { font-size: 12px; padding: 3px 6px; } .hint { display: none; }
+    .legend { display: none; } .hint { display: none; } .gleft { left: 10px; right: 58px; top: 10px; width: auto; } .gleft input { display: none; } #glegend { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; } #glegend button { flex: none; display: flex; gap: 6px; font-size: 12px; padding: 5px 10px; border-radius: 999px; background: rgba(0,0,0,.5); border: 1px solid rgba(255,255,255,.14); }
   }
 </style>
 </head>

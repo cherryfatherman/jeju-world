@@ -4,7 +4,7 @@
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const rich = (s) => esc(s).replace(/\[([^\]]+)\]/g, '<em>$1</em>').replace(/\n/g, '<br>');
+const rich = (s) => esc(s).replace(/\[([^\]]+)\]/g, '<em>$1</em>').replace(/ *\n/g, ' <br>');
 const STAGE = { idea: '아이디어', demo: '데모', users: '사용자 있음', revenue: '매출 있음' };
 const TYPE_LABEL = { home: '집', item: '물건', project: '프로젝트' };
 const TYPE_ICON = { home: 'home', item: 'box', project: 'puzzle' };
@@ -260,6 +260,7 @@ async function mountShell({ active, primary, sub } = {}) {
   const up = document.createElement('button'); up.className = 'totop'; up.setAttribute('aria-label', '맨 위로'); up.innerHTML = icon('up'); up.onclick = () => scrollTo({ top: 0, behavior: 'smooth' }); document.body.append(up);
   addEventListener('scroll', () => up.classList.toggle('show', scrollY > 600), { passive: true });
 
+  mountPageFx(); mountTransitions(); mountReveal();
   // 2) 최신 설정을 받아 반영하고 다음 방문을 위해 저장한다
   CONFIG = await api('/api/config');
   const S = CONFIG.site; applyColors(CONFIG.colors); applyTheme(CONFIG.theme);
@@ -314,10 +315,11 @@ const THEME_FIELDS = [
   ['색', [['accent', '포인트 색', 'color'], ['accent2', '보조 색', 'color'], ['bg', '바탕', 'color'], ['surface', '카드 바탕', 'color'], ['ink', '글자', 'color'], ['line', '선', 'color']]],
   ['모양', [['radius', '카드 모서리 (px)', 'range', 0, 24, 1], ['btnRadius', '버튼 모서리 (px)', 'range', 0, 24, 1], ['wrap', '본문 폭 (px)', 'range', 900, 1320, 20], ['heroH', '홈 큰 배너 높이 (px)', 'range', 240, 560, 10], ['thumb', '목록 사진 크기 (px)', 'range', 48, 112, 4], ['gap', '구역 사이 간격 (px)', 'range', 16, 64, 4]]],
 ];
-const THEME_DEFAULT = { bodyFont: 'Pretendard Variable', headFont: 'Pretendard Variable', headWeight: 800, scale: 100, letter: -0.01, accent: '#ff6b1a', accent2: '#19b3a6', bg: '#faf8f5', surface: '#ffffff', ink: '#1b1915', line: '#e9e3da', radius: 12, btnRadius: 8, wrap: 1080, heroH: 360, thumb: 72, gap: 32 };
+const THEME_DEFAULT = { v: 2, bodyFont: 'Pretendard Variable', headFont: 'Pretendard Variable', headWeight: 800, scale: 100, letter: -0.01, accent: '#ff6b1a', accent2: '#19b3a6', bg: '#08070b', surface: '#131117', ink: '#f4f0ea', line: '#24212a', radius: 14, btnRadius: 10, wrap: 1080, heroH: 360, thumb: 72, gap: 40 };
+const normTheme = (t) => { const T = { ...THEME_DEFAULT, ...(t || {}) }; if (!t || t.v !== 2) Object.assign(T, { v: 2, bg: THEME_DEFAULT.bg, surface: THEME_DEFAULT.surface, ink: THEME_DEFAULT.ink, line: THEME_DEFAULT.line, radius: THEME_DEFAULT.radius, btnRadius: THEME_DEFAULT.btnRadius, gap: THEME_DEFAULT.gap }); return T; };
 function loadFont(name) { const f = FONTS.find((x) => x[0] === name); if (!f || !f[2] || document.querySelector(`link[data-font="${name}"]`)) return; const l = document.createElement('link'); l.rel = 'stylesheet'; l.dataset.font = name; l.href = `https://fonts.googleapis.com/css2?family=${f[2]}&display=swap`; document.head.append(l); }
 function applyTheme(t) {
-  if (!t) return; const r = document.documentElement.style; const T = { ...THEME_DEFAULT, ...t };
+  if (!t) return; const r = document.documentElement.style; const T = normTheme(t);
   const fb = ', "Pretendard Variable", Pretendard, -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
   loadFont(T.bodyFont); loadFont(T.headFont);
   r.setProperty('--font', `"${T.bodyFont}"${fb}`); r.setProperty('--font-head', `"${T.headFont}"${fb}`); r.setProperty('--head-weight', T.headWeight);
@@ -337,7 +339,7 @@ function mountEditor() {
   if ($('#edFab')) return;
   const fab = document.createElement('button'); fab.id = 'edFab'; fab.type = 'button'; fab.textContent = '수정'; document.body.append(fab);
   const panel = document.createElement('aside'); panel.id = 'edPanel';
-  let T = { ...THEME_DEFAULT, ...(CONFIG.theme || {}) }, textMode = false, dirty = false;
+  let T = normTheme(CONFIG.theme), textMode = false, dirty = false;
   const field = ([k, label, type, min, max, step]) => type === 'font' ? `<label>${label}<select data-th="${k}">${FONTS.map((f) => `<option value="${f[0]}" ${T[k] === f[0] ? 'selected' : ''}>${f[1]}</option>`).join('')}</select></label>`
     : type === 'color' ? `<label class="edc">${label}<span><input type="color" data-th="${k}" value="${T[k]}"><code>${T[k]}</code></span></label>`
     : `<label>${label} <b data-out="${k}">${T[k]}</b><input type="range" data-th="${k}" min="${min}" max="${max}" step="${step}" value="${T[k]}"></label>`;
@@ -374,4 +376,55 @@ function mountEditor() {
   };
   addEventListener('beforeunload', (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
   if (new URLSearchParams(location.search).has('edit')) open();
+}
+
+
+/* ════════ 빛 (v9): 섬업의 움직임 ════════
+   홈 첫 화면의 빛줄기를 사이트 전체의 결로 쓴다: 페이지 위쪽의 은은한 빛 띠, 페이지를 넘길 때의 빛 한 줄, 내용이 떠오르는 등장. */
+const FX = {
+  ease: (x) => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x)),
+  reduced: () => matchMedia('(prefers-reduced-motion: reduce)').matches,
+  fit(cv, cap = 1.75) { const D = Math.min(window.devicePixelRatio || 1, cap), W = Math.max(1, cv.clientWidth), H = Math.max(1, cv.clientHeight); if (cv.width !== Math.round(W * D) || cv.height !== Math.round(H * D)) { cv.width = Math.round(W * D); cv.height = Math.round(H * D); } return { W, H, D }; },
+  makeStrands: (n) => Array.from({ length: n }, () => ({ a: Math.random() * 6.28, r: .6 + Math.random() * .6, sp: .2 + Math.random() * .6, w: .5 + Math.random() * 1.6, hue: Math.random(), bend: (Math.random() - .5) * 1.6 })),
+  // 바깥에서 (cx, cy)로 흘러드는 빛줄기. f: 얼마나 들어왔나(0~1), al: 밝기
+  strands(c, S, cx, cy, R, tt, f, al, squash = .8) {
+    for (const s of S) { const a = s.a + Math.sin(tt * s.sp * .5 + s.a) * .12, x0 = cx + Math.cos(a) * R * s.r, y0 = cy + Math.sin(a) * R * s.r * squash, mx = cx + Math.cos(a + s.bend) * R * .28, my = cy + Math.sin(a + s.bend) * R * .28 * squash, ex = x0 + (cx - x0) * f, ey = y0 + (cy - y0) * f;
+      const col = s.hue < .62 ? `255,${110 + (s.hue * 120 | 0)},26` : s.hue < .86 ? '255,200,120' : '25,224,200', g = c.createLinearGradient(x0, y0, ex, ey);
+      g.addColorStop(0, `rgba(${col},0)`); g.addColorStop(.55, `rgba(${col},${.16 * al})`); g.addColorStop(1, `rgba(${col},${.7 * al})`);
+      c.strokeStyle = g; c.lineWidth = s.w; c.beginPath(); c.moveTo(x0, y0); c.quadraticCurveTo(x0 + (mx - x0) * f, y0 + (my - y0) * f, ex, ey); c.stroke(); }
+  },
+  // 숫자가 올라가며 나타난다 ("600억" → 0억 … 600억)
+  count(el) { const full = el.textContent, m = /^([\d,]+)(.*)$/.exec(full.trim()); if (!m || FX.reduced()) return; const to = Number(m[1].replace(/,/g, '')), t0 = performance.now(); const step = (t) => { const k = Math.min(1, (t - t0) / 1200); el.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))).toLocaleString('ko-KR') + m[2]; if (k < 1) requestAnimationFrame(step); else el.textContent = full; }; requestAnimationFrame(step); },
+};
+/* 페이지 위쪽의 빛 띠 (홈 제외). 제목 뒤에서 빛줄기가 한 점으로 모인다 */
+function mountPageFx() {
+  const main = $('main'); if (!main || $('.hero2') || $('.pagefx')) return;
+  const cv = document.createElement('canvas'); cv.className = 'pagefx'; cv.setAttribute('aria-hidden', 'true'); main.before(cv);
+  const c = cv.getContext('2d'), S = FX.makeStrands(innerWidth < 760 ? 46 : 84); let on = true;
+  const draw = (t) => { const { W, H, D } = FX.fit(cv, 1.5); c.setTransform(D, 0, 0, D, 0, 0); c.clearRect(0, 0, W, H); c.globalCompositeOperation = 'lighter';
+    const cx = W < 760 ? W * .82 : W / 2 + Math.min(W, 1160) * .36, cy = W < 760 ? 4 : 6, tt = t / 1000;
+    FX.strands(c, S, cx, cy, Math.max(W * .62, 520), tt, 1, .42 + Math.sin(tt * .7) * .06, .55);
+    const r = 190 + Math.sin(tt * 1.3) * 12, g = c.createRadialGradient(cx, cy, 0, cx, cy, r); g.addColorStop(0, 'rgba(255,170,90,.4)'); g.addColorStop(1, 'rgba(255,107,26,0)'); c.fillStyle = g; c.beginPath(); c.arc(cx, cy, r, 0, 6.3); c.fill(); c.globalCompositeOperation = 'source-over'; };
+  if (FX.reduced()) { draw(0); return; }
+  const loop = (t) => { if (on && !document.hidden && scrollY < 420) draw(t); requestAnimationFrame(loop); }; requestAnimationFrame(loop);
+}
+/* 페이지 넘김: 떠날 때 내용이 살짝 올라가며 사라지고 위에 빛 한 줄이 지나간다. 새 페이지는 아래에서 떠오른다 */
+function mountTransitions() {
+  if (mountTransitions.done) return; mountTransitions.done = true;
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest && e.target.closest('a[href]');
+    if (!a || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || a.target === '_blank' || a.hasAttribute('download') || document.body.classList.contains('ed-text')) return;
+    let u; try { u = new URL(a.href, location.href); } catch { return; }
+    if (u.origin !== location.origin || (u.pathname === location.pathname && u.search === location.search)) return;
+    e.preventDefault(); document.documentElement.classList.add('pt-out'); setTimeout(() => { location.href = a.href; }, FX.reduced() ? 0 : 230);
+  });
+  addEventListener('pageshow', () => document.documentElement.classList.remove('pt-out'));
+}
+/* 구역이 화면에 들어올 때 떠오른다 */
+function mountReveal() {
+  if (FX.reduced() || !('IntersectionObserver' in window)) return;
+  const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .04, rootMargin: '0px 0px -5% 0px' });
+  $$('main > section, main > .two > section').forEach((el) => { el.classList.add('rv'); io.observe(el); });
+  // 안전장치: 관찰이 늦어도 화면 안에 있는 구역은 반드시 보이게
+  setTimeout(() => $$('.rv:not(.in)').forEach((el) => { if (el.getBoundingClientRect().top < innerHeight) el.classList.add('in'); }), 1200);
 }

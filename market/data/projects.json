@@ -46,7 +46,7 @@
   "seller": "집주인",
   "contact": "example-owner@example.com",
   "interest": 19,
-  "views": 436,
+  "views": 444,
   "area": "제주시 아라동"
  },
  {
@@ -137,7 +137,7 @@
   "seller": "졸업반 개발자",
   "contact": "example-seller-1@example.com",
   "interest": 23,
-  "views": 328,
+  "views": 341,
   "type": "project",
   "photos": [
    "https://images.pexels.com/photos/3952068/pexels-photo-3952068.jpeg?auto=compress&cs=tinysrgb&w=1200&h=900&fit=crop"
@@ -199,7 +199,7 @@
   "seller": "대학원생 2인",
   "contact": "example-seller-3@example.com",
   "interest": 31,
-  "views": 540,
+  "views": 542,
   "type": "project",
   "photos": [
    "https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?w=1200&h=900&fit=crop&q=80&auto=format"
@@ -299,5 +299,338 @@
    "https://images.pexels.com/photos/2440021/pexels-photo-2440021.jpeg?auto=compress&cs=tinysrgb&w=1200&h=900&fit=crop"
   ],
   "area": "서귀포시 중문동"
+ },
+ {
+  "status": "live",
+  "sample": true,
+  "url": "",
+  "origin": "",
+  "stage": "users",
+  "dealType": "sell",
+  "id": "h02",
+  "type": "home",
+  "createdAt": "2026-11-10T03:00:00.000Z",
+  "photos": [
+   "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&h=900&fit=crop&q=80&auto=format",
+   "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=1200&h=900&fit=crop&q=80&auto=format"
+  ],
+  "name": "노형동 원룸, 풀옵션",
+  "tagline": "버스 정류장 3분, 바로 들어올 수 있어요",
+  "description": "[사진 기준] 원룸에 주방이 분리돼 있고, 에어컨·세탁기·냉장고·인덕션이 있습니다. 햇빛이 잘 드는 남동향.\n\n노형오거리까지 걸어서 10분, 마트와 병원이 가깝습니다. 1년 계약 기준이고 6개월도 상의할 수 있어요.",
+  "category": "집",
+  "tags": [
+   "노형동",
+   "원룸",
+   "풀옵션"
+  ],
+  "priceMin": 0,
+  "priceMax": 0,
+  "home": {
+   "dong": "제주시 노형동",
+   "areaM2": 26.4,
+   "floor": "3/4층",
+   "use": "다가구주택",
+   "builtYear": 2016,
+   "rooms": "원룸 1욕실",
+   "options": [
+    "에어컨",
+    "세탁기",
+    "냉장고",
+    "인덕션"
+   ],
+   "deal": "월세",
+   "deposit": 5000000,
+   "monthly": 500000,
+   "extractedFrom": "",
+   "ownerRole": "owner"
+  },
+  "seller": "집주인",
+  "contact": "example-owner2@example.com",
+  "interest": 24,
+  "views": 512,
+  "area": "제주시 노형동"
+ },
+ {
+  "status": "live",
+  "sample": true,
+  "url": "",
+  "origin": "",
+  "stage": "users",
+  "dealType": "sell",
+  "id": "h03",
+  "type": "home",
+  "createdAt": "2026-11-09T02:00:00.000Z",
+  "photos": [
+   "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=1200&h=900&fit=crop&q=80&auto=format",
+   "https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=1200&h=900&fit=crop&q=80&auto=format"
+  ],
+  "name": "애월 한달살기, 바다까지 걸어서 5분",
+  "tagline": "12월부터 한 달 단위로 빌려드려요",
+  "description": "[사진 기준] 거실이 넓고 큰 창으로 볕이 듭니다. 침구·식기·와이파이·세탁기가 갖춰져 있어 몸만 오시면 돼요.\n\n한담해안산책로까지 걸어서 5분. 버스는 자주 없어서 차가 있으면 편합니다. 관리비와 공과금은 따로 없어요.",
+  "category": "집",
+  "tags": [
+   "애월",
+   "한달살기",
+   "바다 근처"
+  ],
+  "priceMin": 0,
+  "priceMax": 0,
+  "home": {
+   "dong": "제주시 애월읍",
+   "areaM2": 59.5,
+   "floor": "1/2층",
+   "use": "단독주택",
+   "builtYear": 2019,
+   "rooms": "2룸 1욕실",
+   "options": [
+    "침구",
+    "식기",
+    "와이파이",
+    "세탁기",
+    "주차"
+   ],
+   "deal": "단기",
+   "deposit": 300000,
+   "monthly": 1300000,
+   "extractedFrom": "",
+   "ownerRole": "owner"
+  },
+  "seller": "집주인",
+  "contact": "example-owner3@example.com",
+  "interest": 33,
+  "views": 741,
+  "area": "제주시 애월읍"
+ },
+ {
+  "status": "live",
+  "sample": true,
+  "url": "",
+  "origin": "",
+  "stage": "users",
+  "dealType": "sell",
+  "id": "h04",
+  "type": "home",
+  "createdAt": "2026-11-06T05:00:00.000Z",
+  "photos": [
+   "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200&h=900&fit=crop&q=80&auto=format",
+   "https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=1200&h=900&fit=crop&q=80&auto=format"
+  ],
+  "name": "서귀포 중문 투룸 전세",
+  "tagline": "2년 계약, 주차 1대",
+  "description": "[사진 기준] 거실과 방 두 개, 베란다가 있습니다. 도배와 장판을 올해 새로 했어요.\n\n중문관광단지까지 차로 5분, 초등학교가 걸어서 8분. 계약 전에 건축물대장과 등기부등본을 함께 확인해 드립니다.",
+  "category": "집",
+  "tags": [
+   "중문",
+   "투룸",
+   "전세"
+  ],
+  "priceMin": 0,
+  "priceMax": 0,
+  "home": {
+   "dong": "서귀포시 중문동",
+   "areaM2": 66.1,
+   "floor": "2/4층",
+   "use": "공동주택",
+   "builtYear": 2014,
+   "rooms": "2룸 1욕실",
+   "options": [
+    "에어컨",
+    "붙박이장",
+    "주차"
+   ],
+   "deal": "전세",
+   "deposit": 160000000,
+   "monthly": 0,
+   "extractedFrom": "",
+   "ownerRole": "agent"
+  },
+  "seller": "공인중개사",
+  "contact": "example-agent@example.com",
+  "interest": 15,
+  "views": 364,
+  "area": "서귀포시 중문동"
+ },
+ {
+  "status": "live",
+  "sample": true,
+  "url": "",
+  "origin": "",
+  "stage": "users",
+  "dealType": "sell",
+  "id": "i03",
+  "type": "item",
+  "createdAt": "2026-11-10T06:00:00.000Z",
+  "photos": [
+   "https://images.unsplash.com/photo-1532298229144-0ec0c57515c7?w=1200&h=900&fit=crop&q=80&auto=format"
+  ],
+  "name": "로드 자전거, 1년 탔어요",
+  "tagline": "해안도로 타려고 샀다가 내놓아요",
+  "description": "1년 동안 주말에만 탔습니다. 타이어는 올해 봄에 바꿨고, 변속과 브레이크 모두 잘 됩니다. 프레임에 작은 흠집이 하나 있어요.\n\n이도2동에서 직접 보고 가져가실 분. 헬멧과 라이트를 같이 드려요.",
+  "category": "차량·레저",
+  "tags": [
+   "자전거",
+   "직거래",
+   "이도2동"
+  ],
+  "priceMin": 380000,
+  "priceMax": 420000,
+  "condition": "사용감 있음",
+  "seller": "해안도로 라이더",
+  "contact": "example-bike@example.com",
+  "interest": 18,
+  "views": 402,
+  "area": "제주시 이도2동"
+ },
+ {
+  "status": "live",
+  "sample": true,
+  "url": "",
+  "origin": "",
+  "stage": "users",
+  "dealType": "sell",
+  "id": "i04",
+  "type": "item",
+  "createdAt": "2026-11-09T09:00:00.000Z",
+  "photos": [
+   "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=1200&h=900&fit=crop&q=80&auto=format"
+  ],
+  "name": "3인용 패브릭 소파",
+  "tagline": "이사 가면서 정리해요, 직접 가져가실 분",
+  "description": "2년 썼고 얼룩이나 꺼짐은 없습니다. 커버는 벗겨서 빨 수 있어요. 가로 2m 정도라 승합차나 작은 트럭이 필요합니다.\n\n노형동 1층이라 옮기기 쉬워요. 11월 20일 전까지 가져가실 분.",
+  "category": "가구·인테리어",
+  "tags": [
+   "소파",
+   "이사 정리",
+   "노형동"
+  ],
+  "priceMin": 90000,
+  "priceMax": 120000,
+  "condition": "사용감 있음",
+  "seller": "이사 가는 집",
+  "contact": "example-sofa@example.com",
+  "interest": 13,
+  "views": 287,
+  "area": "제주시 노형동"
+ },
+ {
+  "status": "live",
+  "sample": true,
+  "url": "",
+  "origin": "",
+  "stage": "users",
+  "dealType": "sell",
+  "id": "i05",
+  "type": "item",
+  "createdAt": "2026-11-08T04:00:00.000Z",
+  "photos": [
+   "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&h=900&fit=crop&q=80&auto=format"
+  ],
+  "name": "노트북 13인치, 개발용으로 썼어요",
+  "tagline": "배터리 상태 좋고 충전기 포함",
+  "description": "해커톤과 수업에 쓰던 노트북입니다. 화면과 키보드에 흠집이 없고, 초기화해서 드립니다. 충전기와 파우치 포함.\n\n제주대 근처에서 직접 켜 보고 가져가세요.",
+  "category": "가전·디지털",
+  "tags": [
+   "노트북",
+   "충전기 포함",
+   "아라동"
+  ],
+  "priceMin": 650000,
+  "priceMax": 720000,
+  "condition": "거의 새것",
+  "seller": "졸업반",
+  "contact": "example-laptop@example.com",
+  "interest": 21,
+  "views": 466,
+  "area": "제주시 아라동"
+ },
+ {
+  "status": "live",
+  "sample": true,
+  "url": "https://example.com/sales-board",
+  "origin": "2026 가을 교내 해커톤",
+  "stage": "demo",
+  "dealType": "sell",
+  "id": "s07",
+  "type": "project",
+  "createdAt": "2026-11-10T01:00:00.000Z",
+  "photos": [
+   "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=900&fit=crop&q=80&auto=format"
+  ],
+  "name": "가게 매출 한눈에",
+  "tagline": "카드·배달 매출을 한 화면에 모아 보여 주는 대시보드",
+  "description": "작은 가게 사장님이 카드 매출과 배달 앱 매출 파일을 올리면 하루·주·월 단위로 한 화면에 정리해 줍니다. 해커톤에서 이틀 만에 만든 데모예요.\n\n지금은 파일을 직접 올려야 합니다. 다음 주인이 이어간다면 자동 연동과 세금 신고 알림을 붙일 수 있습니다.",
+  "category": "데이터·분석",
+  "tags": [
+   "소상공인",
+   "대시보드",
+   "React"
+  ],
+  "priceMin": 500000,
+  "priceMax": 1200000,
+  "seller": "데이터 동아리",
+  "contact": "example-seller-7@example.com",
+  "interest": 20,
+  "views": 351,
+  "area": "제주시 연동"
+ },
+ {
+  "status": "live",
+  "sample": true,
+  "url": "https://example.com/local-box",
+  "origin": "지역 문제 해결 해커톤",
+  "stage": "users",
+  "dealType": "sell",
+  "id": "s08",
+  "type": "project",
+  "createdAt": "2026-11-09T06:00:00.000Z",
+  "photos": [
+   "https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=1200&h=900&fit=crop&q=80&auto=format"
+  ],
+  "name": "로컬푸드 꾸러미",
+  "tagline": "동네 농가 채소를 일주일에 한 번 꾸러미로 주문",
+  "description": "농가가 이번 주에 나오는 채소를 올리면, 이웃이 꾸러미로 묶어 주문하는 웹앱입니다. 주문이 모이면 농가에 한 번에 알려 줍니다.\n\n시범으로 농가 3곳과 2주 동안 써 봤고 주문은 40건이었습니다. 운영할 사람이 없어 다음 주인을 찾습니다.",
+  "category": "지역·로컬",
+  "tags": [
+   "농가",
+   "공동구매",
+   "Next.js"
+  ],
+  "priceMin": 700000,
+  "priceMax": 1500000,
+  "seller": "로컬 메이커",
+  "contact": "example-seller-8@example.com",
+  "interest": 16,
+  "views": 298,
+  "area": "제주시 조천읍"
+ },
+ {
+  "status": "live",
+  "sample": true,
+  "url": "https://example.com/code-feedback",
+  "origin": "AI 부트캠프 프로젝트",
+  "stage": "users",
+  "dealType": "sell",
+  "id": "s09",
+  "type": "project",
+  "createdAt": "2026-11-07T07:00:00.000Z",
+  "photos": [
+   "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1200&h=900&fit=crop&q=80&auto=format"
+  ],
+  "name": "코딩 과제 피드백",
+  "tagline": "제출한 코드에 고칠 곳을 줄마다 짚어 주는 도구",
+  "description": "학생이 과제 코드를 올리면 AI가 틀린 곳과 더 나은 방법을 줄마다 적어 줍니다. 정답을 대신 써 주지 않고 힌트만 주도록 만들었어요.\n\n수업 한 반에서 한 학기 동안 썼습니다. 다른 수업이나 학원으로 넓힐 분을 찾습니다.",
+  "category": "교육",
+  "tags": [
+   "코드 리뷰",
+   "수업",
+   "Python"
+  ],
+  "priceMin": 600000,
+  "priceMax": 1400000,
+  "seller": "조교 팀",
+  "contact": "example-seller-9@example.com",
+  "interest": 26,
+  "views": 420,
+  "area": "제주시 아라동"
  }
 ]
