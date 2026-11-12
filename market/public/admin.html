@@ -272,7 +272,7 @@ function renderGuides() {
       <div class="row2"><label>제목<input data-k="title" value="${esc(g.title || '')}"></label><label>주소 이름(영문·숫자·-)<input data-k="id" value="${esc(g.id || '')}"></label></div>
       <label>한 줄 요약<input data-k="summary" value="${esc(g.summary || '')}"></label>
       <div class="row2"><label>분류<input data-k="tag" value="${esc(g.tag || '')}" placeholder="정착 · 쓰레기 · 집 · 교통 · 건강 · 생활"></label><label>업데이트 날짜<input data-k="lastChecked" type="date" value="${esc(g.lastChecked || '')}"></label></div>
-      <div class="row2"><label>기본 업 수<input data-k="votes" type="number" value="${(typeof g !== 'undefined' ? g.votes : p.votes) || 0}"></label><label>표시<select data-k="hidden"><option value="false" ${!g.hidden ? 'selected' : ''}>보이기</option><option value="true" ${g.hidden ? 'selected' : ''}>숨기기</option></select></label></div>
+      <div class="row2"><label>기본 업 수<input data-k="votes" type="number" min="0" value="${(typeof g !== 'undefined' ? g.votes : p.votes) || 0}"></label><label>표시<select data-k="hidden"><option value="false" ${!g.hidden ? 'selected' : ''}>보이기</option><option value="true" ${g.hidden ? 'selected' : ''}>숨기기</option></select></label></div>
       <label>본문<textarea data-k="body" style="min-height:260px;font-family:ui-monospace,monospace;font-size:13px">${esc(g.body || '')}</textarea></label>
       <label>출처 (한 줄에 하나: 이름 | 주소)<textarea data-k="sources" style="min-height:70px">${esc((g.sources || []).map((s) => `${s.label} | ${s.url}`).join('\n'))}</textarea></label>
       <div style="display:flex;gap:8px"><button class="btn sm" type="button" data-up>위로</button><button class="btn sm" type="button" data-down>아래로</button><button class="btn sm" type="button" data-del style="margin-left:auto;color:var(--danger)">삭제</button></div>
@@ -303,7 +303,7 @@ function renderPlaces() {
       <div class="row2"><label>태그 (쉼표로)<input data-k="tags" value="${esc((p.tags || []).join(', '))}"></label><label>주소 이름(영문·숫자·-)<input data-k="id" value="${esc(p.id || '')}"></label></div>
       <div class="row2"><label>출처 이름<input data-k="sourceLabel" value="${esc(p.source?.label || '')}"></label><label>출처 주소<input data-k="sourceUrl" value="${esc(p.source?.url || '')}"></label></div>
       <div class="row2"><span></span><label>표시<select data-k="hidden"><option value="false" ${!p.hidden ? 'selected' : ''}>보이기</option><option value="true" ${p.hidden ? 'selected' : ''}>숨기기</option></select></label></div>
-      <div class="row2"><label>업데이트 날짜<input data-k="lastChecked" type="date" value="${esc(p.lastChecked || '')}"></label><label>추천 수<input data-k="votes" type="number" value="${p.votes || 0}"></label></div>
+      <div class="row2"><label>업데이트 날짜<input data-k="lastChecked" type="date" value="${esc(p.lastChecked || '')}"></label><label>추천 수<input data-k="votes" type="number" min="0" value="${p.votes || 0}"></label></div>
       <div class="row2"><label>위도 (지도 표시)<input data-k="lat" type="number" step="0.0001" value="${p.lat || ''}"></label><label>경도<input data-k="lng" type="number" step="0.0001" value="${p.lng || ''}"></label></div>
       <label>외부 ID (관광 API 연결용)<input data-k="externalId" value="${esc(p.externalId || '')}"></label>
       <div style="display:flex;gap:8px"><button class="btn sm" type="button" data-del style="margin-left:auto;color:var(--danger)">삭제</button></div>

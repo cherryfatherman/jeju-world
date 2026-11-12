@@ -71,7 +71,13 @@ app.get('/uploads/:name', async (req, res) => {
 // 추천 수 = 글에 적힌 기본값 + votes.json의 실시간 증가분. 댓글은 comments.json 한 파일에 key('종류:id')로 모은다.
 const hid = (x) => crypto.createHash('md5').update(String(x)).digest('hex').slice(0, 10);
 const liveVotes = () => load('votes.json', {});
-const voteOf = (V, kind, id, base) => (Number(base) || 0) + (V[`${kind}:${id}`] || 0);
+const voteOf = (V, kind, id, base) => Math.max(0, (Number(base) || 0) + (V[`${kind}:${id}`] || 0));
+// 관리자가 추천 수를 고치면 그 숫자가 그대로 보이게: 바뀐 글은 방문자가 누른 증가분을 0으로 되돌린다
+function applyAdminVotes(kind, before, after) {
+  const old = Object.fromEntries((before || []).map((x) => [x.id, Number(x.votes) || 0])); const V = liveVotes(); let changed = false;
+  for (const x of after) { x.votes = Math.max(0, Math.round(Number(x.votes) || 0)); if (x.id in old && old[x.id] !== x.votes && V[`${kind}:${x.id}`]) { delete V[`${kind}:${x.id}`]; changed = true; } }
+  if (changed) save('votes.json', V);
+}
 const cKey = (c) => c.key || (c.projectId ? `project:${c.projectId}` : '');
 function commentCounts() { const m = {}; for (const c of load('comments.json', [])) { if (c.hidden) continue; const k = cKey(c); m[k] = (m[k] || 0) + 1; } return m; }
 const hackItems = () => (load('hackathons.json', { items: [] }).items || []).map((h) => ({ ...h, id: hid(h.url) }));
@@ -312,6 +318,7 @@ app.put('/api/admin/places', adminOnly, (req, res) => {
     image: isImg(p.image) ? p.image : '', source: { label: clean(p.source?.label, 60), url: isUrl(p.source?.url || '') ? p.source.url : '' },
     hidden: p.hidden === true, lastChecked: clean(p.lastChecked, 10), votes: Number(p.votes) || 0, externalId: clean(p.externalId, 40), lat: Number(p.lat) || null, lng: Number(p.lng) || null,
   })).filter((p) => p.name && !seen.has(p.id) && seen.add(p.id));
+  applyAdminVotes('place', load('places.json', []), cleaned);
   save('places.json', cleaned); res.json({ ok: true, count: cleaned.length });
 });
 
@@ -422,6 +429,7 @@ app.put('/api/admin/guides', adminOnly, (req, res) => {
     body: clean(g.body, 20000),
     sources: (Array.isArray(g.sources) ? g.sources : []).map((s) => ({ label: clean(s.label, 60), url: clean(s.url, 300) })).filter((s) => s.label && isUrl(s.url)).slice(0, 10),
   })).filter((g) => g.title && !seen.has(g.id) && seen.add(g.id));
+  applyAdminVotes('guide', load('guides.json', []), cleaned);
   save('guides.json', cleaned);
   res.json({ ok: true, count: cleaned.length });
 });
@@ -558,6 +566,7 @@ app.put('/api/admin/posts/:kind', adminOnly, (req, res) => {
     else Object.assign(o, { date: clean(p.date, 10), points: (Array.isArray(p.points) ? p.points : String(p.points || '').split('\n')).map((x) => clean(x, 60)).filter(Boolean).slice(0, 4) });
     return o;
   }).filter((p) => p.title && !seen.has(p.id) && seen.add(p.id));
+  applyAdminVotes(kind, load(file, []), cleaned);
   save(file, cleaned); res.json({ ok: true, count: cleaned.length });
 });
 
