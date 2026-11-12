@@ -3,7 +3,7 @@
 const path = require('path');
 const fs = require('fs');
 const express = require('express');
-const { generateListing, generateHome, generateItem, answerWaste, generateThreadsPosts, aiStatus } = require('./lib/ai');
+const { generateListing, generateHome, generateItem, answerWaste, generateThreadsPosts, aiStatus, pageImage } = require('./lib/ai');
 const { fetchHackathons } = require('./lib/hackathons');
 const crypto = require('crypto');
 const agents = require('./lib/agents');
@@ -151,8 +151,10 @@ app.get('/api/projects', (req, res) => {
   if (TYPES.includes(req.query.type)) list = list.filter((p) => (p.type || 'project') === req.query.type);
   res.json(list.map(pubP()));
 });
-app.get('/api/projects/:id', (req, res) => {
-  const p = load('projects.json', []).find((x) => x.id === req.params.id && x.status === 'live');
+app.get('/api/projects/:id', async (req, res) => {
+  const find = () => load('projects.json', []).find((x) => x.id === req.params.id && x.status === 'live');
+  let p = find();
+  if (!p && store.durable) { await store.refresh(); p = find(); } // 다른 서버가 방금 저장한 글일 수 있다: 저장소를 다시 맞추고 한 번 더 찾는다
   if (!p) return res.status(404).json({ error: 'not found' });
   res.json(publicProject(p));
 });
@@ -186,7 +188,7 @@ app.get('/api/admin/storage', adminOnly, (req, res) => res.json(store.status()))
 app.get('/api/admin/ai-status', adminOnly, async (req, res) => res.json(await aiStatus(req.query.test === '1')));
 
 // ---- 판매 등록 (2단계: 확인 후 게시) ----
-app.post('/api/projects', limit(5), (req, res) => {
+app.post('/api/projects', limit(5), async (req, res) => {
   const b = req.body || {};
   const type = TYPES.includes(b.type) ? b.type : 'project';
   const url = clean(b.url, 300);
@@ -195,12 +197,14 @@ app.post('/api/projects', limit(5), (req, res) => {
   if (type === 'home' && !b.ownerConfirmed) return res.status(400).json({ error: '집은 집주인 본인 또는 공인중개사만 올릴 수 있어요. 확인란에 체크해 주세요.' });
   const contact = clean(b.contact, 200);
   if (!contact) return res.status(400).json({ error: '연락처(이메일 또는 오픈채팅 링크)가 필요해요.' });
+  // 프로젝트인데 사진이 없으면, 서비스 주소의 대표 이미지를 가져와 넣는다
+  let autoPhoto = ''; if (type === 'project' && url && !(Array.isArray(b.photos) && b.photos.some(isImg))) { try { autoPhoto = await pageImage(url); } catch {} }
   const p = {
     id: newId(),
     type,
     createdAt: new Date().toISOString(),
     status: 'live',
-    photos: (Array.isArray(b.photos) ? b.photos : []).filter(isImg).slice(0, 6).map((s) => (isDataImg(s) ? saveUpload(s) || s : s)),
+    photos: (Array.isArray(b.photos) && b.photos.some(isImg) ? b.photos : autoPhoto ? [autoPhoto] : []).filter(isImg).slice(0, 6).map((s) => (isDataImg(s) ? saveUpload(s) || s : s)),
     name: clean(b.name, 40) || (type === 'home' ? '이름 없는 집' : type === 'item' ? '이름 없는 물건' : '이름 없는 프로젝트'),
     tagline: clean(b.tagline, 80),
     description: clean(b.description, 1500),

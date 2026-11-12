@@ -176,6 +176,7 @@ $('#step1').onsubmit = async (e) => {
     f.tags.value = (d.tags || []).join(', ');
     setStep(2); window.scrollTo({ top: 0, behavior: 'smooth' });
     await typeInto(f.name, d.name || ''); await typeInto(f.tagline, d.tagline || ''); typeInto(f.description, d.description || '', 4);
+    if (type === 'project' && d.image && !photos.project.length) photos.project.push(d.image); // 사진을 안 넣었으면 페이지의 대표 이미지를 쓴다
     thumbs($('#previewThumbs'), photos[type], false);
     if (type === 'home') {
       f.dong.value = d.dong || ''; f.use.value = d.use || ''; f.areaM2.value = d.areaM2 || ''; $('#areaM2').dispatchEvent(new Event('input'));

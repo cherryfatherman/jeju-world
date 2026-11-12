@@ -48,7 +48,7 @@ async function kv(cmds) {
 const seen = {}; let lastSync = 0, pending = [], lastError = '';
 // 저장소에 있는 최신 내용을 임시 폴더로 가져온다 (다른 서버가 쓴 것도 여기서 맞춰진다)
 async function sync(force) {
-  if (!durable || (!force && Date.now() - lastSync < 10000)) return;
+  if (!durable || (!force && Date.now() - lastSync < 4000)) return;
   try {
     const vals = await kv([['MGET', ...NAMES.map(key)]]).then((r) => r[0] || []);
     NAMES.forEach((name, i) => { const v = vals[i]; if (typeof v === 'string' && v !== seen[name]) { fs.writeFileSync(fileOf(name), v); seen[name] = v; } });
@@ -80,4 +80,4 @@ function middleware(req, res, next) {
 }
 const status = () => ({ serverless: SERVERLESS, durable, lastSync: lastSync ? new Date(lastSync).toISOString() : null, error: lastError });
 
-module.exports = { dir, configFile, uploads, put, putUpload, getUpload, middleware, status, SERVERLESS, durable };
+module.exports = { dir, configFile, uploads, put, putUpload, getUpload, middleware, status, refresh: () => sync(true), SERVERLESS, durable };

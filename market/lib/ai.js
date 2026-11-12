@@ -72,11 +72,14 @@ async function peek(url) {
     const title = html.match(/<title[^>]*>([^<]*)<\/title>/i)?.[1]?.trim() || '';
     const desc = html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']*)/i)?.[1] || html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']*)/i)?.[1] || '';
     const text = html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 2500);
-    return { title, desc, text };
-  } catch { return { title: '', desc: '', text: '' }; }
+    // 페이지가 내세우는 대표 이미지(og:image). https 주소일 때만 쓴다
+    const metaImg = html.match(/<meta[^>]+(?:property|name)=["'](?:og:image(?::secure_url)?|twitter:image)["'][^>]+content=["']([^"']+)/i)?.[1] || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["'](?:og:image|twitter:image)["']/i)?.[1] || '';
+    let image = ''; try { const u = new URL(metaImg.replace(/&amp;/g, '&'), r.url || url); if (metaImg && u.protocol === 'https:' && u.href.length <= 300 && !/[\s"'<>]/.test(u.href)) image = u.href; } catch {}
+    return { title, desc, text, image };
+  } catch { return { title: '', desc: '', text: '', image: '' }; }
 }
 async function generateListing({ url, hint, photos = [] }) {
-  const page = url ? await peek(url) : { title: '', desc: '', text: '' };
+  const page = url ? await peek(url) : { title: '', desc: '', text: '', image: '' };
   const prompt = `당신은 "섬업"(AI로 만든 작은 서비스와 해커톤 프로젝트를 다음 주인에게 넘기는 장터)의 등록 도우미입니다.
 아래 정보로 판매 등록 글을 한국어로 작성하세요. 과장하지 말고, 모르는 것은 지어내지 마세요.
 [서비스 주소] ${url || '(없음)'}
@@ -87,8 +90,8 @@ async function generateListing({ url, hint, photos = [] }) {
 [판매자 메모] ${hint || '(없음)'}
 JSON으로만 답하세요:
 {"name":"이름(20자 이내)","tagline":"한 줄 소개(40자 이내)","description":"소개글 300~500자, 문단 2~3개(문제·사용자·단계·다음 가능성)","category":"${CATEGORIES.join(' | ')} 중 하나","tags":["태그 3~5개"],"priceMin":숫자(원),"priceMax":숫자(원),"priceReason":"가격 근거 한 문장","nextSteps":["다음 주인이 할 일 3가지"]}`;
-  try { return { ...normalize(await askJSON(prompt, photos)), ai: true }; }
-  catch { return { ...fallbackListing(url || 'https://', page, hint), ai: false, note: '지금은 AI 연결이 어려워 기본 초안을 만들었어요. 내용을 직접 다듬어 주세요.' }; }
+  try { return { ...normalize(await askJSON(prompt, photos)), image: page.image || '', ai: true }; }
+  catch { return { ...fallbackListing(url || 'https://', page, hint), image: page.image || '', ai: false, note: '지금은 AI 연결이 어려워 기본 초안을 만들었어요. 내용을 직접 다듬어 주세요.' }; }
 }
 function normalize(o) {
   return {
@@ -238,4 +241,5 @@ JSON으로만: {"posts":["글1","글2","글3"]}`;
   }
 }
 
-module.exports = { askJSON, aiStatus, generateListing, generateHome, generateItem, answerWaste, localWaste, generateThreadsPosts, CATEGORIES, ITEM_CATEGORIES };
+const pageImage = async (url) => (await peek(url)).image || '';
+module.exports = { pageImage, askJSON, aiStatus, generateListing, generateHome, generateItem, answerWaste, localWaste, generateThreadsPosts, CATEGORIES, ITEM_CATEGORIES };

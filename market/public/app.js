@@ -278,7 +278,7 @@ async function mountShell({ active, primary, sub } = {}) {
   for (const [k, v] of [['og:title', document.title], ['og:description', $('meta[name=description]')?.content || S.slogan], ['og:type', 'website'], ['og:site_name', S.name]]) { if (!$(`meta[property="${k}"]`)) { const m = document.createElement('meta'); m.setAttribute('property', k); m.content = v; document.head.append(m); } }
   mountAds(CONFIG.ads);
   const footer = document.createElement('footer');
-  footer.innerHTML = `<div class="wrap"><div><b>${esc(S.name)}</b>${S.sub ? ` <span class="small">${esc(S.sub)}</span>` : ''} · ${esc(S.slogan)}<br><span class="small">${esc(CONFIG.footer?.note || '')}</span></div><div class="links"><a href="./about.html">운영 원칙</a><a href="${esc(S.threads)}" target="_blank" rel="noopener">스레드</a><a href="${esc(S.openchat)}">오픈채팅</a><a href="./admin.html">관리자</a></div></div>`;
+  footer.innerHTML = `<div class="wrap"><div><b>${esc(S.name)}</b>${S.sub ? ` <span class="small">${esc(S.sub)}</span>` : ''} · ${esc(S.slogan)}<br><span class="small">${esc(CONFIG.footer?.note || '')}</span></div><div class="links"><a href="./about.html">운영 원칙</a><a href="./admin.html">관리자</a></div></div>`;
   document.body.append(footer);
   applyTexts(); mountEditor();
   return CONFIG;
