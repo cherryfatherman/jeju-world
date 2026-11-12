@@ -94,7 +94,7 @@ const FIND = {
   insight: (id) => load('insights.json', []).find((x) => x.id === id && x.hidden !== true),
   winner: (id) => WINNERS.find((w) => w.id === id),
   hackathon: (id) => hackItems().find((h) => h.id === id),
-  tour: (id) => jejuits.peek('tour').find((x) => x.id === id), // 교통정보센터 관광지·카페·맛집
+  tour: (id) => jejuits.peek('tour').find((x) => x.id === id) || tourapi.peek().find((x) => x.id === id), // 교통정보센터 + 한국관광공사 관광지·카페·맛집
 };
 const baseVotes = (kind, item) => (kind === 'project' ? item.interest : kind === 'winner' || kind === 'hackathon' || kind === 'tour' ? 0 : item.votes);
 const titleOf = (item) => item.name || item.title || '';
@@ -438,7 +438,7 @@ async function fetchPapers() {
   got.forEach((g) => { if (g.status === 'fulfilled') out.push(...g.value); });
   return out;
 }
-const agentCtx = () => ({ load, save, feedState, titleOf, fixMissingPhotos, winners: () => WINNERS, news: fetchNews, papers: fetchPapers, its: () => jejuits.summary(), env: { ai: !!process.env.GEMINI_API_KEY, durable: store.durable || !store.SERVERLESS }, feeds: () => Object.entries(FEEDS).map(([id, f]) => ({ id, ready: !f.needs || !!process.env[f.needs], ok: feedState(id).ok !== false })), find: (kind, id) => FIND[kind]?.(id), catalog: (kind) => (CATALOG[kind] ? CATALOG[kind]() : []) });
+const agentCtx = () => ({ load, save, feedState, titleOf, fixMissingPhotos, winners: () => WINNERS, news: fetchNews, papers: fetchPapers, travel: async () => (await travelItems()).items, its: () => jejuits.summary(), env: { ai: !!process.env.GEMINI_API_KEY, durable: store.durable || !store.SERVERLESS }, feeds: () => Object.entries(FEEDS).map(([id, f]) => ({ id, ready: !f.needs || !!process.env[f.needs], ok: feedState(id).ok !== false })), find: (kind, id) => FIND[kind]?.(id), catalog: (kind) => (CATALOG[kind] ? CATALOG[kind]() : []) });
 function markFeed(id, ok, note) { const s = load('feeds.json', {}); s[id] = { ...(s[id] || {}), lastRun: new Date().toISOString(), ok, note: note || '' }; save('feeds.json', s); }
 async function runFeed(id) {
   const f = FEEDS[id]; if (!f) return;
@@ -526,13 +526,22 @@ app.put('/api/admin/guides', adminOnly, (req, res) => {
 
 // ---- 제주 생활: 분리배출 ----
 // 제주 교통정보센터: 요청이 오면 받아오고 10분 동안 기억한다. 승인키는 응답에 넣지 않는다.
+// 여행 목록 한 벌: 교통정보센터 관광지 + 한국관광공사 맛집·카페. 이름이 같은 곳은 한 번만
+const tourapi = require('./lib/tourapi');
+async function travelItems() {
+  const [a, b] = await Promise.all([jejuits.load('tour').catch(() => ({ items: [] })), tourapi.load().catch(() => ({ items: [] }))]);
+  const seen = new Set(); const norm = (n) => String(n || '').replace(/\s+/g, '');
+  const items = [...(a.items || []).map((x) => ({ ...x, src: '제주특별자치도 교통정보센터' })), ...(b.items || [])].filter((x) => { const k = norm(x.name) || x.id; if (seen.has(k)) return false; seen.add(k); return true; });
+  return { items, its: a, kto: b };
+}
 app.get('/api/jeju/its/:kind', limit(60), async (req, res) => {
   if (!jejuits.KINDS[req.params.kind]) return res.status(404).json({ error: '없는 종류예요.' });
-  const v = await jejuits.load(req.params.kind); const lim = req.query.all === '1' ? 3000 : req.params.kind === 'traffic' ? 30 : 80;
-  if (req.params.kind !== 'tour') return res.json(jejuits.publicView(v, lim));
+  const lim = req.query.all === '1' ? 3000 : req.params.kind === 'traffic' ? 30 : 80;
+  if (req.params.kind !== 'tour') return res.json(jejuits.publicView(await jejuits.load(req.params.kind), lim));
   // 관광지·카페·맛집: 추천 수를 붙이고, 추천 많은 곳이 위로 오게
-  const V = liveVotes(); const items = (v.items || []).map((x, i) => ({ ...x, votes: V[`tour:${x.id}`] || 0, _i: i })).sort((a, b) => b.votes - a.votes || a._i - b._i).map(({ _i, ...x }) => x);
-  res.json(jejuits.publicView({ ...v, items }, lim));
+  const t = await travelItems(); const V = liveVotes();
+  const items = t.items.map((x, i) => ({ ...x, votes: V[`tour:${x.id}`] || 0, _i: i })).sort((x, y) => y.votes - x.votes || x._i - y._i).map(({ _i, ...x }) => x);
+  res.json({ ok: items.length > 0, title: '관광지', updatedAt: t.its.updatedAt || t.kto.updatedAt || new Date().toISOString(), source: [t.its.ok ? '제주특별자치도 교통정보센터' : '', t.kto.ok ? '한국관광공사' : ''].filter(Boolean).join(' · '), count: items.length, items: items.slice(0, lim) });
 });
 // 관리자 점검: 실제로 받은 필드 이름과 첫 줄을 본다 (형식이 바뀌었을 때 맞추기 위해)
 app.get('/api/admin/its/:kind', adminOnly, async (req, res) => {
@@ -607,7 +616,7 @@ app.get('/api/winners', (req, res) => { const V = liveVotes(); res.json(WINNERS.
 
 // ---- 추천(업)·댓글 API (모든 종류 공통) ----
 app.post('/api/up/:kind/:id', limit(40), async (req, res) => {
-  if (req.params.kind === 'tour') { try { await jejuits.load('tour'); } catch {} } // 막 켜진 서버라면 목록부터 받는다
+  if (req.params.kind === 'tour') { try { await travelItems(); } catch {} } // 막 켜진 서버라면 목록부터 받는다
   const v = upVote(req.params.kind, req.params.id, req.body?.undo === true);
   v === null ? res.status(404).json({ error: '글을 찾을 수 없어요.' }) : res.json({ votes: v });
 });

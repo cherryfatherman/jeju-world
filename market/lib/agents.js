@@ -281,6 +281,15 @@ async function runShift(ctx) {
   let fixed = []; try { fixed = ctx.fixMissingPhotos ? await ctx.fixMissingPhotos() : []; } catch {}
   const dealLead = hq.agents.find((a) => a.pillar === 'deal' && a.rank === '부서장') || hq.agents.find((a) => a.pillar === 'deal');
   if (fixed.length && dealLead) msgs.push({ from: dealLead.id, to: 'halla', text: `사진이 없던 글 ${fixed.length}건에 서비스 페이지의 대표 이미지를 넣었어요: ${fixed.map((t) => cut(t, 16)).join(', ')}`, kind: 'report' });
+  // 생활 줄기: 여행 목록(공공 자료)에서 사진이 있는 곳을 골라 '장소'로 하나씩 올린다. 근무마다 3곳, 맛집 → 카페 → 관광지 순서. 지어내지 않고 이름·주소·전화·사진만 옮긴다
+  try { const lifeLead0 = hq.agents.find((a) => a.pillar === 'life' && a.rank === '부서장') || hq.agents.find((a) => a.pillar === 'life');
+    if (lifeLead0 && ctx.travel) { const places = load('places.json', []); const pool = await ctx.travel(); const nm = (x) => String(x || '').replace(/\s+/g, '');
+      const have2 = new Set(places.map((p) => p.externalId).filter(Boolean)); const names = new Set(places.map((p) => nm(p.name))); const added = [];
+      if (places.filter((p) => p.auto).length < 400) for (const cat of ['food', 'cafe', 'spot']) for (const x of pool) { if (added.length >= 3) break; if (x.cat !== cat || !x.image || !x.name || !x.addr || have2.has('tour:' + x.id) || names.has(nm(x.name))) continue;
+        const m = /(제주시|서귀포시)\s*([가-힣0-9]+(?:읍|면|동))?/.exec(x.addr) || []; const area = [m[1], m[2]].filter(Boolean).join(' ');
+        places.push({ id: 't-' + x.id, type: cat, name: cut(x.name, 60), area, summary: cut(`${area || '제주'}에 있는 ${{ food: '맛집', cafe: '카페', spot: '관광지' }[cat]}이에요.${x.desc ? ' ' + x.desc : ''}`, 160), tags: [], image: x.image, address: cut(x.addr, 120), tel: cut(x.tel, 30), tip: '', source: x.src === '한국관광공사' ? { label: '한국관광공사 관광정보', url: 'https://korean.visitkorea.or.kr/' } : { label: '제주특별자치도 교통정보센터', url: 'https://www.jejuits.go.kr/' }, lastChecked: today, votes: 0, externalId: 'tour:' + x.id, hidden: false, auto: true, addedBy: `${lifeLead0.dept || '생활부'} AI ${lifeLead0.name}`, ...(x.lat && x.lng ? { lat: x.lat, lng: x.lng } : {}) });
+        have2.add('tour:' + x.id); names.add(nm(x.name)); added.push(x.name); }
+      if (added.length) { save('places.json', places); msgs.push({ from: lifeLead0.id, to: 'halla', text: `여행 목록에 새 장소 ${added.length}곳을 올렸어요: ${added.map((t) => cut(t, 16)).join(', ')}`, kind: 'report' }); hq.placesAdded = (hq.placesAdded || 0) + added.length; } } } catch {}
   // 생활 줄기: 교통정보센터 자료가 바뀌었으면 알린다
   try { const now = ctx.its ? await ctx.its() : null; const lifeLead = hq.agents.find((a) => a.pillar === 'life' && a.rank === '부서장') || hq.agents.find((a) => a.pillar === 'life');
     if (now && lifeLead && (now.road !== null || now.ev !== null || now.tour !== null)) { const before = hq.itsSeen || {}; const parts = [];
