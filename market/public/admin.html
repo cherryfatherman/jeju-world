@@ -47,7 +47,7 @@
   <div id="panel" hidden>
     <p style="margin:0 0 12px"><a class="btn primary" href="./hq.html">본부 3D 대시보드 열기 ↗</a></p>
     <div class="tabs">
-      <button data-tab="dash" class="on">대시보드</button><button data-tab="site">기본·배너</button><button data-tab="ticker">공지 띠</button><button data-tab="carousel">배너 이미지</button><button data-tab="ads">좌우 광고</button><button data-tab="program">창업정보</button><button data-tab="insight">인사이트</button><button data-tab="talk">이야기 관리</button><button data-tab="guides">생활 가이드</button><button data-tab="places">여행 장소</button><button data-tab="feeds">자동 갱신</button><button data-tab="jeju">제주 생활</button><button data-tab="nav">메뉴·도구 상자</button><button data-tab="projects">프로젝트 관리</button><button data-tab="inbox">받은 편지함</button><button data-tab="vault">자료 보관함</button><button data-tab="threads">스레드 글</button>
+      <button data-tab="dash" class="on">대시보드</button><button data-tab="site">기본·배너</button><button data-tab="ticker">공지 띠</button><button data-tab="carousel">배너 이미지</button><button data-tab="ads">좌우 광고</button><button data-tab="program">창업정보</button><button data-tab="insight">인사이트</button><button data-tab="talk">이야기 관리</button><button data-tab="guides">생활 가이드</button><button data-tab="places">여행 장소</button><button data-tab="feeds">자동 갱신</button><button data-tab="jeju">제주 생활</button><button data-tab="nav">메뉴·도구 상자</button><button data-tab="projects">프로젝트 관리</button><button data-tab="inbox">받은 편지함</button><button data-tab="vault">자료 보관함</button><button data-tab="letter">뉴스레터</button><button data-tab="threads">스레드 글</button>
     </div>
 
     <!-- 대시보드 -->
@@ -187,6 +187,16 @@
     <div class="pane" id="pane-projects"><div class="form"><div id="projList"></div></div></div>
 
     <!-- 받은 편지함 -->
+    <!-- 뉴스레터 -->
+    <div class="pane" id="pane-letter"><div class="form">
+      <p class="help">매일 아침 사이트에 올라온 글로 「섬업 레터」를 엮어 인사이트에 올리고, 아래 주소로 보내요. 차례는 항상 같아요: <span id="ltSpec"></span>. 담을 글이 없는 칸은 빠지고, 모든 항목에 출처가 붙어요.</p>
+      <div id="ltState" class="vwhere"></div>
+      <label>받는 사람 (한 줄에 주소 하나, 90명까지)<textarea id="ltSubs" rows="6" placeholder="name@example.com"></textarea></label>
+      <label>운영자 주소 (AI 직원 근무 보고를 따로 받아요)<input id="ltOp" type="email" placeholder="me@example.com"></label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><label>보내는 시각 (한국 시간)<select id="ltHour"><option value="6">아침 6시</option><option value="7">아침 7시</option><option value="8">아침 8시</option><option value="9">아침 9시</option></select></label><label>자동 발송<select id="ltOn"><option value="true">켜기</option><option value="false">끄기</option></select></label></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><button class="btn primary" id="ltSave" type="button">저장</button><button class="btn" id="ltMake" type="button">지금 엮어서 미리 보기</button><button class="btn" id="ltSend" type="button">지금 엮어서 보내기</button><a class="btn" id="ltView" href="/api/letter/view" target="_blank" rel="noopener">최근 레터 열기</a></div>
+    </div></div>
+
     <!-- 자료 보관함: 저장된 자료를 표로 본다 -->
     <div class="pane" id="pane-vault"><div class="form">
       <p class="help">사이트의 모든 자료가 여기 한곳에 모여요. 글·이야기·추천·문의가 들어오면 바로 아래 표에 한 줄씩 쌓여요. 표를 누르면 내용을 보고, 엑셀 파일(CSV)로 내려받을 수 있어요.</p>
@@ -222,6 +232,17 @@ async function enter() {
   try { await api('/api/admin/inbox'); } catch { sessionStorage.removeItem('adminpw'); return; }
   $('#login').hidden = true; $('#panel').hidden = false; fill(); loadProjects(); loadInbox();
 }
+/* 뉴스레터 */
+async function loadLetter() {
+  const d = await api('/api/admin/letter'); $('#ltSpec').textContent = d.spec.map((x) => x.label).join(' → ');
+  $('#ltSubs').value = d.subscribers.join('\n'); $('#ltOp').value = d.operator; $('#ltHour').value = String(d.hour); $('#ltOn').value = String(d.enabled);
+  const r = d.lastResult; $('#ltState').innerHTML = `<span class="dot ${d.mailReady ? '' : 'off'}"></span><b>메일 보내기</b><span>${d.mailReady ? '연결됨' : '메일 키(RESEND_API_KEY)가 없어 웹에만 올려요'}</span><small>${d.lastSent ? '마지막 발송 ' + esc(d.lastSent) : '아직 보낸 적 없어요'}${r ? ` · 보냄 ${r.sent} · 실패 ${r.failed}${r.note ? ' · ' + esc(r.note) : ''}` : ''} · 받는 사람 ${d.subscribers.length}명</small>`;
+}
+const saveLetter = () => api('/api/admin/letter', { operator: $('#ltOp').value, subscribers: $('#ltSubs').value.split(/[\n,; ]+/).filter(Boolean), hour: Number($('#ltHour').value), enabled: $('#ltOn').value === 'true' }, 'PUT');
+$('#ltSave').onclick = async () => { try { const r = await saveLetter(); toast(`저장했어요 · 받는 사람 ${r.subscribers}명`); loadLetter(); } catch (e) { toast(e.message); } };
+const runLetter = async (send, b) => { b.disabled = true; try { await saveLetter(); const r = await api('/api/admin/letter/run', { send }); toast(r.skipped ? (r.note || '담을 글이 없어요.') : send ? `보냄 ${r.sent} · 실패 ${r.failed}${r.note ? ' · ' + r.note : ''}` : `엮었어요 · ${r.sections}칸`); if (!r.skipped && !send) window.open('/api/letter/view', '_blank'); loadLetter(); } catch (e) { toast(e.message); } b.disabled = false; };
+$('#ltMake').onclick = (e) => runLetter(false, e.currentTarget);
+$('#ltSend').onclick = (e) => { if (confirm('등록된 주소로 지금 보낼까요?')) runLetter(true, e.currentTarget); };
 /* 자료 보관함 */
 async function loadVault() {
   const d = await api('/api/admin/vault'); const ok = d.storage.durable || !d.storage.serverless;
@@ -234,7 +255,7 @@ async function openVault(name) {
     (d.rows.length ? `<div class="vtable"><table><thead><tr><th>#</th>${d.cols.map((c) => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${d.rows.map((r, i) => `<tr><td class="n">${d.total - i}</td>${d.cols.map((c) => `<td>${esc(r[c])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : '<p class="help">아직 쌓인 자료가 없어요.</p>');
   $('#vaultCsv').onclick = async () => { const r = await fetch('/api/admin/vault/' + name + '?format=csv', { headers: { 'x-admin-password': sessionStorage.getItem('adminpw') || '' } }); if (!r.ok) return toast('내려받지 못했어요.'); const a = document.createElement('a'); a.href = URL.createObjectURL(await r.blob()); a.download = `seomup-${name.replace('.json', '')}.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 3000); };
 }
-$$('.tabs button').forEach((b) => b.onclick = () => { if (b.dataset.tab === 'vault') loadVault().catch((e) => toast(e.message)); $$('.tabs button').forEach((x) => x.classList.toggle('on', x === b)); $$('.pane').forEach((p) => p.classList.toggle('on', p.id === 'pane-' + b.dataset.tab)); });
+$$('.tabs button').forEach((b) => b.onclick = () => { if (b.dataset.tab === 'vault') loadVault().catch((e) => toast(e.message)); if (b.dataset.tab === 'letter') loadLetter().catch((e) => toast(e.message)); $$('.tabs button').forEach((x) => x.classList.toggle('on', x === b)); $$('.pane').forEach((p) => p.classList.toggle('on', p.id === 'pane-' + b.dataset.tab)); });
 
 function fill() {
   const S = cfg.site, B = cfg.banner, T = cfg.ticker || {}, C = cfg.colors || {};

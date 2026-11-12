@@ -39,3 +39,4 @@
 받아온 글에는 `auto: true`와 `externalId`를 넣는다. 운영자가 숨긴 글은 다음 갱신에도 숨김이 유지된다.
 
 | 네이버 검색 API (블로그 글 수) | developers.naver.com | 섬업 점수(1~1000) 계산 (`lib/buzz.js`) | 코드 연결됨. `NAVER_SEARCH_ID`, `NAVER_SEARCH_SECRET` 필요. 실제 응답으로는 아직 확인 못 함 |
+| Resend (이메일 발송) | resend.com | 섬업 레터와 운영자 근무 보고 발송 (`lib/letter.js`) | 코드 연결됨. `RESEND_API_KEY`, `LETTER_FROM` 필요. 실제 발송은 아직 확인 못 함 |

@@ -390,6 +390,7 @@ const FEEDS = {
   tour: { name: '관광지·카페·맛집 (관광 API)', every: 86400e3, needs: 'TOUR_API_KEY', run: () => refreshTourPlaces() },
   kstartup: { name: '창업 지원사업 공고 (K-Startup, 공공데이터포털 15125364)', every: 86400e3, needs: 'DATA_GO_KR_KEY', run: () => refreshKStartup() },
   buzz: { name: '섬업 점수 재기 (네이버 블로그 글 수)', every: 3600e3, needs: 'NAVER_SEARCH_ID', run: () => refreshBuzz() },
+  letter: { name: '섬업 레터 (매일 아침 뉴스레터)', every: 3600e3, run: () => letter.run({ ...agentCtx(), hackathons: hackItems }) },
   agents: { name: '본부 회의 (AI 직원)', every: 86400e3, run: () => agents.runCycle(agentCtx()) },
   shift: { name: 'AI 직원 근무 (답글·이야기·보고)', every: 6 * 3600e3, run: () => agents.runShift(agentCtx()) },
 };
@@ -415,7 +416,7 @@ async function fixMissingPhotos() {
 // 기사 클리핑용: 구글 뉴스에서 주제별 기사 제목과 원문 주소만 가져온다 (본문은 가져오지 않는다)
 const NEWS_TOPICS = [
   ['제주 창업', '제주 창업 OR 제주 스타트업'], ['해커톤', '해커톤 모집 OR 해커톤 참가 OR 해커톤 수상'], ['지원사업', '창업 지원사업 모집 OR 예비창업패키지 OR 초기창업패키지'],
-  ['스타트업 투자', '스타트업 투자 유치'], ['AI 창업', 'AI 스타트업 OR 인공지능 창업'], ['제주 관광', '제주 관광 스타트업 OR 제주 워케이션'], ['보고서', '스타트업 보고서 OR 창업 실태조사 OR 벤처 통계'],
+  ['스타트업 투자', '스타트업 투자 유치'], ['AI 창업', 'AI 스타트업 OR 인공지능 창업'], ['AI 동향', '생성형 AI OR AI 에이전트 OR 인공지능 모델 출시'], ['제주 관광', '제주 관광 스타트업 OR 제주 워케이션'], ['보고서', '스타트업 보고서 OR 창업 실태조사 OR 벤처 통계'],
 ];
 async function fetchNewsOne([topic, q]) {
   const r = await fetch('https://news.google.com/rss/search?q=' + encodeURIComponent(q + ' when:14d') + '&hl=ko&gl=KR&ceid=KR:ko', { signal: AbortSignal.timeout(7000) }); if (!r.ok) return [];
@@ -430,7 +431,7 @@ async function fetchNews() {
   return out;
 }
 // 논문 클리핑용: Crossref(학술 논문 공개 목록)에서 제목·학술지·날짜·DOI 주소만 가져온다. 키가 필요 없다
-const PAPER_TOPICS = ['Jeju tourism startup', 'hackathon innovation', 'startup ecosystem Korea', 'island entrepreneurship', 'regional entrepreneurship policy', 'generative AI entrepreneurship', 'digital nomad workation', 'social venture local community'];
+const PAPER_TOPICS = ['Jeju tourism startup', 'hackathon innovation', 'startup ecosystem Korea', 'island entrepreneurship', 'regional entrepreneurship policy', 'generative AI entrepreneurship', 'large language model agents', 'AI coding assistant productivity', 'generative AI small business adoption', 'digital nomad workation', 'social venture local community'];
 async function fetchPapers() {
   const base = process.env.CROSSREF_BASE || 'https://api.crossref.org'; const n = Math.floor(Date.now() / (6 * 3600e3)); const picks = [PAPER_TOPICS[n % PAPER_TOPICS.length], PAPER_TOPICS[(n + 3) % PAPER_TOPICS.length]]; const out = [];
   const got = await Promise.allSettled(picks.map(async (q) => { const r = await fetch(`${base}/works?query.bibliographic=${encodeURIComponent(q)}&rows=12&filter=from-pub-date:2023-01-01,type:journal-article&select=DOI,title,container-title,published,author`, { headers: { 'User-Agent': 'seomup-clipper/1.0' }, signal: AbortSignal.timeout(7000) }); if (!r.ok) return [];
@@ -536,12 +537,28 @@ app.put('/api/admin/guides', adminOnly, (req, res) => {
 // 여행 목록 한 벌: 교통정보센터 관광지 + 한국관광공사 맛집·카페. 이름이 같은 곳은 한 번만
 const tourapi = require('./lib/tourapi');
 const buzz = require('./lib/buzz');
+const letter = require('./lib/letter');
 async function travelItems() {
   const [a, b] = await Promise.all([jejuits.load('tour').catch(() => ({ items: [] })), tourapi.load().catch(() => ({ items: [] }))]);
   const seen = new Set(); const norm = (n) => String(n || '').replace(/\s+/g, '');
   const items = [...(a.items || []).map((x) => ({ ...x, src: '제주특별자치도 교통정보센터' })), ...(b.items || [])].filter((x) => { const k = norm(x.name) || x.id; if (seen.has(k)) return false; seen.add(k); return true; });
   return { items, its: a, kto: b };
 }
+// ---- 섬업 레터 (뉴스레터) ----
+app.get('/api/letter/view', (req, res) => { const st = load('letter.json', {}); const it = (st.issues || []).find((x) => x.date === req.query.date) || (st.issues || [])[0];
+  if (!it) return res.status(404).type('html').send('<meta charset="utf-8"><p style="font-family:sans-serif;padding:40px">아직 나온 레터가 없어요.</p>');
+  res.set('Content-Security-Policy', "default-src 'none'; img-src https: http: data:; style-src 'unsafe-inline'").type('html').send(it.html); });
+app.get('/api/letter/unsub', limit(20), (req, res) => { const e = String(req.query.e || '').toLowerCase(); const ok = letter.validEmail(e) && req.query.t === letter.token(e);
+  if (ok) { const st = load('letter.json', {}); st.subscribers = (st.subscribers || []).filter((x) => String(x).toLowerCase() !== e); save('letter.json', st); }
+  res.type('html').send(`<meta charset="utf-8"><p style="font-family:sans-serif;padding:40px">${ok ? '섬업 레터를 그만 받도록 했어요.' : '주소를 확인하지 못했어요.'}</p>`); });
+app.get('/api/admin/letter', adminOnly, (req, res) => { const st = load('letter.json', {}); res.json({ operator: st.operator || '', subscribers: st.subscribers || [], hour: Number.isFinite(Number(st.hour)) ? Number(st.hour) : 6, enabled: st.enabled !== false, lastSent: st.lastSent || '', lastResult: st.lastResult || null, issues: (st.issues || []).map((x) => x.date), mailReady: !!process.env.RESEND_API_KEY, spec: letter.SPEC }); });
+app.put('/api/admin/letter', adminOnly, (req, res) => { const b = req.body || {}; const st = load('letter.json', {});
+  if (typeof b.operator === 'string') st.operator = letter.validEmail(b.operator.trim()) ? b.operator.trim().toLowerCase() : '';
+  if (Array.isArray(b.subscribers)) st.subscribers = [...new Set(b.subscribers.map((e) => String(e).trim().toLowerCase()).filter(letter.validEmail))].slice(0, 90);
+  if (b.hour !== undefined) st.hour = Math.max(5, Math.min(11, Number(b.hour) || 6)); if (b.enabled !== undefined) st.enabled = b.enabled !== false;
+  save('letter.json', st); res.json({ ok: true, subscribers: st.subscribers.length }); });
+// 지금 만들기: send가 true면 등록된 주소로도 보낸다 (오늘 이미 보냈어도 다시)
+app.post('/api/admin/letter/run', adminOnly, async (req, res) => { try { res.json(await letter.run({ ...agentCtx(), hackathons: hackItems }, { force: true, send: req.body?.send === true })); } catch (e) { res.status(500).json({ error: e.message }); } });
 app.get('/api/jeju/live', limit(60), async (req, res) => res.json(await jejuits.summary()));
 app.get('/api/jeju/its/:kind', limit(60), async (req, res) => {
   if (!jejuits.KINDS[req.params.kind]) return res.status(404).json({ error: '없는 종류예요.' });
@@ -727,7 +744,15 @@ const tick = () => { for (const id of due()) runFeed(id); };
 // 서버리스에서는 타이머가 없어서, 방문이 있을 때(1분에 한 번만 확인)와 하루 한 번 예약 호출 때 돌린다.
 // 시작할 때 '돌렸다'고 먼저 적어서 서버 여러 대가 같은 일을 겹쳐 하지 않게 한다.
 let lastTickCheck = 0, ticking = false;
+function seedSamples() {
+  let extra = []; try { extra = require('./seed/samples2.json'); } catch { return 0; }
+  const st = load('feeds.json', {}); const done = new Set((st._seeded || [])); const todo = extra.filter((x) => !done.has(x.id)); if (!todo.length) return 0;
+  const list = load('projects.json', []); const have = new Set(list.map((p) => p.id)); let n = 0; const now = Date.now();
+  todo.forEach((x, i) => { if (!have.has(x.id)) { list.push({ ...x, createdAt: new Date(now - (i + 1) * 5400e3).toISOString() }); n++; } });
+  if (n) save('projects.json', list); st._seeded = [...done, ...todo.map((x) => x.id)]; save('feeds.json', st); return n;
+}
 async function autoTick(force) {
+  try { seedSamples(); } catch {}
   if (ticking || (!force && Date.now() - lastTickCheck < 60000)) return []; lastTickCheck = Date.now();
   const ids = due(); if (!ids.length) return [];
   ticking = true; try { for (const id of ids) markFeed(id, true, '돌리는 중'); await Promise.race([Promise.all(ids.map((id) => runFeed(id))), new Promise((r) => setTimeout(r, 50000))]); } finally { ticking = false; }
@@ -737,6 +762,7 @@ if (store.SERVERLESS) {
   // 서버리스(Vercel): 요청이 올 때만 켜지므로 서버를 직접 열지 않고 앱을 내보낸다. 자동 갱신은 관리자 화면의 '지금 갱신' 버튼으로.
   if (!ADMIN_PASSWORD) console.warn('⚠️  ADMIN_PASSWORD가 없어 관리자 로그인이 막혀 있어요. 호스팅 설정에서 환경변수를 넣어 주세요.');
 } else {
+  try { seedSamples(); } catch {}
   app.listen(PORT, () => {
     console.log(`섬업 실행 중: http://localhost:${PORT}`);
     if (HOSTED && !ADMIN_PASSWORD) console.warn('⚠️  ADMIN_PASSWORD가 없어 관리자 로그인이 막혀 있어요. 호스팅 설정에서 환경변수를 넣어 주세요.');
