@@ -111,7 +111,7 @@ async function run(ctx, { force = false, send = true } = {}) {
   if (!force && (st.enabled === false || st.lastSent === today || hour < at)) return { skipped: true };
   const issue = await collect(ctx); if (!issue.sections.length) return { skipped: true, note: '담을 글이 없어요.' };
   const site = SITE(); const html = renderHtml(issue);
-  st.issues = [{ date: today, html }, ...(st.issues || []).filter((x) => x.date !== today)].slice(0, 14);
+  st.issues = [{ date: today, title: `섬업 레터 · ${today.slice(5).replace('-', '월 ')}일`, html }, ...(st.issues || []).filter((x) => x.date !== today)].slice(0, 30);
   // 웹: 인사이트 > 뉴스레터
   const ins = ctx.load('insights.json', []); const id = 'letter-' + today; const head = (issue.sections.find((s) => s.id === 'head') || issue.sections[0]).items[0];
   const post = { id, title: `섬업 레터 · ${today.slice(5).replace('-', '월 ')}일`, category: '뉴스레터', org: '섬업 레터', date: today, summary: cut(`${issue.keywords.map((k) => '#' + k).join(' ')} ${head.title}`, 200), points: issue.sections.map((s) => `${s.label} ${s.items.length}건`).slice(0, 4), url: `${site}/api/letter/view?date=${today}`, source: { label: '섬업 레터 전체 보기', url: `${site}/api/letter/view?date=${today}` },
@@ -127,4 +127,17 @@ async function run(ctx, { force = false, send = true } = {}) {
   ctx.save('letter.json', st);
   return { date: today, sections: issue.sections.length, sent, failed, note };
 }
-module.exports = { SPEC, collect, renderHtml, renderReport, run, token, validEmail, dayKey };
+// 운영자가 따로 보내는 소식: 같은 틀에 '알림' 한 칸만 담아 보낸다. 지난 레터 목록에도 남는다
+async function sendCustom(ctx, { title, text, url }) {
+  const st = ctx.load('letter.json', {}); const site = SITE(); const now = kst(); const key = `${dayKey()}-${String(now.getUTCHours()).padStart(2, '0')}${String(now.getUTCMinutes()).padStart(2, '0')}`;
+  const link = isUrl(url) ? url : site; const issue = { date: dayKey(), keywords: [], sections: [{ id: 'head', label: '알림', max: 1, items: [{ title: cut(title, 90), text: cut(text, 1200), tag: '', source: { label: isUrl(url) ? '자세히 보기' : '섬업', url: link }, link }] }], reports: [], score: null };
+  const fix = (h) => h.replace(`/api/letter/view?date=${issue.date}"`, `/api/letter/view?date=${key}"`);
+  st.issues = [{ date: key, title: cut(title, 90), html: fix(renderHtml(issue)), custom: true }, ...(st.issues || [])].slice(0, 30);
+  let sent = 0, failed = 0, note = '';
+  if (process.env.RESEND_API_KEY) { const list = [...new Set((st.subscribers || []).map((e) => String(e).toLowerCase()).filter(validEmail))].slice(0, 90);
+    for (const e of list) { try { await sendMail(e, `[섬업 알림] ${cut(title, 80)}`, fix(renderHtml(issue, { unsub: `${site}/api/letter/unsub?e=${encodeURIComponent(e)}&t=${token(e)}` }))); sent++; } catch (err) { failed++; note = err.message; } }
+  } else note = '메일 키가 없어 웹에만 올렸어요.';
+  st.lastResult = { at: new Date().toISOString(), sent, failed, note }; ctx.save('letter.json', st);
+  return { key, sent, failed, note };
+}
+module.exports = { sendCustom, SPEC, collect, renderHtml, renderReport, run, token, validEmail, dayKey };

@@ -547,10 +547,19 @@ async function travelItems() {
 app.get('/api/letter/view', (req, res) => { const st = load('letter.json', {}); const it = (st.issues || []).find((x) => x.date === req.query.date) || (st.issues || [])[0];
   if (!it) return res.status(404).type('html').send('<meta charset="utf-8"><p style="font-family:sans-serif;padding:40px">아직 나온 레터가 없어요.</p>');
   res.set('Content-Security-Policy', "default-src 'none'; img-src https: http: data:; style-src 'unsafe-inline'").type('html').send(it.html); });
+app.get('/api/letter/issues', (req, res) => res.json((load('letter.json', {}).issues || []).map((x) => ({ date: x.date, title: x.title || `섬업 레터 ${x.date}`, custom: !!x.custom }))));
+// 누구나 이메일만 적으면 받는 사람에 더해진다 (짧은 시간에 5번까지, 모두 90명까지). 메일마다 '그만 받기'가 있다
+app.post('/api/letter/subscribe', limit(5), (req, res) => { const e = String(req.body?.email || '').trim().toLowerCase();
+  if (!letter.validEmail(e)) return res.status(400).json({ error: '이메일 주소를 다시 확인해 주세요.' });
+  const st = load('letter.json', {}); const list = st.subscribers || []; if (list.includes(e)) return res.json({ ok: true, already: true });
+  if (list.length >= 90) return res.status(400).json({ error: '지금은 신청이 꽉 찼어요. 곧 늘릴게요.' });
+  st.subscribers = [...list, e]; save('letter.json', st); res.json({ ok: true }); });
+app.post('/api/admin/letter/custom', adminOnly, async (req, res) => { const title = clean(req.body?.title, 90), text = clean(req.body?.text, 1200); if (!title || !text) return res.status(400).json({ error: '제목과 내용을 적어 주세요.' });
+  try { res.json(await letter.sendCustom(agentCtx(), { title, text, url: clean(req.body?.url, 300) })); } catch (e) { res.status(500).json({ error: e.message }); } });
 app.get('/api/letter/unsub', limit(20), (req, res) => { const e = String(req.query.e || '').toLowerCase(); const ok = letter.validEmail(e) && req.query.t === letter.token(e);
   if (ok) { const st = load('letter.json', {}); st.subscribers = (st.subscribers || []).filter((x) => String(x).toLowerCase() !== e); save('letter.json', st); }
   res.type('html').send(`<meta charset="utf-8"><p style="font-family:sans-serif;padding:40px">${ok ? '섬업 레터를 그만 받도록 했어요.' : '주소를 확인하지 못했어요.'}</p>`); });
-app.get('/api/admin/letter', adminOnly, (req, res) => { const st = load('letter.json', {}); res.json({ operator: st.operator || '', subscribers: st.subscribers || [], hour: Number.isFinite(Number(st.hour)) ? Number(st.hour) : 6, enabled: st.enabled !== false, lastSent: st.lastSent || '', lastResult: st.lastResult || null, issues: (st.issues || []).map((x) => x.date), mailReady: !!process.env.RESEND_API_KEY, spec: letter.SPEC }); });
+app.get('/api/admin/letter', adminOnly, (req, res) => { const st = load('letter.json', {}); res.json({ operator: st.operator || '', subscribers: st.subscribers || [], hour: Number.isFinite(Number(st.hour)) ? Number(st.hour) : 6, enabled: st.enabled !== false, lastSent: st.lastSent || '', lastResult: st.lastResult || null, issues: (st.issues || []).map((x) => ({ date: x.date, title: x.title || `섬업 레터 ${x.date}`, custom: !!x.custom })), mailReady: !!process.env.RESEND_API_KEY, spec: letter.SPEC }); });
 app.put('/api/admin/letter', adminOnly, (req, res) => { const b = req.body || {}; const st = load('letter.json', {});
   if (typeof b.operator === 'string') st.operator = letter.validEmail(b.operator.trim()) ? b.operator.trim().toLowerCase() : '';
   if (Array.isArray(b.subscribers)) st.subscribers = [...new Set(b.subscribers.map((e) => String(e).trim().toLowerCase()).filter(letter.validEmail))].slice(0, 90);

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>섬업 레터 · 섬업</title>
+<meta name="description" content="매일 아침 제주에서 보내는 AI·해커톤·창업 소식. 지난 레터를 모두 볼 수 있어요.">
+<link rel="stylesheet" href="./style.css">
+<script src="./app.js"></script>
+</head>
+<body>
+<main class="wrap" style="max-width:760px">
+  <div class="page-title"><h1 id="ltH1">섬업 레터</h1><p id="ltSub">매일 아침, 제주에서 보내는 AI·해커톤·창업 소식.</p></div>
+  <img src="./letter/header.png" alt="섬업 레터" style="width:100%;border-radius:18px;margin-top:14px;display:block">
+  <section><div class="sec-head"><h2 id="ltList">지난 레터</h2><span class="more" id="ltCount"></span></div><div class="letterlist" id="issues"></div></section>
+</main>
+<script>
+mountShell({ active: 'insight' }).then(async () => {
+  let list = []; try { list = await api('/api/letter/issues'); } catch {}
+  $('#ltCount').textContent = list.length ? `${list.length}호` : '';
+  $('#issues').innerHTML = list.length ? list.map((x) => `<a href="/api/letter/view?date=${encodeURIComponent(x.date)}" target="_blank" rel="noopener"><b>${esc(x.title)}</b><small>${esc(x.date.slice(0, 10))}${x.custom ? ' · 알림' : ''}</small></a>`).join('') : '<div class="empty">첫 레터가 곧 나와요. 아래에 이메일을 적어 두면 보내 드려요.</div>';
+});
+</script>
+</body>
+</html>

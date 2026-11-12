@@ -317,6 +317,11 @@ async function mountShell({ active, primary, sub } = {}) {
   mountAds(CONFIG.ads);
   const footer = document.createElement('footer');
   footer.innerHTML = `<div class="wrap"><div><b>${esc(S.name)}</b>${S.sub ? ` <span class="small">${esc(S.sub)}</span>` : ''} · ${esc(S.slogan)}<br><span class="small">${esc(CONFIG.footer?.note || '')}</span></div><div class="links"><a href="./about.html">운영 원칙</a><a href="./admin.html">관리자</a></div></div>`;
+  if (!/admin|hq\.html/.test(location.pathname)) { /* 섬업 레터 신청: 이메일만 적으면 된다 */
+    const nl = document.createElement('section'); nl.className = 'nlbox';
+    nl.innerHTML = `<div class="wrap"><div><b>섬업 레터</b><span>매일 아침, 제주에서 보내는 AI·해커톤·창업 소식. <a href="./letter.html">지난 레터 보기</a></span></div><form><input type="email" name="email" required maxlength="120" placeholder="이메일 주소" aria-label="이메일 주소"><button class="btn primary">받아 보기</button></form><small>적어 주신 주소는 레터를 보내는 데만 써요. 메일 아래 '그만 받기'로 언제든 끊을 수 있어요.</small></div>`;
+    nl.querySelector('form').onsubmit = async (e) => { e.preventDefault(); try { const r = await api('/api/letter/subscribe', { email: e.target.email.value }); toast(r.already ? '이미 신청돼 있어요.' : '신청됐어요. 내일 아침부터 보내 드려요.'); e.target.reset(); } catch (err) { toast(err.message); } };
+    document.body.append(nl); }
   document.body.append(footer);
   applyTexts(); mountEditor();
   return CONFIG;
