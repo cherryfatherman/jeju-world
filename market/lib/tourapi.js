@@ -26,7 +26,9 @@ async function load({ fresh = false } = {}) {
   const key = keyOf(); if (!key) return { ok: false, needs: 'TOUR_API_KEY', items: [] };
   if (!fresh && cache && Date.now() - cache.at < (cache.value.ok ? TTL : 10 * 60e3)) return cache.value;
   let value;
-  try { const got = await Promise.allSettled([1, 2, 3].map((n) => page(key, n))); const raw = got.flatMap((g) => (g.status === 'fulfilled' ? g.value : []));
+  try { const got = []; /* 한 번에 한 쪽씩 (동시에 부르면 일부가 실패한다). 실패한 쪽은 한 번 더 */
+    for (const n of [1, 2, 3, 4]) { let g; for (let t = 0; t < 2; t++) { try { g = { status: 'fulfilled', value: await page(key, n) }; break; } catch (e) { g = { status: 'rejected', reason: e }; } } got.push(g); if (g.status === 'fulfilled' && g.value.length < 100) break; }
+    const raw = got.flatMap((g) => (g.status === 'fulfilled' ? g.value : []));
     const seen = new Set(); const items = raw.map(normalize).filter((x) => x.id.length > 1 && x.name && !seen.has(x.id) && seen.add(x.id));
     value = { ok: items.length > 0, updatedAt: new Date().toISOString(), source: '한국관광공사', count: items.length, items, error: items.length ? '' : (got.find((g) => g.status === 'rejected')?.reason?.message || '받은 목록이 비어 있어요.').slice(0, 160) };
   } catch (e) { value = { ok: false, items: [], error: String(e.message).slice(0, 160) }; }
