@@ -96,7 +96,10 @@ const FIND = {
   hackathon: (id) => hackItems().find((h) => h.id === id),
   tour: (id) => jejuits.peek('tour').find((x) => x.id === id) || tourapi.peek().find((x) => x.id === id), // 교통정보센터 + 한국관광공사 관광지·카페·맛집
 };
-const baseVotes = (kind, item) => (kind === 'project' ? item.interest : kind === 'winner' || kind === 'hackathon' || kind === 'tour' ? 0 : item.votes);
+// 공공 자료 장소의 '시작 업': 방문자가 적은 초기에 목록이 비어 보이지 않게 운영자가 넣기로 한 임의의 시작값이다 (2026-11-12 결정).
+// 실제 리뷰나 방문 수에서 나온 숫자가 아니다. 장소 번호로 정해지는 고정값이고(사진 있는 곳 3~40, 없는 곳 0~8), 그 위에 실제로 누른 업이 더해진다. SEED_VOTES=off 로 끌 수 있다.
+const seedVote = (x) => { if (process.env.SEED_VOTES === 'off' || !x || !x.id) return 0; const h = parseInt(crypto.createHash('md5').update('seed:' + x.id).digest('hex').slice(0, 6), 16); return x.image ? 3 + (h % 38) : h % 9; };
+const baseVotes = (kind, item) => (kind === 'project' ? item.interest : kind === 'tour' ? seedVote(item) : kind === 'winner' || kind === 'hackathon' ? 0 : item.votes);
 const titleOf = (item) => item.name || item.title || '';
 function upVote(kind, id, undo) {
   const item = FIND[kind]?.(id); if (!item) return null;
@@ -576,8 +579,8 @@ app.put('/api/admin/letter', adminOnly, (req, res) => { const b = req.body || {}
 app.post('/api/admin/letter/run', adminOnly, async (req, res) => { try { res.json(await letter.run({ ...agentCtx(), hackathons: hackItems }, { force: true, send: req.body?.send === true })); } catch (e) { res.status(500).json({ error: e.message }); } });
 // 공공 자료의 장소 한 곳 (안내 페이지용): 정보 + 추천 수
 app.get('/api/tour/:id', limit(120), async (req, res) => { const t = await travelItems(); const x = t.items.find((i) => i.id === req.params.id); if (!x) return res.status(404).json({ error: '찾는 곳이 없어요.' });
-  const V = liveVotes(); const near = t.items.filter((i) => i.id !== x.id && i.cat === x.cat && i.image).slice(0, 60).sort((a, b) => (V[`tour:${b.id}`] || 0) - (V[`tour:${a.id}`] || 0)).slice(0, 4).map((i) => ({ id: i.id, name: i.name, addr: i.addr, image: i.image }));
-  res.json({ ...x, votes: V[`tour:${x.id}`] || 0, near }); });
+  const V = liveVotes(); const near = t.items.filter((i) => i.id !== x.id && i.cat === x.cat && i.image).slice(0, 60).sort((a, b) => (seedVote(b) + (V[`tour:${b.id}`] || 0)) - (seedVote(a) + (V[`tour:${a.id}`] || 0))).slice(0, 4).map((i) => ({ id: i.id, name: i.name, addr: i.addr, image: i.image }));
+  res.json({ ...x, votes: seedVote(x) + (V[`tour:${x.id}`] || 0), near }); });
 app.get('/api/jeju/live', limit(60), async (req, res) => res.json(await jejuits.summary()));
 app.get('/api/jeju/its/:kind', limit(60), async (req, res) => {
   if (!jejuits.KINDS[req.params.kind]) return res.status(404).json({ error: '없는 종류예요.' });
@@ -585,7 +588,7 @@ app.get('/api/jeju/its/:kind', limit(60), async (req, res) => {
   if (req.params.kind !== 'tour') return res.json(jejuits.publicView(await jejuits.load(req.params.kind), lim));
   // 관광지·카페·맛집: 추천 수를 붙이고, 추천 많은 곳이 위로 오게
   const t = await travelItems(); const V = liveVotes(), C = commentCounts();
-  const items = t.items.map((x, i) => ({ ...x, votes: V[`tour:${x.id}`] || 0, comments: C[`tour:${x.id}`] || 0, _i: i })).sort((x, y) => y.votes - x.votes || x._i - y._i).map(({ _i, ...x }) => x); // 업(추천) 많은 순
+  const items = t.items.map((x, i) => ({ ...x, votes: seedVote(x) + (V[`tour:${x.id}`] || 0), comments: C[`tour:${x.id}`] || 0, _i: i })).sort((x, y) => y.votes - x.votes || x._i - y._i).map(({ _i, ...x }) => x); // 업(추천) 많은 순
   res.json({ ok: items.length > 0, title: '관광지', updatedAt: t.its.updatedAt || t.kto.updatedAt || new Date().toISOString(), source: [t.its.ok ? '제주특별자치도 교통정보센터' : '', t.kto.ok ? '한국관광공사' : ''].filter(Boolean).join(' · '), count: items.length, items: items.slice(0, lim) });
 });
 // 관리자 점검: 실제로 받은 필드 이름과 첫 줄을 본다 (형식이 바뀌었을 때 맞추기 위해)
