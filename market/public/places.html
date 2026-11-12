@@ -43,7 +43,7 @@ function render() {
 $$('#typetabs button').forEach((b) => b.onclick = () => { type = b.dataset.t; history.replaceState(null, '', `?type=${type}`); render(); });
 $$('#sort button').forEach((b) => b.onclick = () => { sort = b.dataset.s; $$('#sort button').forEach((x) => x.classList.toggle('on', x === b)); render(); });
 mountShell({ active: 'jeju', sub: 'travel' }).then(async () => {
-  itsSection($('#sec-tour'), 'tour', { first: 10 });
+  itsSection($('#sec-tour'), 'tour', { first: 5 });
   const d = await api('/api/places'); all = d.items || []; render();
   if (d.updatedAt) $('#updated').textContent = `데이터 갱신: ${new Date(d.updatedAt).toLocaleString('ko-KR')}`;
 });

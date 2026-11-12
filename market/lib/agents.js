@@ -109,7 +109,7 @@ function scripted(facts, props, hq) {
     m.push({ from: a.id, to: 'halla', text: `${p.name} 줄기예요.${nums ? ` 지금 숫자는 ${nums}.` : ''}${mine[0] ? ` 새로 할 일은 "${mine[0].title}"이에요.` : ' 새로 할 일은 없어요.'}` });
   }
   const top = props.slice(0, 3).map((p, i) => `${i + 1}) ${p.title}`).join('  ');
-  if (hq.agents.some((a) => a.id === 'halla')) m.push({ from: 'halla', to: 'all', text: top ? `이번에는 이 세 가지만 해요. ${top}` : '새로 할 일은 없어요. 지금 상태를 유지해요.' });
+  const sc = facts.score; if (hq.agents.some((a) => a.id === 'halla')) m.push({ from: 'halla', to: 'all', text: `${sc ? `지금 사이트 점수는 ${sc.total}점이에요. 가장 낮은 건 ${sc.lowest}(${sc.lowestScore}점)이고, ${sc.next}. ` : ''}${top ? `이번에는 이 세 가지만 해요. ${top}` : '새로 할 일은 없어요.'}` });
   return m;
 }
 async function aiTalk(facts, props, hq) {
@@ -117,7 +117,7 @@ async function aiTalk(facts, props, hq) {
   const reps = hq.pillars.map((p) => hq.agents.find((a) => a.pillar === p.id && a.rank === '부서장') || hq.agents.find((a) => a.pillar === p.id)).filter(Boolean);
   const boss = hq.agents.find((a) => a.id === 'halla'); const people = boss ? [boss, ...reps] : reps;
   const prompt = `제주 창업 플랫폼 "섬업"의 줄기별 전담 에이전트 회의록을 씁니다.
-규칙: [숫자]와 [제안]에 있는 사실만. 새 숫자·사실 금지. 한 사람 1~2문장, 쉬운 존댓말(~해요). 줄기 대표는 halla에게 보고, 마지막은 halla가 to "all"로 우선순위 3가지. 메시지는 ${people.length + 1}개 이하.
+규칙: [숫자]와 [제안]에 있는 사실만. [숫자]의 score는 사이트 점수표예요(100점 만점, 기준별 점수). 각 줄기 대표는 자기 줄기가 점수에서 무엇이 부족한지 한 가지를 말하고, 다른 줄기에게 도움이 될 피드백을 한 가지 주세요. halla는 총점과 가장 낮은 기준, 그 기준을 올릴 방법을 말해요. 새 숫자·사실 금지. 한 사람 1~2문장, 쉬운 존댓말(~해요). 줄기 대표는 halla에게 보고, 마지막은 halla가 to "all"로 우선순위 3가지. 메시지는 ${people.length + 1}개 이하.
 [사람] ${people.map((a) => `${a.id}=${a.name}(${a.dept}) ${a.persona}`).join(' / ')}
 [숫자] ${JSON.stringify(facts)}
 [제안] ${props.map((p) => `${p.owner}: ${p.title}`).join(' / ') || '없음'}
@@ -128,13 +128,43 @@ JSON만: {"messages":[{"from":"id","to":"id 또는 all","text":""}]}`;
   return msgs;
 }
 
+// ── 사이트 점수표: 여섯 가지 기준을 숫자로 잰다 (AI가 매기지 않고 코드가 센다). 회의 때마다 가장 낮은 기준을 놓고 이야기한다 ──
+const clamp = (x) => Math.max(0, Math.min(100, Math.round(x)));
+function scorecard(ctx, facts) {
+  const { load } = ctx; const f = facts || {};
+  const projects = load('projects.json', []).filter((p) => p.status === 'live' && (p.type || 'project') === 'project');
+  const real = projects.filter((p) => !p.sample).length, withPhoto = projects.filter((p) => (p.photos || []).length).length;
+  const comments = load('comments.json', []).filter((c) => !c.hidden && !c.staff); const week = comments.filter((c) => Date.now() - new Date(c.createdAt).getTime() < 7 * DAY).length;
+  const posts = [...load('programs.json', []), ...load('insights.json', []), ...load('guides.json', [])].filter((p) => !p.hidden);
+  const sourced = posts.filter((p) => p.url || p.source?.url || (p.sources || []).length || p.sourceUrl).length;
+  const places = load('places.json', []).filter((p) => !p.hidden); const coord = places.filter((p) => p.lat && p.lng).length;
+  const feeds = ctx.feeds ? ctx.feeds() : []; const feedsOk = feeds.filter((x) => x.ready && x.ok).length;
+  const items = [
+    { id: 'deal', name: '실제 거래', weight: 30, score: clamp(real >= 3 ? 70 + Math.min(30, (f.deal?.inquiries || 0) * 10) : real * 22 + Math.min(20, (f.deal?.inquiries || 0) * 5)), why: `실제 프로젝트 ${real}건, 문의 ${f.deal?.inquiries || 0}건`, next: real < 3 ? '해커톤 참가팀에게 직접 부탁해 실제 프로젝트 3건을 받는다' : '첫 거래 사례를 글로 남긴다' },
+    { id: 'talk', name: '소통', weight: 15, score: clamp(week * 12 + Math.min(40, comments.length * 4)), why: `방문자 이야기 ${comments.length}건, 최근 7일 ${week}건`, next: '글마다 답하기 쉬운 질문을 달고, 달린 이야기에는 당일에 답한다' },
+    { id: 'fresh', name: '새 소식', weight: 15, score: clamp(100 - Math.max(0, (f.hackathon?.feedDays || 0) - 1) * 20 - Math.max(0, (f.insight?.newestDays || 0) - 14) * 2 - Math.max(0, 5 - (f.program?.open || 0)) * 8), why: `해커톤 수집 ${f.hackathon?.feedDays ?? '?'}일 전, 인사이트 ${f.insight?.newestDays ?? '?'}일 전, 진행 공고 ${f.program?.open ?? 0}건`, next: '이번 주 인사이트 1건, 진행 중 공고 5건 이상 유지' },
+    { id: 'trust', name: '믿을 수 있는 정보', weight: 15, score: clamp(posts.length ? (sourced / posts.length) * 100 : 0), why: `출처가 달린 글 ${sourced}/${posts.length}`, next: '출처 없는 글에 원문 링크를 단다' },
+    { id: 'auto', name: '스스로 굴러감', weight: 15, score: clamp((feeds.length ? (feedsOk / feeds.length) * 70 : 40) + (ctx.env?.ai ? 15 : 0) + (ctx.env?.durable ? 15 : 0)), why: `자동 갱신 ${feedsOk}/${feeds.length}개 정상${ctx.env?.ai ? '' : ', AI 키 없음'}${ctx.env?.durable ? '' : ', 저장소 없음'}`, next: '키 대기 중인 자동 수집(K-Startup, 관광 API)을 연결한다' },
+    { id: 'polish', name: '완성도', weight: 10, score: clamp((projects.length ? (withPhoto / projects.length) * 60 : 30) + (places.length ? (coord / places.length) * 40 : 20)), why: `사진 있는 프로젝트 ${withPhoto}/${projects.length}, 위치 있는 장소 ${coord}/${places.length}`, next: '사진 없는 글과 위치 없는 장소를 채운다' },
+  ];
+  const total = Math.round(items.reduce((a, x) => a + x.score * x.weight, 0) / items.reduce((a, x) => a + x.weight, 0));
+  const lowest = [...items].sort((a, b) => a.score - b.score)[0];
+  return { total, items, lowest: lowest.id, at: new Date().toISOString() };
+}
+
 // ── 한 번의 회의 ──
 async function runCycle(ctx, { force = false } = {}) {
   const { load, save } = ctx;
   const hq = load('hq.json', { pillars: [], agents: [], tasks: [], log: [] });
   hq.tasks = hq.tasks || []; hq.log = hq.log || []; hq.memory = hq.memory || {};
   const facts = sense(ctx);
+  const card = scorecard(ctx, facts); const low = card.items.find((x) => x.id === card.lowest); const prev = hq.score?.total;
+  hq.score = card; hq.scoreHistory = [...(hq.scoreHistory || []), { at: card.at.slice(0, 10), total: card.total }].filter((x, i, arr) => i === arr.length - 1 || x.at !== arr[i + 1].at).slice(-60);
+  facts.score = { total: card.total, lowest: low.name, lowestScore: low.score, why: low.why, next: low.next, items: card.items.map((x) => `${x.name} ${x.score}`).join(', ') };
   const props = hq.pillars.flatMap((p) => proposeFor(p, facts[p.id], hq));
+  // 가장 낮은 기준을 올리는 일을 본부장 할 일로 올린다 (같은 제목이 이미 있거나 지운 적이 있으면 건너뜀)
+  { const title = `점수 올리기: ${low.name} (${low.score}점)`; const boss = hq.agents.find((a) => a.id === 'halla')?.id || ''; const pid = hq.pillars[0]?.id; const dismissed = hq.memory?.[pid]?.dismissed || [];
+    if (pid && !hq.tasks.some((t) => t.title.startsWith(`점수 올리기: ${low.name}`)) && !dismissed.some((d) => d.startsWith(`점수 올리기: ${low.name}`))) props.push({ pillar: pid, owner: boss, title, why: `${low.why}. ${low.next}.` }); }
   const at = new Date().toISOString();
   for (const p of props) hq.tasks.unshift({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), pillar: p.pillar, owner: p.owner, title: p.title, why: p.why, status: 'proposed', by: 'agent', createdAt: at });
   // 지난 회의와 숫자가 같고 새 제안도 없으면 AI를 부르지 않는다 (토큰 0)
@@ -215,6 +245,11 @@ async function runShift(ctx) {
   let fixed = []; try { fixed = ctx.fixMissingPhotos ? await ctx.fixMissingPhotos() : []; } catch {}
   const dealLead = hq.agents.find((a) => a.pillar === 'deal' && a.rank === '부서장') || hq.agents.find((a) => a.pillar === 'deal');
   if (fixed.length && dealLead) msgs.push({ from: dealLead.id, to: 'halla', text: `사진이 없던 글 ${fixed.length}건에 서비스 페이지의 대표 이미지를 넣었어요: ${fixed.map((t) => cut(t, 16)).join(', ')}`, kind: 'report' });
+  // 생활 줄기: 교통정보센터 자료가 바뀌었으면 알린다
+  try { const now = ctx.its ? await ctx.its() : null; const lifeLead = hq.agents.find((a) => a.pillar === 'life' && a.rank === '부서장') || hq.agents.find((a) => a.pillar === 'life');
+    if (now && lifeLead && (now.road !== null || now.ev !== null || now.tour !== null)) { const before = hq.itsSeen || {}; const parts = [];
+      if (now.road !== null && now.road !== before.road) parts.push(`도로 통제 ${now.road}건`); if (now.ev !== null && now.ev !== before.ev) parts.push(`전기차 충전소 ${now.ev}곳`); if (now.tour !== null && now.tour !== before.tour) parts.push(`관광지 ${now.tour}곳`);
+      if (parts.length) msgs.push({ from: lifeLead.id, to: 'halla', text: `교통정보센터 자료를 새로 받아 화면에 반영했어요: ${parts.join(', ')}.`, kind: 'report' }); hq.itsSeen = now; } } catch {}
   const replies = done.filter((d) => d.type === 'reply').length, notes = done.length - replies;
   if (hq.agents.some((a) => a.id === 'halla')) msgs.push({ from: 'halla', to: 'all', text: done.length ? `근무 보고를 받았어요. 답글 ${replies}건, 이야기 ${notes}건${fixed.length ? `, 스스로 고친 것 ${fixed.length}건` : ''}이에요.` : '이번 근무에는 새로 남길 글이 없었어요.', kind: 'report' });
   hq.log = [...msgs.map((m) => ({ ...m, at, round, ai })).reverse(), ...hq.log].slice(0, 300);
@@ -223,4 +258,4 @@ async function runShift(ctx) {
   return { replies, notes, fixed: fixed.length, ai, at };
 }
 
-module.exports = { sense, runCycle, runShift, programStatus, remember, AGENTS };
+module.exports = { sense, runCycle, runShift, scorecard, programStatus, remember, AGENTS };

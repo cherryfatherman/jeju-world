@@ -484,7 +484,7 @@ async function itsSection(sec, kind, { first = 6 } = {}) {
   const list = sec.querySelector('.list'), more = sec.querySelector('.itsmore'), note = sec.querySelector('.note'), cnt = sec.querySelector('.more');
   list.innerHTML = items.slice(0, first).map(row).join('');
   if (cnt) cnt.textContent = `${(d.count || items.length).toLocaleString('ko-KR')}곳`.replace('곳', kind === 'road' ? '건' : '곳');
-  if (more) { more.hidden = items.length <= first; more.onclick = () => { list.innerHTML = items.map(row).join(''); more.hidden = true; }; }
+  if (more) { more.hidden = false; more.textContent = '전체 보기'; more.onclick = () => { location.href = './info.html?kind=' + kind; }; }
   if (note) note.textContent = `출처: ${d.source} OPEN API · ${new Date(d.updatedAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })} 기준`;
   sec.hidden = false; if (!FX.reduced()) sec.classList.add('in');
 }

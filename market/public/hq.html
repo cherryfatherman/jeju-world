@@ -67,6 +67,11 @@
   .addrow { display: grid; grid-template-columns: 1fr auto; gap: 6px; margin-top: 10px; }
   .agent { display: grid; grid-template-columns: 28px 84px 74px 1fr 24px; gap: 6px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); }
   .agent input, .agent select { min-height: 30px; padding: 3px 6px; font-size: 12px; }
+  .scorebox { border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin-bottom: 16px; background: #fff; display: grid; gap: 10px; }
+  .sctop { display: flex; align-items: center; gap: 14px; } .sctop b { font-size: 44px; font-weight: 900; color: var(--accent); line-height: 1; } .sctop b small { font-size: 16px; margin-left: 2px; } .sctop span { font-size: 12px; color: var(--ink-3); line-height: 1.5; }
+  .scrow { display: grid; grid-template-columns: 1fr 90px 30px; gap: 4px 10px; align-items: center; font-size: 13px; font-weight: 700; } .scrow small { color: var(--ink-4); font-weight: 600; }
+  .scrow i { height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; } .scrow u { display: block; height: 100%; background: var(--accent-2); border-radius: 4px; } .scrow.low u { background: var(--accent); }
+  .scrow b { text-align: right; } .scrow p { grid-column: 1 / -1; font-size: 12px; font-weight: 500; color: var(--ink-3); line-height: 1.45; } .scrow.low p { color: var(--ink-2); }
   .msg { display: grid; grid-template-columns: 28px 1fr; gap: 8px; padding: 8px 0; }
   .msg .who { font-size: 12px; font-weight: 800; } .msg .who small { color: var(--ink-3); font-weight: 600; }
   .msg p { font-size: 14px; line-height: 1.5; background: var(--surface); border: 1px solid var(--line); padding: 8px 10px; border-radius: 4px 12px 12px 12px; margin-top: 3px; }
@@ -293,13 +298,14 @@ function renderOrg() {
 }
 function renderLog() {
   const box = $('#t-log'); if (!HQ.log.length) { box.innerHTML = '<p class="note">아직 회의록이 없어요. 위의 "지금 회의"를 눌러 보세요. 하루에 한 번은 자동으로 열려요.</p>'; return; }
-  let html = '', round = null;
+  let html = '', round = null; const S = HQ.score;
+  if (S) html += `<div class="scorebox"><div class="sctop"><b>${S.total}<small>점</small></b><span>사이트 점수 (100점 만점)<br>회의할 때마다 코드가 다시 잽니다</span></div>${S.items.map((x) => `<div class="scrow${x.id === S.lowest ? ' low' : ''}"><span>${esc(x.name)} <small>비중 ${x.weight}</small></span><i><u style="width:${x.score}%"></u></i><b>${x.score}</b><p>${esc(x.why)}${x.id === S.lowest ? ` → ${esc(x.next)}` : ''}</p></div>`).join('')}</div>`;
   for (const m of HQ.log) { // 최신 회의가 위, 회의 안에서는 말한 순서대로
     if (m.round !== round) { round = m.round; html += `<div class="round">${m.round}번째 회의 · ${new Date(m.at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' })}${m.ai ? ' · AI 작성' : ''}</div>`; html += HQ.log.filter((x) => x.round === round).slice().reverse().map((x) => { const a = agentOf(x.from), to = x.to === 'all' ? '모두' : agentOf(x.to)?.name || ''; return `<div class="msg ${x.to === 'all' ? 'all' : ''}">${ava(a)}<div><span class="who">${esc(a?.name || x.from)} <small>${esc(a?.rank || '')} → ${esc(to)}</small></span><p>${esc(x.text)}</p></div></div>`; }).join(''); }
   }
   box.innerHTML = html;
 }
-function setState() { const c = HQ.lastCycle; $('#state').textContent = c ? `마지막 회의 ${new Date(c.at).toLocaleString('ko-KR')} · ${c.round}번째${c.ai ? ' · AI' : ''}` : '아직 회의 전'; }
+function setState() { const c = HQ.lastCycle; $('#state').textContent = (HQ.score ? `사이트 점수 ${HQ.score.total}점 · ` : '') + (c ? `마지막 회의 ${new Date(c.at).toLocaleString('ko-KR')} · ${c.round}번째${c.ai ? ' · AI' : ''}` : '아직 회의 전'); }
 async function load() {
   [HQ, GRAPH] = await Promise.all([api('/api/admin/hq'), api('/api/admin/hq/graph')]); if (!sel || !pillarOf(sel)) sel = HQ.pillars[0]?.id || null;
   build3D(); renderPillar(); renderOrg(); renderLog(); setState();

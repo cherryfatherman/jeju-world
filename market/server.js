@@ -356,7 +356,7 @@ const FEEDS = {
   waste: { name: '쓰레기 배출 통계 (공공데이터포털)', every: 86400e3, run: () => refreshWasteStats() },
   tour: { name: '관광지·카페·맛집 (관광 API)', every: 86400e3, needs: 'TOUR_API_KEY', run: () => refreshTourPlaces() },
   kstartup: { name: '창업 지원사업 공고 (K-Startup, 공공데이터포털 15125364)', every: 86400e3, needs: 'DATA_GO_KR_KEY', run: () => refreshKStartup() },
-  agents: { name: '본부 회의 (AI 직원)', every: 86400e3, run: () => agents.runCycle({ load, save, feedState }) },
+  agents: { name: '본부 회의 (AI 직원)', every: 86400e3, run: () => agents.runCycle(agentCtx()) },
   shift: { name: 'AI 직원 근무 (답글·이야기·보고)', every: 6 * 3600e3, run: () => agents.runShift(agentCtx()) },
 };
 const feedState = (id) => (load('feeds.json', {})[id] || {});
@@ -378,7 +378,7 @@ async function fixMissingPhotos() {
   if (list.some((p) => p.photoTried)) save('projects.json', list);
   return fixed;
 }
-const agentCtx = () => ({ load, save, feedState, titleOf, fixMissingPhotos, find: (kind, id) => FIND[kind]?.(id), catalog: (kind) => (CATALOG[kind] ? CATALOG[kind]() : []) });
+const agentCtx = () => ({ load, save, feedState, titleOf, fixMissingPhotos, its: () => jejuits.summary(), env: { ai: !!process.env.GEMINI_API_KEY, durable: store.durable || !store.SERVERLESS }, feeds: () => Object.entries(FEEDS).map(([id, f]) => ({ id, ready: !f.needs || !!process.env[f.needs], ok: feedState(id).ok !== false })), find: (kind, id) => FIND[kind]?.(id), catalog: (kind) => (CATALOG[kind] ? CATALOG[kind]() : []) });
 function markFeed(id, ok, note) { const s = load('feeds.json', {}); s[id] = { ...(s[id] || {}), lastRun: new Date().toISOString(), ok, note: note || '' }; save('feeds.json', s); }
 async function runFeed(id) {
   const f = FEEDS[id]; if (!f) return;
@@ -438,7 +438,7 @@ app.get('/api/admin/hq/graph', adminOnly, (req, res) => {
   });
 });
 app.post('/api/admin/hq/shift', adminOnly, async (req, res) => { try { const r = await agents.runShift(agentCtx()); markFeed('shift', true); res.json(r); } catch (e) { res.status(500).json({ error: e.message }); } });
-app.post('/api/admin/hq/cycle', adminOnly, async (req, res) => { try { const r = await agents.runCycle({ load, save, feedState }, { force: true }); markFeed('agents', true); res.json(r); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.post('/api/admin/hq/cycle', adminOnly, async (req, res) => { try { const r = await agents.runCycle(agentCtx(), { force: true }); markFeed('agents', true); res.json(r); } catch (e) { res.status(500).json({ error: e.message }); } });
 
 // ---- 제주 생활 가이드 (글 하나 = 독립 정보 페이지, 관리자에서 편집) ----
 const guideSummary = ({ id, title, summary, image, tag, lastChecked, votes }) => ({ id, title, summary, image, tag, lastChecked, votes });
@@ -468,7 +468,7 @@ app.put('/api/admin/guides', adminOnly, (req, res) => {
 // 제주 교통정보센터: 요청이 오면 받아오고 10분 동안 기억한다. 승인키는 응답에 넣지 않는다.
 app.get('/api/jeju/its/:kind', limit(60), async (req, res) => {
   if (!jejuits.KINDS[req.params.kind]) return res.status(404).json({ error: '없는 종류예요.' });
-  res.json(jejuits.publicView(await jejuits.load(req.params.kind), req.params.kind === 'traffic' ? 30 : 80));
+  res.json(jejuits.publicView(await jejuits.load(req.params.kind), req.query.all === '1' ? 3000 : req.params.kind === 'traffic' ? 30 : 80));
 });
 // 관리자 점검: 실제로 받은 필드 이름과 첫 줄을 본다 (형식이 바뀌었을 때 맞추기 위해)
 app.get('/api/admin/its/:kind', adminOnly, async (req, res) => {

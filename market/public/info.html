@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>제주 실시간 정보 · 섬업</title>
+<link rel="stylesheet" href="./vendor/leaflet/leaflet.css">
+<link rel="stylesheet" href="./style.css">
+<script src="./vendor/leaflet/leaflet.js"></script>
+<script src="./app.js"></script>
+<style>
+  .infomap { height: 320px; border-radius: 16px; border: 1px solid var(--line); margin: 14px 0 6px; z-index: 1; }
+  .infosearch { display: flex; gap: 8px; margin: 14px 0 4px; } .infosearch input { flex: 1; }
+  .rrow .rnav { flex: none; display: inline-flex; align-items: center; height: 40px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--line-strong); font-size: 13px; font-weight: 700; color: var(--ink-2); background: #fff; white-space: nowrap; }
+  .rrow .rnav:hover { border-color: var(--accent); color: var(--accent); }
+  @media (max-width: 560px) { .infomap { height: 230px; } .rrow .rnav { padding: 0 10px; } }
+</style>
+</head>
+<body>
+<main class="wrap" style="max-width:860px">
+  <div class="page-title"><h1 id="h1">제주 실시간 정보</h1><p id="sub"></p></div>
+  <div class="chips" id="areas"></div>
+  <div class="infosearch"><input id="q" placeholder="이름이나 주소로 찾기" aria-label="찾기"></div>
+  <div class="infomap" id="imap" hidden></div>
+  <div class="listbar"><span id="count"></span></div>
+  <div class="rlist" id="list"></div>
+  <div style="display:grid;place-items:center;margin-top:18px"><button class="btn" id="more" hidden>더 보기</button></div>
+  <p class="note" id="src" style="margin-top:16px"></p>
+</main>
+<script>
+/* 제주 교통정보센터 자료를 보여 주는 페이지: ?kind=road(도로 통제) | ev(전기차 충전소) | tour(관광지) */
+const Q = new URLSearchParams(location.search), kind = ['road', 'ev', 'tour'].includes(Q.get('kind')) ? Q.get('kind') : 'road';
+const META = { road: { h1: '도로 통제', sub: '지금 제주에서 통제 중인 도로예요.', icon: 'cloud', topic: 'logistics', empty: '지금 통제 중인 도로가 없어요.', sub2: 'jeju' },
+  ev: { h1: '전기차 충전소', sub: '제주의 전기차 충전소 위치예요.', icon: 'sun', topic: 'environment', empty: '충전소 정보를 불러오지 못했어요.', sub2: 'jeju' },
+  tour: { h1: '제주 관광지', sub: '제주특별자치도 교통정보센터가 제공하는 관광지 정보예요.', icon: 'sun', topic: 'travel 관광', empty: '관광지 정보를 불러오지 못했어요.', sub2: 'travel' } }[kind];
+document.title = `${META.h1} · 섬업`; $('#h1').textContent = META.h1; $('#sub').textContent = META.sub;
+let all = [], area = '전체', shown = 30, map, layer;
+const areaOf = (x) => { const m = /(제주시|서귀포시)\s*([가-힣0-9]+(?:읍|면|동))?/.exec(x.addr || ''); return m ? (m[2] ? `${m[1]} ${m[2]}` : m[1]) : ''; };
+const cityOf = (x) => (/(제주시|서귀포시)/.exec(x.addr || '') || [])[1] || '';
+const navUrl = (x) => `https://map.naver.com/p/search/${encodeURIComponent(x.addr || x.name)}`;
+function render() {
+  const q = $('#q').value.trim().toLowerCase();
+  const list = all.filter((x) => (area === '전체' || cityOf(x) === area) && (!q || `${x.name} ${x.addr} ${x.desc}`.toLowerCase().includes(q)));
+  $('#count').textContent = `${list.length.toLocaleString('ko-KR')}${kind === 'road' ? '건' : '곳'}`;
+  $('#list').replaceChildren(...list.slice(0, shown).map((x) => {
+    const period = [x.start, x.end].filter(Boolean).join(' ~ ');
+    const r = rankRow({ href: navUrl(x), external: true, image: x.image, iconName: META.icon, topic: META.topic, title: x.name || x.addr, sub: x.name ? x.addr : x.desc, meta: [x.name ? x.desc : '', period, x.tel && !/^-+$/.test(x.tel) ? x.tel : ''].filter(Boolean).join(' · ') });
+    r.querySelector('.up')?.remove(); const a = document.createElement('a'); a.className = 'rnav'; a.href = navUrl(x); a.target = '_blank'; a.rel = 'noopener'; a.textContent = '지도'; r.append(a); return r; }));
+  if (!list.length) $('#list').innerHTML = `<div class="empty">${all.length ? '찾는 곳이 없어요.' : META.empty}</div>`;
+  $('#more').hidden = list.length <= shown;
+  if (map) { layer.clearLayers(); const pts = list.filter((x) => x.lat && x.lng).slice(0, 400);
+    for (const x of pts) L.circleMarker([x.lat, x.lng], { radius: 6, color: '#fff', weight: 2, fillColor: '#ff6b1a', fillOpacity: 1 }).bindPopup(`<div class="pop"><b>${esc(x.name || x.addr)}</b><small>${esc(x.name ? x.addr : '')}</small></div>`).addTo(layer);
+    if (pts.length) map.fitBounds(L.latLngBounds(pts.map((x) => [x.lat, x.lng])).pad(0.15), { maxZoom: 13 }); }
+}
+$('#q').oninput = () => { shown = 30; render(); }; $('#more').onclick = () => { shown += 30; render(); };
+mountShell({ active: 'jeju', sub: META.sub2 }).then(async () => {
+  let d = { items: [] }; try { d = await api('/api/jeju/its/' + kind + '?all=1'); } catch {}
+  all = (d.items || []).filter((x) => x.name || x.addr);
+  const cities = [...new Set(all.map(cityOf).filter(Boolean))];
+  $('#areas').replaceChildren(...(cities.length > 1 ? ['전체', ...cities] : []).map((c) => { const b = document.createElement('button'); b.className = 'chip' + (c === area ? ' on' : ''); b.textContent = c; b.onclick = () => { area = c; shown = 30; $$('#areas .chip').forEach((y) => y.classList.toggle('on', y === b)); render(); }; return b; }));
+  if (all.some((x) => x.lat && x.lng)) { $('#imap').hidden = false; map = L.map('imap', { scrollWheelZoom: false }).setView([33.38, 126.55], 10); L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '&copy; OpenStreetMap' }).addTo(map); layer = L.layerGroup().addTo(map); }
+  if (d.source) $('#src').textContent = `출처: ${d.source} OPEN API · ${new Date(d.updatedAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })} 기준 · 10분마다 새로 받아와요`;
+  render();
+});
+</script>
+</body>
+</html>

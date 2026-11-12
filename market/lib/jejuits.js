@@ -44,6 +44,7 @@ function normalize(o) {
     start: strip(pick(o, [/(start|begin|bgn|st|from|strt)_?(dt|de|date|time|day|ymd)/i, /^(sdate|stdt|startdate)$/i])).slice(0, 30),
     end: strip(pick(o, [/(end|finish|ed|to|close)_?(dt|de|date|time|day|ymd)/i, /^(edate|eddt|enddate)$/i])).slice(0, 30),
     tel: strip(pick(o, [/tel|phone|telno/i])).slice(0, 30),
+    image: (() => { const v = String(pick(o, [/(img|image|photo|thumb|pic)[a-z_]*(url|path|src)?$/i]) || ''); return /^https:\/\/[^\s"'<>]{8,300}$/.test(v) ? v : ''; })(),
     speed: num(pick(o, [/(spd|speed)$/i])),
     lat, lng,
   };
@@ -67,6 +68,7 @@ async function load(kind, { fresh = false } = {}) {
   cache[kind] = { at: Date.now(), value }; return value;
 }
 // 방문자에게 보내는 모양 (원본 표본과 키는 빼고, 개수를 줄여서)
+const summary = async () => { const out = {}; for (const k of ['road', 'ev', 'tour']) { try { const v = await load(k); out[k] = v.ok ? v.count : null; } catch { out[k] = null; } } return out; };
 const publicView = (v, limit = 60) => ({ ok: v.ok, title: v.title, updatedAt: v.updatedAt, source: v.source, count: v.count || 0, items: (v.items || []).slice(0, limit) });
 
-module.exports = { KINDS, load, publicView };
+module.exports = { KINDS, load, publicView, summary };

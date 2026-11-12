@@ -342,6 +342,16 @@
      "icon": "heart",
      "label": "야간 응급·약국",
      "href": "./guide.html?id=emergency"
+    },
+    {
+     "icon": "cloud",
+     "label": "도로 통제",
+     "href": "./info.html?kind=road"
+    },
+    {
+     "icon": "sun",
+     "label": "전기차 충전소",
+     "href": "./info.html?kind=ev"
     }
    ]
   },
