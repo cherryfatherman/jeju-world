@@ -14,7 +14,7 @@
   <div class="typetabs" id="typetabs"><button data-t="spot">관광지</button><button data-t="cafe">카페</button><button data-t="food">맛집</button></div>
   <div class="chips" id="areaChips"></div>
   <div style="display:flex;gap:8px;margin:12px 0 4px"><input id="q" placeholder="이름이나 주소로 찾기" aria-label="찾기" style="flex:1"></div>
-  <div class="listbar"><span id="count"></span><div class="sort" id="sort"><button data-s="votes" class="on">점수순</button><button data-s="name">이름순</button></div></div>
+  <div class="listbar"><span id="count"></span><div class="sort" id="sort"><button data-s="votes" class="on">추천순</button><button data-s="name">이름순</button></div></div>
   <div class="rlist" id="list"></div>
   <div style="display:flex;gap:8px;justify-content:center;margin-top:18px"><button class="btn" id="more" hidden>더 보기</button><a class="btn" id="mapLink" href="./info.html?kind=tour">지도에서 보기</a></div>
   <p class="note" style="margin-top:16px">틀린 정보는 장소 페이지에서 알려 주세요. <span id="updated"></span></p>
@@ -23,7 +23,7 @@
 /* 직접 올린 장소와 공공 자료(교통정보센터·한국관광공사)를 한 목록으로 합쳐 보여 준다 */
 const Q = new URLSearchParams(location.search);
 let type = ['spot', 'cafe', 'food'].includes(Q.get('type')) ? Q.get('type') : 'spot', sort = 'votes', area = '전체', all = [], shown = 20;
-const SUB = { spot: '점수 높은 관광지부터.', cafe: '점수 높은 카페부터.', food: '점수 높은 맛집부터.' };
+const SUB = { spot: '추천 많은 관광지부터.', cafe: '추천 많은 카페부터.', food: '추천 많은 맛집부터.' };
 const TOPIC = { spot: ['travel 관광', 'sun'], cafe: ['retail 카페', 'chat'], food: ['food 맛집', 'grid'] };
 const cityOf = (t) => (/(제주시|서귀포시)/.exec(t || '') || [])[1] || '';
 const nm = (x) => String(x || '').replace(/\s+/g, '');
@@ -35,10 +35,9 @@ function render() {
   $('#areaChips').replaceChildren(...(areas.length > 2 ? areas : []).map((a) => { const b = document.createElement('button'); b.className = 'chip' + (a === area ? ' on' : ''); b.textContent = a; b.onclick = () => { area = a; shown = 20; render(); }; return b; }));
   const q = $('#q').value.trim().toLowerCase();
   const list = mine.filter((p) => (area === '전체' || p.city === area) && (!q || `${p.name} ${p.sub} ${p.meta}`.toLowerCase().includes(q)));
-  const rk = (p) => (p.score || 0) + (p.votes || 0) * 25; /* 섬업 점수 + 추천 1개당 25점 */
-  if (sort === 'votes') list.sort((a, b) => rk(b) - rk(a) || a.order - b.order); else list.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+  if (sort === 'votes') list.sort((a, b) => (b.votes || 0) - (a.votes || 0) || a.order - b.order); else list.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
   $('#count').textContent = `${list.length.toLocaleString('ko-KR')}곳`;
-  $('#list').replaceChildren(...list.slice(0, shown).map((p, i) => rankRow({ rank: i + 1, href: p.href, external: p.external, image: p.image, iconName: TOPIC[type][1], topic: TOPIC[type][0], title: p.name, sub: p.sub, meta: [p.score ? `섬업 점수 ${p.score}` : '', p.meta].filter(Boolean).join(' · '), kind: p.kind, id: p.id, votes: p.votes })));
+  $('#list').replaceChildren(...list.slice(0, shown).map((p, i) => rankRow({ rank: i + 1, href: p.href, external: p.external, image: p.image, iconName: TOPIC[type][1], topic: TOPIC[type][0], title: p.name, sub: p.sub, meta: p.meta, kind: p.kind, id: p.id, votes: p.votes })));
   if (!list.length) $('#list').innerHTML = `<div class="empty">${q ? '찾는 곳이 없어요.' : '아직 등록된 곳이 없어요.'}</div>`;
   $('#more').hidden = list.length <= shown;
 }
@@ -49,9 +48,9 @@ mountShell({ active: 'jeju', sub: 'travel' }).then(async () => {
   const [d, t] = await Promise.all([api('/api/places').catch(() => ({ items: [] })), api('/api/jeju/its/tour?all=1').catch(() => ({ items: [] }))]);
   const mine = (d.items || []).map((p, i) => ({ kind: 'place', id: p.id, type: p.type, name: p.name, sub: p.summary, meta: [p.area, ...(p.tags || []).slice(0, 2), p.comments ? `이야기 ${p.comments}` : ''].filter(Boolean).join(' · '), image: p.image, votes: p.votes || 0, score: p.score || 0, city: cityOf(`${p.area} ${p.address || ''}`), href: `./place.html?id=${encodeURIComponent(p.id)}`, order: i, ext: p.externalId || '' }));
   const names = new Set(mine.map((p) => nm(p.name))), exts = new Set(mine.map((p) => p.ext).filter(Boolean));
-  const pub = (t.items || []).filter((x) => x.name && !names.has(nm(x.name)) && !exts.has('tour:' + x.id)).map((x, i) => ({ kind: 'tour', id: x.id, type: x.cat || 'spot', name: x.name, sub: x.addr, meta: [x.desc, x.tel && !/^-+$/.test(x.tel) ? x.tel : ''].filter(Boolean).join(' · '), image: x.image, votes: x.votes || 0, score: x.score || 0, city: cityOf(x.addr), href: `https://map.naver.com/p/search/${encodeURIComponent(x.addr || x.name)}`, external: true, order: 1000 + i }));
+  const pub = (t.items || []).filter((x) => x.name && !names.has(nm(x.name)) && !exts.has('tour:' + x.id)).map((x, i) => ({ kind: 'tour', id: x.id, type: x.cat || 'spot', name: x.name, sub: x.addr, meta: [x.desc, x.tel && !/^-+$/.test(x.tel) ? x.tel : '', x.comments ? `이야기 ${x.comments}` : ''].filter(Boolean).join(' · '), image: x.image, votes: x.votes || 0, score: x.score || 0, city: cityOf(x.addr), href: `./spot.html?id=${encodeURIComponent(x.id)}`, order: 1000 + i }));
   all = [...mine, ...pub]; render();
-  const src = ['섬업이 직접 확인한 곳', t.source].filter(Boolean).join(' · '); $('#updated').textContent = `자료: ${src}. 섬업 점수(1~1000)는 사진·설명·위치·연락처가 얼마나 갖춰졌는지로 매기고, 추천을 받으면 순서가 올라가요.`;
+  const src = ['섬업이 직접 확인한 곳', t.source].filter(Boolean).join(' · '); $('#updated').textContent = `자료: ${src}. 업(추천)을 많이 받은 곳이 위로 올라가요.`;
 });
 </script>
 </body>

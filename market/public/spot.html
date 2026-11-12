@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>제주여행 · 섬업</title>
+<link rel="stylesheet" href="./vendor/leaflet/leaflet.css">
+<link rel="stylesheet" href="./style.css">
+<script src="./vendor/leaflet/leaflet.js"></script>
+<script src="./app.js"></script>
+<style>#smap { height: 260px; border-radius: 16px; border: 1px solid var(--line); margin-top: 14px; z-index: 1; } .pactions { flex-wrap: wrap; }</style>
+</head>
+<body>
+<main class="wrap" style="max-width:860px">
+  <article class="guide" id="place">
+    <p class="crumb"><a href="./places.html">여행</a> <span>›</span> <a id="crumbType" href="#"></a></p>
+    <div class="post-head"><div><h1 id="pName"></h1><p class="lead" id="pSummary"></p></div><span id="upSlot"></span></div>
+    <img class="ghero" id="pImage" alt="">
+    <div class="pfacts" id="pFacts"></div>
+    <div class="pactions">
+      <a class="btn primary" id="naverBtn" target="_blank" rel="noopener">네이버 지도에서 보기</a>
+      <a class="btn" id="telBtn" hidden>전화 걸기</a>
+      <button class="btn" id="shareBtn" type="button">공유</button>
+    </div>
+    <div id="smap" hidden></div>
+    <div class="gsources" id="pSources"></div>
+    <section id="talk"></section>
+  </article>
+  <section id="nearSec" hidden>
+    <div class="sec-head"><h2 id="spNear">같이 보면 좋은 곳</h2><a class="more" id="moreLink" href="./places.html">전체 보기</a></div>
+    <div class="rlist" id="more"></div>
+  </section>
+</main>
+<script>
+/* 공공 자료(교통정보센터·한국관광공사)로 들어온 장소의 안내 페이지: 정보를 보고, 추천하고, 이야기를 남긴다 */
+const id = new URLSearchParams(location.search).get('id');
+const LABEL = { spot: '관광지', cafe: '카페', food: '맛집' }, TOPIC = { spot: ['travel 관광', 'sun'], cafe: ['retail 카페', 'chat'], food: ['food 맛집', 'grid'] };
+mountShell({ active: 'jeju', sub: 'travel' }).then(async () => {
+  let p; try { p = await api(`/api/tour/${encodeURIComponent(id || '')}`); } catch { $('#place').innerHTML = '<div class="empty">찾는 장소가 없어요. <a href="./places.html">제주여행으로 돌아가기</a></div>'; return; }
+  const cat = LABEL[p.cat] ? p.cat : 'spot'; document.title = `${p.name} · 섬업`;
+  $('#crumbType').textContent = LABEL[cat]; $('#crumbType').href = `./places.html?type=${cat}`; $('#moreLink').href = `./places.html?type=${cat}`;
+  $('#pName').textContent = p.name || p.addr; $('#pSummary').textContent = p.desc || '';
+  if (p.image) { $('#pImage').src = p.image; $('#pImage').onerror = () => { $('#pImage').hidden = true; }; } else $('#pImage').hidden = true;
+  const tel = p.tel && !/^-+$/.test(p.tel) ? p.tel : '';
+  $('#pFacts').innerHTML = [['분류', LABEL[cat]], ['주소', p.addr], ['전화', tel]].filter(([, v]) => v).map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('');
+  $('#naverBtn').href = `https://map.naver.com/p/search/${encodeURIComponent(`${p.name || ''} ${p.addr || ''}`.trim())}`;
+  if (tel) { $('#telBtn').hidden = false; $('#telBtn').href = 'tel:' + tel.replace(/[^0-9+]/g, ''); }
+  if (p.lat && p.lng) { $('#smap').hidden = false; const map = L.map('smap', { scrollWheelZoom: false }).setView([p.lat, p.lng], 14); L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '&copy; OpenStreetMap' }).addTo(map); L.circleMarker([p.lat, p.lng], { radius: 9, color: '#fff', weight: 3, fillColor: '#ff6b1a', fillOpacity: 1 }).addTo(map); }
+  const src = p.src === '한국관광공사' ? ['한국관광공사 관광정보', 'https://korean.visitkorea.or.kr/'] : ['제주특별자치도 교통정보센터', 'https://www.jejuits.go.kr/'];
+  $('#pSources').innerHTML = `<b>출처</b><ul><li><a href="${src[1]}" target="_blank" rel="noopener">${src[0]}</a></li></ul>`;
+  $('#upSlot').replaceChildren(upBtn('tour', p.id, p.votes, true));
+  mountComments($('#talk'), 'tour', p.id);
+  $('#shareBtn').onclick = () => share(`${p.name} · 섬업`, p.addr || '', location.href);
+  if ((p.near || []).length) { $('#nearSec').hidden = false; $('#more').replaceChildren(...p.near.map((x) => { const r = rankRow({ href: `./spot.html?id=${encodeURIComponent(x.id)}`, image: x.image, iconName: TOPIC[cat][1], topic: TOPIC[cat][0], title: x.name, sub: x.addr }); r.querySelector('.up')?.remove(); return r; })); }
+});
+</script>
+</body>
+</html>
