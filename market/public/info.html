@@ -46,8 +46,8 @@ function render() {
   $('#count').textContent = `${list.length.toLocaleString('ko-KR')}${kind === 'road' ? '건' : '곳'}`;
   $('#list').replaceChildren(...list.slice(0, shown).map((x) => {
     const period = [x.start, x.end].filter(Boolean).join(' ~ ');
-    const r = rankRow({ href: navUrl(x), external: true, image: x.image, iconName: cat ? CATS[cat][2] : META.icon, topic: cat ? CATS[cat][1] : META.topic, title: x.name || x.addr, sub: x.name ? x.addr : x.desc, meta: [x.name ? x.desc : '', period, x.tel && !/^-+$/.test(x.tel) ? x.tel : ''].filter(Boolean).join(' · ') });
-    r.querySelector('.up')?.remove(); const a = document.createElement('a'); a.className = 'rnav'; a.href = navUrl(x); a.target = '_blank'; a.rel = 'noopener'; a.textContent = '지도'; r.append(a); return r; }));
+    const r = rankRow({ href: navUrl(x), external: true, image: x.image, iconName: cat ? CATS[cat][2] : META.icon, topic: cat ? CATS[cat][1] : META.topic, title: x.name || x.addr, sub: x.name ? x.addr : x.desc, meta: [x.name ? x.desc : '', period, x.tel && !/^-+$/.test(x.tel) ? x.tel : ''].filter(Boolean).join(' · '), ...(kind === 'tour' ? { kind: 'tour', id: x.id, votes: x.votes || 0 } : {}) });
+    if (kind !== 'tour') r.querySelector('.up')?.remove(); const a = document.createElement('a'); a.className = 'rnav'; a.href = navUrl(x); a.target = '_blank'; a.rel = 'noopener'; a.textContent = '지도'; r.append(a); return r; }));
   if (!list.length) $('#list').innerHTML = `<div class="empty">${all.length ? '찾는 곳이 없어요.' : META.empty}</div>`;
   $('#more').hidden = list.length <= shown;
   if (map) { layer.clearLayers(); const pts = list.filter((x) => x.lat && x.lng).slice(0, 400);

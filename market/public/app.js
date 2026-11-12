@@ -482,9 +482,16 @@ async function itsSection(sec, kind, { first = 6, cat = '' } = {}) {
   const row = (x) => { const period = [x.start, x.end].filter(Boolean).join(' ~ '), sub = [x.name ? x.addr : '', x.desc, period, x.tel].filter(Boolean).join(' · ');
     return `<div class="row"><div class="body"><b>${esc(x.name || x.addr)}</b>${sub ? `<p>${esc(sub)}</p>` : ''}</div></div>`; };
   const list = sec.querySelector('.list'), more = sec.querySelector('.itsmore'), note = sec.querySelector('.note'), cnt = sec.querySelector('.more');
+  if (kind === 'tour') { /* 관광지·카페·맛집: 위 목록과 같은 모양(그림 + 추천 버튼)으로 */
+    const T = { spot: ['travel 관광', 'sun'], cafe: ['retail 카페', 'chat'], food: ['food 맛집', 'grid'] }[cat || 'spot']; let shown = first;
+    const paint = () => { list.className = 'list rlist'; list.replaceChildren(...items.slice(0, shown).map((x, i) => rankRow({ rank: i + 1, href: `https://map.naver.com/p/search/${encodeURIComponent(x.addr || x.name)}`, external: true, image: x.image, iconName: T[1], topic: T[0], title: x.name || x.addr, sub: x.name ? x.addr : x.desc, meta: [x.name ? x.desc : '', x.tel && !/^-+$/.test(x.tel) ? x.tel : ''].filter(Boolean).join(' · '), kind: 'tour', id: x.id, votes: x.votes || 0 })));
+      if (more) { more.hidden = false; more.textContent = shown < Math.min(items.length, 60) ? '더 보기' : '전체 보기 (지도·검색)'; more.onclick = () => { if (shown < Math.min(items.length, 60)) { shown += 12; paint(); } else location.href = './info.html?kind=tour&type=' + (cat || 'spot'); }; } };
+    paint();
+  } else {
   list.innerHTML = items.slice(0, first).map(row).join('');
-  if (cnt) cnt.textContent = `${(cat ? items.length : d.count || items.length).toLocaleString('ko-KR')}곳`.replace('곳', kind === 'road' ? '건' : '곳');
   if (more) { more.hidden = false; more.textContent = '전체 보기'; more.onclick = () => { location.href = './info.html?kind=' + kind + (cat ? '&type=' + cat : ''); }; }
+  }
+  if (cnt) cnt.textContent = `${(cat ? items.length : d.count || items.length).toLocaleString('ko-KR')}곳`.replace('곳', kind === 'road' ? '건' : '곳');
   if (note) note.textContent = `출처: ${d.source} OPEN API · ${new Date(d.updatedAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })} 기준`;
   sec.hidden = false; if (!FX.reduced()) sec.classList.add('in');
 }

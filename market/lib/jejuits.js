@@ -2,6 +2,7 @@
 // 승인키는 환경변수에만 둔다: JEJU_CITS_CODE(관광지·도로통제·전기차 충전소), JEJU_ITS_CODE(실시간 교통).
 // 요청이 올 때 받아오고 10분 동안 기억해 둔다(서버리스에서도 돌게). AI는 쓰지 않는다.
 // 응답 필드 이름을 문서로 확인하지 못해서, 이름·주소·좌표를 너그럽게 찾아낸다.
+const crypto = require('crypto');
 const BASE = process.env.JEJU_ITS_BASE || 'http://api.jejuits.go.kr/api/'; // JEJU_ITS_BASE는 시험할 때만 쓴다
 const KINDS = {
   road: { path: 'infoRoadCloseList', key: 'JEJU_CITS_CODE', title: '도로 통제' },
@@ -65,7 +66,7 @@ async function load(kind, { fresh = false } = {}) {
     const r = await fetch(`${BASE}${K.path}?code=${encodeURIComponent(code)}${K.extra || ''}`, { signal: AbortSignal.timeout(8000) });
     const text = await r.text();
     let raw = []; try { raw = findList(JSON.parse(text)); } catch { raw = parseXml(text); }
-    const items = raw.map(normalize).filter((x) => x.name || x.addr || x.desc);
+    const items = raw.map(normalize).filter((x) => x.name || x.addr || x.desc).map((x) => ({ id: crypto.createHash('md5').update(`${x.name}|${x.addr}`).digest('hex').slice(0, 12), ...x })); /* id: 추천을 붙이기 위한 고정 번호 */
     value = { ok: r.ok && raw.length > 0, status: r.status, title: K.title, updatedAt: new Date().toISOString(), source: '제주특별자치도 교통정보센터', count: items.length, items,
       sample: { fields: raw[0] ? Object.keys(raw[0]) : [], first: raw[0] || null, head: raw.length ? '' : text.slice(0, 400) } };
     if (!value.ok) value.error = raw.length ? '' : '받은 내용에서 목록을 찾지 못했어요.';
@@ -76,4 +77,5 @@ async function load(kind, { fresh = false } = {}) {
 const summary = async () => { const out = {}; for (const k of ['road', 'ev', 'tour']) { try { const v = await load(k); out[k] = v.ok ? v.count : null; } catch { out[k] = null; } } return out; };
 const publicView = (v, limit = 60) => ({ ok: v.ok, title: v.title, updatedAt: v.updatedAt, source: v.source, count: v.count || 0, items: (v.items || []).slice(0, limit) });
 
-module.exports = { KINDS, load, publicView, summary };
+const peek = (kind) => (cache[kind] ? cache[kind].value.items || [] : []); // 이미 받아 둔 목록 (기다리지 않고)
+module.exports = { KINDS, load, publicView, summary, peek };

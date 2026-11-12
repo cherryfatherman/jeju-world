@@ -41,7 +41,7 @@ function render() {
   if (!list.length) $('#list').innerHTML = '<div class="empty">아직 등록된 곳이 없어요.</div>';
 }
 const TOUR_H = { spot: '제주 관광지 정보', cafe: '제주 카페 정보', food: '제주 맛집 정보' };
-function drawTour() { const sec = $('#sec-tour'); sec.querySelector('h2').textContent = TOUR_H[type]; itsSection(sec, 'tour', { first: 6, cat: type }); }
+function drawTour() { const sec = $('#sec-tour'); sec.querySelector('h2').textContent = TOUR_H[type]; itsSection(sec, 'tour', { first: 12, cat: type }); }
 $$('#typetabs button').forEach((b) => b.onclick = () => { type = b.dataset.t; history.replaceState(null, '', `?type=${type}`); render(); drawTour(); });
 $$('#sort button').forEach((b) => b.onclick = () => { sort = b.dataset.s; $$('#sort button').forEach((x) => x.classList.toggle('on', x === b)); render(); });
 mountShell({ active: 'jeju', sub: 'travel' }).then(async () => {
