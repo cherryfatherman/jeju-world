@@ -441,9 +441,9 @@ async function fetchNews() {
 }
 // 논문 클리핑용: Crossref(학술 논문 공개 목록)에서 제목·학술지·날짜·DOI 주소만 가져온다. 키가 필요 없다
 const PAPER_TOPICS = ['Jeju tourism startup', 'hackathon innovation', 'startup ecosystem Korea', 'island entrepreneurship', 'regional entrepreneurship policy', 'generative AI entrepreneurship', 'large language model agents', 'AI coding assistant productivity', 'generative AI small business adoption', 'digital nomad workation', 'social venture local community'];
-async function fetchPapers() {
-  const base = process.env.CROSSREF_BASE || 'https://api.crossref.org'; const n = Math.floor(Date.now() / (6 * 3600e3)); const picks = [PAPER_TOPICS[n % PAPER_TOPICS.length], PAPER_TOPICS[(n + 3) % PAPER_TOPICS.length]]; const out = [];
-  const got = await Promise.allSettled(picks.map(async (q) => { const r = await fetch(`${base}/works?query.bibliographic=${encodeURIComponent(q)}&rows=12&filter=from-pub-date:2023-01-01,type:journal-article&select=DOI,title,container-title,published,author`, { headers: { 'User-Agent': 'seomup-clipper/1.0' }, signal: AbortSignal.timeout(7000) }); if (!r.ok) return [];
+async function fetchPapers(query, rows = 12) {
+  const base = process.env.CROSSREF_BASE || 'https://api.crossref.org'; const n = Math.floor(Date.now() / (6 * 3600e3)); const picks = query ? [query] : [PAPER_TOPICS[n % PAPER_TOPICS.length], PAPER_TOPICS[(n + 3) % PAPER_TOPICS.length]]; const out = [];
+  const got = await Promise.allSettled(picks.map(async (q) => { const r = await fetch(`${base}/works?query.bibliographic=${encodeURIComponent(q)}&rows=${Math.max(5, Math.min(40, Number(rows) || 12))}&filter=from-pub-date:2023-01-01,type:journal-article&select=DOI,title,container-title,published,author`, { headers: { 'User-Agent': 'seomup-clipper/1.0' }, signal: AbortSignal.timeout(7000) }); if (!r.ok) return [];
     const d = await r.json(); return ((d.message || {}).items || []).map((x) => { const doi = String(x.DOI || ''); const dp = ((x.published || {})['date-parts'] || [[]])[0] || []; const au = (x.author || []).map((a) => [a.given, a.family].filter(Boolean).join(' ')).filter(Boolean);
       return { id: crypto.createHash('md5').update(doi).digest('hex').slice(0, 10), topic: q, title: clean(String((x.title || [])[0] || '').replace(/<[^>]+>/g, ''), 160), journal: clean((x['container-title'] || [])[0] || '', 80), date: dp[0] ? [dp[0], String(dp[1] || 1).padStart(2, '0'), String(dp[2] || 1).padStart(2, '0')].join('-') : '', year: dp[0] || '', authors: clean(au.slice(0, 3).join(', ') + (au.length > 3 ? ' 외' : ''), 80), link: /^10\.\d{4,9}\/\S+$/.test(doi) ? 'https://doi.org/' + doi : '' }; }).filter((x) => x.link && x.title.length > 12); }));
   got.forEach((g) => { if (g.status === 'fulfilled') out.push(...g.value); });
@@ -491,14 +491,17 @@ app.post('/api/admin/feeds/:id/run', adminOnly, async (req, res) => { await runF
 
 // ---- 본부(HQ): 큰 줄기(기둥)·부서·AI 직원·할 일·회의록. 3D 대시보드(/hq.html)가 쓴다 ----
 app.get('/api/admin/hq', adminOnly, (req, res) => res.json({ ...load('hq.json', { pillars: [], agents: [], tasks: [], log: [] }), facts: agents.sense({ load, save, feedState }) }));
-app.put('/api/admin/hq', adminOnly, (req, res) => {
+app.put('/api/admin/hq', adminOnly, async (req, res) => {
   const b = req.body || {}; const hq = load('hq.json', { pillars: [], agents: [], tasks: [], log: [] }); const oldTasks = hq.tasks || [];
   const color = (c) => (/^#[0-9a-fA-F]{6}$/.test(c || '') ? c : '#ff6b1a');
   if (Array.isArray(b.pillars)) hq.pillars = b.pillars.map((p) => ({ id: clean(p.id, 30).toLowerCase().replace(/[^a-z0-9-]/g, '-') || newId(), name: clean(p.name, 20), dept: clean(p.dept, 20), color: color(p.color), goal: clean(p.goal, 120), kpi: clean(p.kpi, 80) })).filter((p) => p.name).slice(0, 12);
   if (Array.isArray(b.agents)) hq.agents = b.agents.map((a) => ({ id: clean(a.id, 30).toLowerCase().replace(/[^a-z0-9-]/g, '-') || newId(), name: clean(a.name, 12), rank: ['본부장', '부서장', '팀장', '팀원'].includes(a.rank) ? a.rank : '팀원', dept: clean(a.dept, 20), pillar: clean(a.pillar, 30), persona: clean(a.persona, 120) })).filter((a) => a.name).slice(0, 40);
-  if (Array.isArray(b.tasks)) hq.tasks = b.tasks.map((t) => ({ id: clean(t.id, 30) || newId(), pillar: clean(t.pillar, 30), owner: clean(t.owner, 30), title: clean(t.title, 100), why: clean(t.why, 240), status: ['proposed', 'doing', 'done'].includes(t.status) ? t.status : 'proposed', by: t.by === 'agent' ? 'agent' : 'admin', createdAt: clean(t.createdAt, 30) || new Date().toISOString() })).filter((t) => t.title).slice(0, 200);
+  if (Array.isArray(b.tasks)) hq.tasks = b.tasks.map((t) => ({ id: clean(t.id, 30) || newId(), pillar: clean(t.pillar, 30), owner: clean(t.owner, 30), title: clean(t.title, 100), why: clean(t.why, 240), status: ['proposed', 'doing', 'done'].includes(t.status) ? t.status : 'proposed', by: t.by === 'agent' ? 'agent' : 'admin', createdAt: clean(t.createdAt, 30) || new Date().toISOString(), ...(t.result ? { result: clean(t.result, 200), worker: clean(t.worker, 30) } : {}) })).filter((t) => t.title).slice(0, 200);
   if (Array.isArray(b.tasks)) agents.remember(hq, oldTasks, hq.tasks);
-  save('hq.json', hq); res.json({ ok: true });
+  save('hq.json', hq);
+  // '진행'으로 바뀐 할 일이 있으면 팀원이 바로 한다
+  let ran = 0; if ((hq.tasks || []).some((t) => t.status === 'doing' && !t.result)) { try { ran = (await Promise.race([agents.runTasks(agentCtx()), new Promise((r) => setTimeout(() => r({ ran: 0 }), 20000))])).ran || 0; } catch {} }
+  res.json({ ok: true, ran });
 });
 // 본부 지식 지도: 줄기마다 실제 글을 점으로. 제목과 여는 주소만 보낸다
 app.get('/api/admin/hq/graph', adminOnly, (req, res) => {

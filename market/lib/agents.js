@@ -166,7 +166,7 @@ async function runCycle(ctx, { force = false } = {}) {
   { const title = `점수 올리기: ${low.name} (${low.score}점)`; const boss = hq.agents.find((a) => a.id === 'halla')?.id || ''; const pid = hq.pillars[0]?.id; const dismissed = hq.memory?.[pid]?.dismissed || [];
     if (pid && !hq.tasks.some((t) => t.title.startsWith(`점수 올리기: ${low.name}`)) && !dismissed.some((d) => d.startsWith(`점수 올리기: ${low.name}`))) props.push({ pillar: pid, owner: boss, title, why: `${low.why}. ${low.next}.` }); }
   const at = new Date().toISOString();
-  for (const p of props) hq.tasks.unshift({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), pillar: p.pillar, owner: p.owner, title: p.title, why: p.why, status: 'proposed', by: 'agent', createdAt: at });
+  for (const p of props) hq.tasks.unshift({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), pillar: p.pillar, owner: ((hq.agents.find((a) => a.pillar === p.pillar && a.rank === '부서장')) || {}).id || p.owner, title: p.title, why: p.why, status: 'proposed', by: 'agent', createdAt: at });
   // 지난 회의와 숫자가 같고 새 제안도 없으면 AI를 부르지 않는다 (토큰 0)
   const hash = crypto.createHash('md5').update(JSON.stringify(facts)).digest('hex');
   const changed = hash !== hq.lastCycle?.hash || props.length > 0;
@@ -202,17 +202,19 @@ function planShift(ctx, hq) {
   const keyOf = (c) => c.key || (c.projectId ? `project:${c.projectId}` : '');
   const leadOf = (pid) => hq.agents.find((a) => a.pillar === pid && a.rank === '부서장') || hq.agents.find((a) => a.pillar === pid);
   // 운영자가 남긴 이야기에는 반드시 답한다 (맨 위 글이든 답글이든, 한 번 근무에 8건까지). 그 글의 줄기 담당이 답하고, 없으면 소통 담당이 답한다
+  const threadOf = (c) => { const root = c.parent || c.id; return comments.filter((x) => keyOf(x) === keyOf(c) && (x.id === root || x.parent === root)).sort((a, b) => a.createdAt.localeCompare(b.createdAt)).slice(-6).map((x) => ({ who: x.staff ? `AI 직원 ${x.name}` : x.owner ? '운영자' : `방문자 ${cut(x.name, 12)}`, text: cut(x.text, 160), me: x.id === c.id })); };
+  const bodyOf = (item) => cut([item.tagline, item.summary, item.description, item.body].filter(Boolean).join(' '), 500);
   const pillarOfKind = (kind) => Object.keys(SHIFT_KINDS).find((pid) => SHIFT_KINDS[pid].includes(kind));
   for (const c of comments.filter((x) => x.owner && !x.staff && !repliedTo.has(x.id)).sort((a, b) => a.createdAt.localeCompare(b.createdAt)).slice(0, 8)) {
     const [kind, ...rest] = keyOf(c).split(':'); const id = rest.join(':'); const item = ctx.find(kind, id); if (!item) continue;
     const agent = leadOf(pillarOfKind(kind)) || leadOf('community') || hq.agents[0]; if (!agent) continue;
-    taken.add(c.id); jobs.push({ type: 'reply', owner: true, pillar: agent.pillar || 'community', agent, kind, id, title: ctx.titleOf(item), about: cut(item.tagline || item.summary || item.description || '', 160), parent: c.parent || c.id, replyTo: c.id, to: cut(c.name, 20), said: cut(c.text, 200) });
+    taken.add(c.id); jobs.push({ type: 'reply', owner: true, pillar: agent.pillar || 'community', agent, kind, id, title: ctx.titleOf(item), about: cut(item.tagline || item.summary || item.description || '', 160), parent: c.parent || c.id, replyTo: c.id, to: cut(c.name, 20), said: cut(c.text, 200), thread: threadOf(c), body: bodyOf(item) });
   }
   const pick = (pillar, kinds) => {
     const agent = leadOf(pillar.id); if (!agent) return;
     // ① 답글: 내 줄기 글에 달린, 아직 답이 없는 방문자 이야기 (가장 최근 것)
     const waiting = comments.filter((c) => !c.staff && !c.parent && !repliedTo.has(c.id) && !taken.has(c.id) && kinds.includes(keyOf(c).split(':')[0])).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
-    if (waiting) { const [kind, ...rest] = keyOf(waiting).split(':'); const id = rest.join(':'); const item = ctx.find(kind, id); if (item) { taken.add(waiting.id); jobs.push({ type: 'reply', pillar: pillar.id, agent, kind, id, title: ctx.titleOf(item), about: cut(item.tagline || item.summary || item.description || '', 160), parent: waiting.id, replyTo: waiting.id, to: cut(waiting.name, 20), said: cut(waiting.text, 200) }); return; } }
+    if (waiting) { const [kind, ...rest] = keyOf(waiting).split(':'); const id = rest.join(':'); const item = ctx.find(kind, id); if (item) { taken.add(waiting.id); jobs.push({ type: 'reply', pillar: pillar.id, agent, kind, id, title: ctx.titleOf(item), about: cut(item.tagline || item.summary || item.description || '', 160), parent: waiting.id, replyTo: waiting.id, thread: threadOf(waiting), body: bodyOf(item), to: cut(waiting.name, 20), said: cut(waiting.text, 200) }); return; } }
     // ② 이야기: 직원 이야기가 없는 글부터, 한 글에 2건까지
     const counts = {}; for (const c of comments) if (c.staff) counts[keyOf(c)] = (counts[keyOf(c)] || 0) + 1;
     const pool = kinds.flatMap((kind) => ctx.catalog(kind).slice(0, 30).map((it) => ({ kind, ...it }))).filter((it) => !(counts[`${it.kind}:${it.id}`] > 0)) // 글 하나에 직원 이야기는 1건까지.sort((a, b) => (counts[`${a.kind}:${a.id}`] || 0) - (counts[`${b.kind}:${b.id}`] || 0));
@@ -254,10 +256,77 @@ JSON만: {"lines":[{"i":0,"text":"","name":"","tagline":""}]}  (name과 tagline�
   for (const l of Array.isArray(o.lines) ? o.lines : []) { const t = cut(l.text, 320); if (Number.isInteger(l.i) && jobs[l.i] && t.length >= 8 && !/https?:\/\//.test(t)) { out[l.i] = jobs[l.i].type === 'idea' || jobs[l.i].type === 'pick' ? t : cut(t, 200); out['m' + l.i] = { name: cut(l.name, 20), tagline: cut(l.tagline, 40) }; } }
   return out;
 }
+// 할 일 실행: '진행'으로 바뀐 할 일을 그 줄기의 팀원(없으면 팀장, 부서장)이 바로 한다. 제안은 부서장, 실행은 팀원.
+// 할 수 있는 일: 논문 찾기 / 기사 클리핑 / 장소(맛집·카페·관광지) 올리기. 그 밖의 일은 사람이 해야 한다고 적어 둔다.
+const PAPER_Q = [[/해커톤/, 'hackathon innovation'], [/관광|여행/, 'Jeju tourism'], [/AI|인공지능|생성형/i, 'generative artificial intelligence startup'], [/투자|펀드/, 'venture capital startup funding'], [/제주/, 'Jeju startup entrepreneurship'], [/창업|스타트업/, 'startup entrepreneurship ecosystem Korea']];
+async function runTasks(ctx) {
+  const { load, save } = ctx; const hq = load('hq.json', { pillars: [], agents: [], tasks: [], log: [] }); hq.log = hq.log || [];
+  const todo = (hq.tasks || []).filter((t) => t.status === 'doing' && !t.result).slice(0, 3); if (!todo.length) return { ran: 0 };
+  const at = new Date().toISOString(), today = at.slice(0, 10); const msgs = []; let ran = 0;
+  const workerOf = (pid) => hq.agents.find((a) => a.pillar === pid && a.rank === '팀원') || hq.agents.find((a) => a.pillar === pid && a.rank === '팀장') || hq.agents.find((a) => a.pillar === pid) || hq.agents[0];
+  for (const t of todo) { const w = workerOf(t.pillar); if (!w) continue; const text = `${t.title} ${t.why || ''}`; const n = Math.max(1, Math.min(10, Number((/(\d+)\s*(건|개|곳|편)/.exec(t.title) || [])[1]) || 3)); let result = '';
+    try {
+      if (/논문|paper/i.test(text) && ctx.papers) { const q = (PAPER_Q.find(([re]) => re.test(text)) || [0, 'Jeju startup entrepreneurship'])[1]; const ins = load('insights.json', []); const have = new Set(ins.map((x) => x.externalId)); const urls = new Set(ins.map((x) => x.url));
+        const found = (await ctx.papers(q, 30)).filter((x) => !have.has('paper:' + x.id) && !urls.has(x.link)).slice(0, n);
+        for (const x of found) ins.unshift({ id: 'paper-' + x.id, title: cut(x.title, 160), category: '논문', org: cut([x.journal, x.authors].filter(Boolean).join(' · ') || '학술 논문', 120), date: x.date || today, summary: cut(`${x.journal || '학술지'}에 실린 논문이에요.`, 200), points: [], url: x.link, source: { label: cut(x.journal || 'DOI 원문', 60), url: x.link }, body: `${w.dept || '인사이트부'} AI 직원 ${w.name}이(가) 할 일 "${cut(t.title, 40)}"로 찾아온 논문이에요. 제목과 실린 곳만 옮겼어요. 내용은 원문에서 확인해 주세요.`, votes: 0, updatedAt: today, auto: true, externalId: 'paper:' + x.id });
+        if (found.length) save('insights.json', ins); result = found.length ? `논문 ${found.length}건을 인사이트에 올렸어요 (국제 학술지 목록 Crossref에서 "${q}"로 찾음)` : '새로 올릴 논문을 찾지 못했어요. 다음 근무 때 다시 찾을게요.'; if (!found.length) result = ''; }
+      else if (/기사|뉴스|클리핑|소식/.test(text) && ctx.news) { const ins = load('insights.json', []); const have = new Set(ins.map((x) => x.externalId)); const urls = new Set(ins.map((x) => x.url)); const key = (/해커톤/.test(text) ? '해커톤' : /AI|인공지능/i.test(text) ? 'AI' : /지원/.test(text) ? '지원사업' : /관광/.test(text) ? '관광' : '');
+        const found = (await ctx.news()).filter((x) => x.link && !have.has('clip:' + x.id) && !urls.has(x.link) && (!key || (x.topic || '').includes(key))).slice(0, n);
+        for (const x of found) ins.unshift({ id: 'clip-' + x.id, title: cut(x.title, 100), category: x.topic === '해커톤' ? '해커톤 소식' : '클리핑', tag: x.topic || '', org: cut(x.source || '뉴스', 60), date: x.date || today, summary: cut(x.title, 200), points: [], url: x.link, source: { label: cut(x.source || '원문', 60), url: x.link }, body: `${w.dept || '인사이트부'} AI 직원 ${w.name}이(가) 할 일 "${cut(t.title, 40)}"로 골라 온 기사예요. 내용은 원문에서 확인해 주세요.`, votes: 0, updatedAt: today, auto: true, externalId: 'clip:' + x.id });
+        if (found.length) { save('insights.json', ins); result = `기사 ${found.length}건을 인사이트에 클리핑했어요`; } }
+      else if (/맛집|카페|관광지|장소|여행지/.test(text) && ctx.travel) { const cat = /맛집/.test(text) ? 'food' : /카페/.test(text) ? 'cafe' : /관광지|여행지/.test(text) ? 'spot' : ''; const places = load('places.json', []); const nm = (x) => String(x || '').replace(/\s+/g, ''); const ext = new Set(places.map((p) => p.externalId)); const names = new Set(places.map((p) => nm(p.name))); const added = [];
+        for (const x of await ctx.travel()) { if (added.length >= n) break; if ((cat && x.cat !== cat) || !x.image || !x.name || !x.addr || ext.has('tour:' + x.id) || names.has(nm(x.name))) continue; const m = /(제주시|서귀포시)\s*([가-힣0-9]+(?:읍|면|동))?/.exec(x.addr) || []; const area = [m[1], m[2]].filter(Boolean).join(' ');
+          places.push({ id: 't-' + x.id, type: x.cat, name: cut(x.name, 60), area, summary: cut(`${area || '제주'}에 있는 ${{ food: '맛집', cafe: '카페', spot: '관광지' }[x.cat] || '곳'}이에요.`, 160), tags: [], image: x.image, address: cut(x.addr, 120), tel: cut(x.tel, 30), tip: '', source: x.src === '한국관광공사' ? { label: '한국관광공사 관광정보', url: 'https://korean.visitkorea.or.kr/' } : { label: '제주특별자치도 교통정보센터', url: 'https://www.jejuits.go.kr/' }, lastChecked: today, votes: 0, externalId: 'tour:' + x.id, hidden: false, auto: true, addedBy: `${w.dept || '생활부'} AI ${w.name}`, ...(x.lat && x.lng ? { lat: x.lat, lng: x.lng } : {}) }); names.add(nm(x.name)); added.push(x.name); }
+        if (added.length) { save('places.json', places); result = `장소 ${added.length}곳을 올렸어요: ${added.map((a) => cut(a, 14)).join(', ')}`; } }
+      else result = '이 일은 AI 직원이 직접 할 수 없는 일이에요. 사람이 해야 해요. (지금 할 수 있는 일: 논문 찾기, 기사 클리핑, 장소 올리기)';
+    } catch (e) { result = ''; }
+    if (!result) continue; ran++; const can = !/직접 할 수 없는/.test(result);
+    t.result = cut(result, 200); t.worker = w.id; if (can) t.status = 'done';
+    msgs.push({ from: w.id, to: t.owner && hq.agents.some((a) => a.id === t.owner) ? t.owner : 'halla', text: `할 일 "${cut(t.title, 30)}": ${result}`, kind: 'report', at, round: (hq.log[0]?.round || 0), ai: false }); }
+  if (ran) { hq.log = [...msgs.reverse(), ...hq.log].slice(0, 300); save('hq.json', hq); }
+  return { ran };
+}
+async function writeReplies(jobs) {
+  const prompt = `당신은 제주 창업 플랫폼 "섬업"에서 일하는 AI 직원입니다. 담당 글에 달린 이야기에 답글을 씁니다. 글 내용과 앞뒤 대화를 끝까지 읽고, 상대가 한 말에 정확히 맞는 답을 하세요.
+
+[답하는 법]
+- 먼저 상대의 말이 무엇인지 가려내세요: 질문 / 칭찬·감사 / 불만·지적 / 제안·지시 / 가벼운 인사.
+- 질문: [글]에 답이 있으면 그 내용으로 바로 답합니다. 없으면 모른다고 말하고 "글 올린 분께 문의하기로 물어보시면 정확해요"처럼 다음 행동을 알려 줍니다.
+- 칭찬·감사: 무엇이 좋았다고 했는지 그 말을 짚어 고마움을 전하고, 관련해서 도움이 될 한 가지를 덧붙입니다.
+- 불만·지적(예: "똑같은 말만 한다"): 변명하지 말고 인정한 뒤, 이번에는 그 글에 대해 구체적으로 답합니다. 같은 문장을 되풀이하지 마세요.
+- 제안·지시(운영자가 "열심히 하자", "이것 확인해 줘" 등): 무엇을 하겠다는지 이 글과 관련된 구체적인 한 가지로 답합니다. 이미 했다고 거짓으로 말하지 않습니다.
+- 앞에서 AI 직원이 이미 한 말과 같은 문장·같은 내용을 다시 쓰지 마세요.
+
+[말투와 금지]
+- 1~3문장, 정중하고 또렷한 존댓말(~해요/~합니다). 군더더기 인사("확인했어요", "살펴볼게요"만 있는 답) 금지.
+- [글]과 [대화]에 없는 사실·숫자·통계·날짜·가격·약속을 만들지 마세요. 사이트 이용자 수, 거래 건수 같은 숫자는 절대 쓰지 마세요.
+- [글]에 적힌 숫자(가입자 수, 매칭 건수 등)는 상대가 그것을 물었을 때만 옮기세요. 묻지 않았는데 숫자를 끼워 넣지 마세요. 여러 답글에 같은 구절을 되풀이하지 마세요.
+- 거친 말이나 욕이 섞여 있어도 차분하게, 내용에만 답하세요.
+- 이름·직함·링크는 쓰지 마세요(따로 표시됩니다). 상대를 부를 때는 운영자면 "운영자님", 방문자면 닉네임에 "님"을 붙입니다.
+
+[작업]
+${jobs.map((j, i) => `#${i} | 직원: ${j.agent.dept || '섬업'} 담당 (${j.agent.persona || '차분하고 정확함'})
+[글] "${j.title}" - ${j.body || j.about || '(설명 없음)'}
+[대화]
+${(j.thread && j.thread.length ? j.thread : [{ who: j.owner ? '운영자' : `방문자 ${j.to}`, text: j.said, me: true }]).map((t) => `${t.me ? '▶ 답할 말 · ' : ''}${t.who}: ${t.text}`).join('\n')}`).join('\n\n')}
+
+JSON만: {"lines":[{"i":0,"kind":"질문|칭찬|불만|제안|인사","text":""}]}`;
+  const o = await askJSON(prompt); const out = {};
+  /* 묻지 않았는데 숫자를 끼워 넣은 문장은 뺀다 (AI가 글의 숫자를 답마다 되풀이하는 버릇) */
+  const noNumbers = (text, said) => { if (/[?？]|얼마|몇|언제|가격|비용|숫자|수는|기간/.test(said || '')) return text; const parts = text.match(/[^.!?。]+[.!?。]?/g) || [text]; const kept = parts.filter((x) => !/\d/.test(x)).join('').trim(); return kept.length >= 12 ? kept : text; };
+  for (const l of Array.isArray(o.lines) ? o.lines : []) { const t = Number.isInteger(l.i) && jobs[l.i] ? noNumbers(cut(l.text, 260), jobs[l.i].said) : ''; if (Number.isInteger(l.i) && jobs[l.i] && t.length >= 12 && !/https?:\/\//.test(t) && !/\d+\s*(건|명)의?\s*(거래|이용자|회원|방문)/.test(t)) out[l.i] = t; }
+  return out;
+}
 async function runShift(ctx) {
+  try { await runTasks(ctx); } catch {}
   const { load, save } = ctx; const hq = load('hq.json', { pillars: [], agents: [], tasks: [], log: [] }); hq.log = hq.log || [];
   const jobs = planShift(ctx, hq); await planWriting(ctx, hq, jobs); const at = new Date().toISOString(); let ai = false, lines = {};
-  if (jobs.length) { try { lines = await Promise.race([writeShift(jobs), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 25000))]); ai = Object.keys(lines).length > 0; } catch {} }
+  if (jobs.length) { const late = () => new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 25000));
+    const rIdx = jobs.map((j, i) => (j.type === 'reply' ? i : -1)).filter((i) => i >= 0); const oIdx = jobs.map((j, i) => (j.type !== 'reply' ? i : -1)).filter((i) => i >= 0);
+    const [a, b] = await Promise.allSettled([oIdx.length ? Promise.race([writeShift(oIdx.map((i) => jobs[i])), late()]) : {}, rIdx.length ? Promise.race([writeReplies(rIdx.map((i) => jobs[i])), late()]) : {}]);
+    if (a.status === 'fulfilled') for (const k of Object.keys(a.value)) { const m = /^(m?)(\d+)$/.exec(k); if (m) lines[m[1] + oIdx[Number(m[2])]] = a.value[k]; }
+    if (b.status === 'fulfilled') for (const k of Object.keys(b.value)) lines[rIdx[Number(k)]] = b.value[k];
+    ai = Object.keys(lines).length > 0; }
   const all = load('comments.json', []); const done = [];
   const wrote = []; const today = at.slice(0, 10); const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   // 글쓰기 일감 처리
@@ -269,8 +338,8 @@ async function runShift(ctx) {
       if (j.type === 'idea' && lines[i] && lines['m' + i]?.name) { const w = j.winner, m = lines['m' + i]; const id = newId(); projs.push({ id, type: 'project', createdAt: at, status: 'live', sample: true, staffIdea: true, ideaFrom: w.id, photos: [], name: m.name, tagline: m.tagline || cut(lines[i], 40), description: `${lines[i]}\n\n이 글은 섬업 ${j.agent.dept || '거래부'} AI 직원 ${j.agent.name}이(가) 올린 아이디어 제안이에요. 아직 만들어진 서비스가 아니에요. 참고한 해커톤 수상작: ${w.name} (Devpost)`, category: '기타', tags: ['아이디어 제안', 'AI 직원'], url: w.url, origin: `AI 직원 제안 · 참고 ${cut(w.name, 30)}`, stage: 'idea', priceMin: 0, priceMax: 0, dealType: 'cofounder', seller: `${j.agent.dept || '거래부'} AI ${j.agent.name}`, contact: '', interest: 0, views: 0, area: '' }); projChanged = true; hq.shiftDaily.idea = true; wrote.push({ j, what: `아이디어 제안 "${m.name}"을 장터에 올렸어요 (함께 만들 사람 찾기)`, link: { kind: 'project', id } }); }
     });
     if (insChanged) save('insights.json', ins); if (projChanged) save('projects.json', projs); }
-  jobs.forEach((j, i) => { if (!['reply', 'note'].includes(j.type)) return; if (!lines[i] && j.type !== 'reply') return; // AI가 못 썼으면 정해진 문장은 답글에만 쓴다 (같은 말이 여러 글에 반복되지 않게)
-    const text = lines[i] || scriptedLine(j);
+  jobs.forEach((j, i) => { if (!['reply', 'note'].includes(j.type)) return; if (!lines[i]) return; // AI가 못 썼으면 정해진 문장은 답글에만 쓴다 (같은 말이 여러 글에 반복되지 않게)
+    const text = lines[i];
     all.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), key: `${j.kind}:${j.id}`, title: j.title, name: j.agent.name, staff: true, agent: j.agent.id, role: `${j.agent.dept || '섬업'} AI`, ...(j.parent ? { parent: j.parent } : {}), ...(j.replyTo ? { replyTo: j.replyTo } : {}), text, createdAt: at });
     done.push({ ...j, text }); });
   if (done.length) save('comments.json', all);
@@ -309,4 +378,4 @@ async function runShift(ctx) {
   return { replies, notes, wrote: wrote.length, fixed: fixed.length, ai, at };
 }
 
-module.exports = { sense, runCycle, runShift, scorecard, programStatus, remember, AGENTS };
+module.exports = { runTasks, sense, runCycle, runShift, scorecard, programStatus, remember, AGENTS };
