@@ -42,6 +42,12 @@ function render() {
 // 집·물건: 어느 동네에 있는지 지도로
 async function drawMap() {
   const d = await api('/api/map'); const pts = d.points.filter((p) => p.kind === 'project' && p.type === type); if (!pts.length) { $('#minimap').hidden = true; return; }
+  // 네이버 지도를 쓸 수 있으면 네이버 지도로. 중간에 인증이 실패하면 원래 지도로 다시 그린다
+  const leaflet = () => { const el = $('#minimap'); el.innerHTML = ''; el.className = 'minimap'; el.removeAttribute('style'); drawLeaflet(d, pts); };
+  if (await loadNaverMap()) { try { naverPins($('#minimap'), d.center, pts); document.addEventListener('naver-auth-failed', leaflet, { once: true }); return; } catch (e) { leaflet(); return; } }
+  drawLeaflet(d, pts);
+}
+function drawLeaflet(d, pts) {
   map = L.map('minimap', { scrollWheelZoom: false }).setView([d.center.lat, d.center.lng], 10);
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '&copy; OpenStreetMap' }).addTo(map);
   for (const p of pts) L.marker([p.lat, p.lng], { icon: L.divIcon({ className: '', html: '<div class="pin" style="background:var(--accent)"></div>', iconSize: [22, 22], iconAnchor: [11, 22], popupAnchor: [0, -20] }) }).bindPopup(`<div class="pop"><small>${esc(p.area)}</small><b>${esc(p.title)}</b><a href="${esc(p.href)}">자세히 보기 →</a></div>`).addTo(map);

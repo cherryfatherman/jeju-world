@@ -102,7 +102,7 @@ function addComment(kind, id, body) {
 }
 
 // ---- 사이트 설정 (관리자 화면에서 수정) ----
-app.get('/api/config', (req, res) => res.json(readConfig()));
+app.get('/api/config', (req, res) => { const c = readConfig(); if (process.env.NAVER_MAP_CLIENT_ID) c.maps = { ...(c.maps || {}), naverClientId: process.env.NAVER_MAP_CLIENT_ID }; res.json(c); });
 app.post('/api/ping', limit(60), (req, res) => { countVisit(clean(req.body.page, 40) || '/'); res.json({ ok: true }); });
 app.get('/api/admin/metrics', adminOnly, (req, res) => {
   const m = load('metrics.json', {}); const days = [];

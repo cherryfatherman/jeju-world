@@ -410,6 +410,33 @@ function mountPageFx() {
   const main = $('main'); if (!main || $('.hero2') || $('.pagefx')) return;
   const d = document.createElement('div'); d.className = 'pagefx'; d.setAttribute('aria-hidden', 'true'); main.before(d);
 }
+/* 네이버 지도를 불러온다. 쓸 수 있으면 true, 안 되면(키 없음·막힘·인증 실패) false → 원래 지도로 그린다 */
+let naverReady;
+function loadNaverMap() {
+  if (naverReady) return naverReady;
+  const id = ((typeof CONFIG === 'object' && CONFIG && CONFIG.maps) || {}).naverClientId;
+  naverReady = new Promise((res) => {
+    if (!id) return res(false);
+    let done = false; const fin = (v) => { if (!done) { done = true; res(v); } };
+    window.navermap_authFailure = () => { window.__naverAuthFailed = true; fin(false); document.dispatchEvent(new Event('naver-auth-failed')); };
+    const sc = document.createElement('script'); sc.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${encodeURIComponent(id)}`;
+    sc.onload = () => setTimeout(() => fin(!!(window.naver && naver.maps && naver.maps.Map) && !window.__naverAuthFailed), 500);
+    sc.onerror = () => fin(false); setTimeout(() => fin(false), 5000); document.head.append(sc);
+  });
+  return naverReady;
+}
+/* 네이버 지도에 동네 단위 점을 찍는다 */
+function naverPins(el, center, pts) {
+  const nm = naver.maps, map = new nm.Map(el, { center: new nm.LatLng(center.lat, center.lng), zoom: 10, scrollWheel: false, zoomControl: true, zoomControlOptions: { position: nm.Position.TOP_LEFT } });
+  const info = new nm.InfoWindow({ borderWidth: 0, backgroundColor: 'transparent', disableAnchor: true, pixelOffset: new nm.Point(0, -6) });
+  const first = new nm.LatLng(pts[0].lat, pts[0].lng), bounds = new nm.LatLngBounds(first, first);
+  for (const p of pts) { const pos = new nm.LatLng(p.lat, p.lng); bounds.extend(pos);
+    const m = new nm.Marker({ position: pos, map, title: p.title, icon: { content: '<div class="pin" style="background:#ff6b1a"></div>', anchor: new nm.Point(11, 22) } });
+    nm.Event.addListener(m, 'click', () => { info.setContent(`<div class="pop npop"><small>${esc(p.area)}</small><b>${esc(p.title)}</b><a href="${esc(p.href)}">자세히 보기</a></div>`); info.open(map, m); }); }
+  nm.Event.addListener(map, 'click', () => info.close());
+  if (pts.length > 1) { map.fitBounds(bounds, { top: 50, right: 50, bottom: 50, left: 50 }); if (map.getZoom() > 12) map.setZoom(12); } else { map.setCenter(first); map.setZoom(12); }
+  return map;
+}
 /* 제주 교통정보센터 자료(도로 통제·전기차 충전소·관광지)를 한 구역에 그린다. 받은 것이 없으면 구역을 숨긴 채로 둔다 */
 async function itsSection(sec, kind, { first = 6 } = {}) {
   if (!sec) return; let d; try { d = await api('/api/jeju/its/' + kind); } catch { return; }
