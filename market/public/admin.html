@@ -116,12 +116,12 @@
     <!-- 창업정보 · 인사이트 (같은 편집기) -->
     <div class="pane" id="pane-program">
       <div class="form" style="margin-bottom:14px"><p class="help">지원사업·자금 공고예요. 마감일이 지나면 자동으로 '완료'로 옮겨져요. '자동' 표시는 K-Startup API가 넣은 글이라 다음 갱신 때 덮어써요(숨김은 유지).</p>
-        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button" data-add="program">＋ 새 공고</button><button class="btn primary" type="button" data-save="program">창업정보 저장</button></div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button" data-add="program">＋ 새 공고</button></div></div>
       <div class="glist" id="list-program"></div>
     </div>
     <div class="pane" id="pane-insight">
       <div class="form" style="margin-bottom:14px"><p class="help">논문·통계·정책·읽을거리. 출처 주소는 꼭 넣어 주세요. 핵심은 한 줄에 하나, 3개까지가 보기 좋아요.</p>
-        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button" data-add="insight">＋ 새 인사이트</button><button class="btn primary" type="button" data-save="insight">인사이트 저장</button></div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button" data-add="insight">＋ 새 인사이트</button></div></div>
       <div class="glist" id="list-insight"></div>
     </div>
     <!-- 이야기(댓글) 관리 -->
@@ -130,7 +130,7 @@
     <div class="pane" id="pane-guides">
       <div class="form" style="margin-bottom:14px">
         <p class="help">글 하나가 독립 페이지(guide.html?id=...)예요. 본문은 간단한 서식: <code>## 제목</code>, <code>- 목록</code>, <code>1. 목록</code>, <code>**굵게**</code>, <code>[글자](주소)</code>, <code>&gt; 메모</code>. 고친 날은 '업데이트 날짜'에 적어 주세요.</p>
-        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button" id="gAdd">＋ 새 가이드</button><button class="btn primary" type="button" id="gSave">가이드 저장</button></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button" id="gAdd">＋ 새 가이드</button></div>
       </div>
       <div class="glist" id="glist"></div>
     </div>
@@ -138,7 +138,7 @@
     <div class="pane" id="pane-places">
       <div class="form" style="margin-bottom:14px">
         <p class="help">관광지·카페·맛집 카드예요. 추천 수가 높은 순으로 보여요. 외부 ID는 관광 API를 연결할 때 자동으로 맞추는 칸이라 비워 둬도 돼요. 사진은 파일 업로드 또는 주소 붙여넣기.</p>
-        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button" id="plAdd">＋ 새 장소</button><button class="btn primary" type="button" id="plSave">장소 저장</button></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button" id="plAdd">＋ 새 장소</button></div>
       </div>
       <div class="glist" id="pllist"></div>
     </div>
@@ -219,12 +219,12 @@ function fill() {
   v('#supportText', (cfg.support || []).map((s) => [s.org, s.title, s.sub, s.href].join(' | ')).join('\n'));
 }
 /* ── 창업정보 · 인사이트: 같은 편집기 ── */
-const POSTS = { program: [], insight: [] };
+const POSTS = { program: [], insight: [] }; const LOADED = {}; // 불러오기에 성공한 목록만 저장한다
 const PFIELDS = {
   program: [['title', '제목'], ['org', '주관 기관'], ['region', '지역 (제주/전국)'], ['category', '분류 (자금·보육·투자·공간·입주·교육·멘토링·정책·행사)'], ['summary', '한 줄 소개'], ['target', '대상'], ['benefit', '지원 내용'], ['start', '접수 시작', 'date'], ['end', '접수 마감 (지나면 자동 완료)', 'date'], ['periodText', '기간 표시 문구 (비우면 날짜로)'], ['url', '공고 원문 주소'], ['sourceLabel', '출처 이름'], ['votes', '기본 업 수', 'number'], ['updatedAt', '업데이트 날짜', 'date']],
   insight: [['title', '제목'], ['org', '출처 (기관·저자)'], ['category', '분류 (정책·통계·조사·논문·리포트·읽을거리)'], ['date', '시기'], ['summary', '한 줄 소개'], ['url', '원문 주소'], ['votes', '기본 업 수', 'number'], ['updatedAt', '업데이트 날짜', 'date']],
 };
-async function loadPosts(kind) { try { POSTS[kind] = await api(`/api/admin/posts/${kind}`); } catch { POSTS[kind] = []; } renderPosts(kind); }
+async function loadPosts(kind) { try { POSTS[kind] = await api(`/api/admin/posts/${kind}`); LOADED[kind] = true; } catch { POSTS[kind] = []; LOADED[kind] = false; } renderPosts(kind); }
 function renderPosts(kind) {
   $(`#list-${kind}`).replaceChildren(...POSTS[kind].map((p, idx) => {
     const d = document.createElement('details');
@@ -245,7 +245,7 @@ function renderPosts(kind) {
   }));
 }
 $$('[data-add]').forEach((b) => b.onclick = () => { const kind = b.dataset.add; POSTS[kind].unshift({ id: `${kind}-${Date.now().toString(36)}`, title: '', org: '', category: '', summary: '', url: '', image: '', votes: 0, hidden: false, updatedAt: new Date().toISOString().slice(0, 10), source: { label: '', url: '' } }); renderPosts(kind); $(`#list-${kind} details`).open = true; });
-$$('[data-save]').forEach((b) => b.onclick = async () => { const kind = b.dataset.save; try { const r = await api(`/api/admin/posts/${kind}`, POSTS[kind], 'PUT'); toast(`${r.count}개를 저장했어요`); loadPosts(kind); } catch (err) { toast(err.message); } });
+
 /* ── 이야기(댓글) 관리 ── */
 const KIND_NAME = { project: '거래', program: '창업정보', insight: '인사이트', guide: '생활정보', place: '여행', winner: '수상작', hackathon: '해커톤' };
 async function loadTalk() {
@@ -263,7 +263,7 @@ async function loadAi(test) {
 }
 $('#aiTest').onclick = () => loadAi(true);
 let GUIDES = [];
-async function loadGuides() { try { GUIDES = await api('/api/admin/guides'); } catch { GUIDES = []; } renderGuides(); }
+async function loadGuides() { try { GUIDES = await api('/api/admin/guides'); LOADED.guides = true; } catch { GUIDES = []; LOADED.guides = false; } renderGuides(); }
 function renderGuides() {
   $('#glist').replaceChildren(...GUIDES.map((g, idx) => {
     const d = document.createElement('details');
@@ -290,7 +290,7 @@ function renderGuides() {
 $('#gAdd').onclick = () => { GUIDES.unshift({ id: `guide-${Date.now().toString(36)}`, title: '', summary: '', tag: '생활', image: '', verified: false, hidden: false, lastChecked: new Date().toISOString().slice(0, 10), body: '## 제목\n- 내용', sources: [] }); renderGuides(); $('#glist details').open = true; };
 let PLACES = [];
 const PL = { spot: '관광지', cafe: '카페', food: '맛집' };
-async function loadPlaces() { try { PLACES = await api('/api/admin/places'); } catch { PLACES = []; } renderPlaces(); }
+async function loadPlaces() { try { PLACES = await api('/api/admin/places'); LOADED.places = true; } catch { PLACES = []; LOADED.places = false; } renderPlaces(); }
 function renderPlaces() {
   $('#pllist').replaceChildren(...PLACES.map((p, idx) => {
     const d = document.createElement('details');
@@ -317,14 +317,14 @@ function renderPlaces() {
   }));
 }
 $('#plAdd').onclick = () => { PLACES.unshift({ id: `place-${Date.now().toString(36)}`, type: 'spot', name: '', area: '', summary: '', tip: '', address: '', tags: [], image: '', source: { label: '', url: '' }, verified: false, hidden: false, lastChecked: new Date().toISOString().slice(0, 10), votes: 0, externalId: '' }); renderPlaces(); $('#pllist details').open = true; };
-$('#plSave').onclick = async () => { try { const r = await api('/api/admin/places', PLACES, 'PUT'); toast(`장소 ${r.count}곳을 저장했어요`); loadPlaces(); } catch (err) { toast(err.message); } };
+
 $$('[data-its]').forEach((b) => b.onclick = async () => { const out = $('#itsOut'); out.hidden = false; out.textContent = '받아오는 중…'; try { out.textContent = JSON.stringify(await api('/api/admin/its/' + b.dataset.its), null, 1); } catch (e) { out.textContent = '실패: ' + e.message; } });
 async function loadFeeds() {
   let feeds = []; try { feeds = await api('/api/admin/feeds'); } catch { return; }
   $('#feedList').innerHTML = feeds.map((f) => `<div class="trow" style="display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)"><div class="grow" style="flex:1"><b>${esc(f.name)}</b><div class="muted" style="font-size:13px">${f.everyHours}시간마다 · ${f.lastRun ? `마지막 ${new Date(f.lastRun).toLocaleString('ko-KR')} · ${f.ok ? '성공' : '실패'}` : '아직 실행 안 됨'}${f.note ? ` · ${esc(f.note)}` : ''}${!f.ready ? ` · <span style="color:var(--warn)">${esc(f.needs)} 필요</span>` : ''}</div></div><button class="btn sm" type="button" data-run="${f.id}">지금 갱신</button></div>`).join('');
   $$('#feedList [data-run]').forEach((b) => b.onclick = async () => { b.disabled = true; b.textContent = '갱신 중'; try { await api(`/api/admin/feeds/${b.dataset.run}/run`, {}); } catch (e) { toast(e.message); } loadFeeds(); });
 }
-$('#gSave').onclick = async () => { try { const r = await api('/api/admin/guides', GUIDES, 'PUT'); toast(`가이드 ${r.count}개를 저장했어요`); loadGuides(); } catch (err) { toast(err.message); } };
+
 function renderAds() {
   cfg.ads = cfg.ads || { enabled: true, left: {}, right: {} };
   v('#ad-enabled', String(cfg.ads.enabled !== false));
@@ -406,8 +406,6 @@ function renderTools() {
 $('#addNav').onclick = () => { cfg.nav.push({ label: '새 메뉴', href: './', key: '' }); renderNav(); };
 $('#addTool').onclick = () => { cfg.tools.push({ icon: '🆕', label: '새 도구', sub: '', href: '' }); renderTools(); };
 
-// 아래쪽 큰 '저장하고 반영' 버튼: 지금 열린 탭이 목록(장소·가이드·창업정보·인사이트)이면 그 목록의 저장 버튼을 대신 누른다
-$('#save').addEventListener('click', (e) => { const on = ($('.pane.on') || {}).id || ''; const b = on === 'pane-places' ? $('#plSave') : on === 'pane-guides' ? $('#gSave') : on === 'pane-program' ? $('[data-save="program"]') : on === 'pane-insight' ? $('[data-save="insight"]') : null; if (b) { e.stopImmediatePropagation(); e.preventDefault(); b.click(); } }, true);
 $('#save').onclick = async () => {
   const lines = (id, n) => v(id).split('\n').map((l) => l.split('|').map((x) => x.trim())).filter((p) => p.length >= n && p[0]);
   cfg.direction = { ...(cfg.direction || {}), title: v('#f-dirTitle'), facts: lines('#f-dirFacts', 2).map(([num, label, src, href]) => ({ num, label, src: src || '', href: href || '' })) };
@@ -421,7 +419,18 @@ $('#save').onclick = async () => {
   cfg.ads = { ...cfg.ads, enabled: v('#ad-enabled') === 'true' };
   cfg.support = v('#supportText').split('\n').map((l) => l.split('|').map((x) => x.trim())).filter((p) => p.length >= 4 && p[3]).map(([org, title, sub, href]) => ({ org, title, sub, href }));
   cfg.jeju = { ...cfg.jeju, area: v('#j-area'), waste: { ...(cfg.jeju.waste || {}), source: v('#j-source'), sourceUrl: v('#j-sourceUrl'), daily: v('#j-daily').split(',').map((x) => x.trim()).filter(Boolean), lastChecked: v('#j-checked'), notes: v('#j-notes'), days: Object.fromEntries($$('#j-days input').map((i) => [i.dataset.day, i.value])) }, tips: (cfg.jeju.tips || []).filter((t) => t.title || t.body) };
-  try { await api('/api/config', cfg, 'PUT'); toast('저장했어요. 사이트에 바로 반영돼요'); } catch (err) { toast(err.message); }
+  // 설정과 함께, 불러온 목록(창업정보·인사이트·생활 가이드·여행 장소)도 전부 저장한다
+  const btn = $('#save'); btn.disabled = true; const fails = [];
+  const step = async (name, fn) => { try { await fn(); } catch (err) { fails.push(`${name}: ${err.message}`); } };
+  await step('설정', () => api('/api/config', cfg, 'PUT'));
+  if (LOADED.program) await step('창업정보', () => api('/api/admin/posts/program', POSTS.program, 'PUT'));
+  if (LOADED.insight) await step('인사이트', () => api('/api/admin/posts/insight', POSTS.insight, 'PUT'));
+  if (LOADED.guides) await step('생활 가이드', () => api('/api/admin/guides', GUIDES, 'PUT'));
+  if (LOADED.places) await step('여행 장소', () => api('/api/admin/places', PLACES, 'PUT'));
+  btn.disabled = false;
+  if (fails.length) { toast('저장하지 못한 것: ' + fails.join(' / ')); return; }
+  toast('전부 저장했어요. 사이트에 바로 반영돼요');
+  if (LOADED.program) loadPosts('program'); if (LOADED.insight) loadPosts('insight'); if (LOADED.guides) loadGuides(); if (LOADED.places) loadPlaces();
 };
 
 async function loadProjects() {
