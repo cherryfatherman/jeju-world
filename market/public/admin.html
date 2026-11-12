@@ -269,7 +269,7 @@ $$('.tabs button').forEach((b) => b.onclick = () => { if (b.dataset.tab === 'vau
 
 function fill() {
   const S = cfg.site, B = cfg.banner, T = cfg.ticker || {}, C = cfg.colors || {};
-  v('#f-name', S.name); v('#f-slogan', S.slogan); v('#f-brandSub', S.sub || ''); v('#f-dirTitle', cfg.direction?.title || ''); v('#f-dirFacts', (cfg.direction?.facts || []).map((f) => [f.num, f.label, f.src, f.href].join(' | ')).join('\n')); v('#f-ring', (cfg.ring || []).map((r) => [r.label, r.sub, r.href, r.image].join(' | ')).join('\n')); v('#f-lead', cfg.lead || ''); v('#f-tiles', (cfg.tiles || []).flatMap((g) => g.items.map((t) => [g.name, t.icon, t.label, t.href, t.accent ? '강조' : ''].join(' | '))).join('\n')); v('#f-theme', S.defaultTheme || 'auto'); v('#f-samples', String(S.showSamples !== false));
+  v('#f-name', S.name); v('#f-slogan', S.slogan); v('#f-brandSub', S.sub || ''); v('#f-dirTitle', cfg.direction?.title || ''); v('#f-dirFacts', (cfg.direction?.facts || []).map((f) => [f.num, String(f.label || '').replace(/\n/g, ' // '), f.src, f.post || f.href || '', f.image || ''].join(' | ')).join('\n')); v('#f-ring', (cfg.ring || []).map((r) => [r.label, r.sub, r.href, r.image].join(' | ')).join('\n')); v('#f-lead', cfg.lead || ''); v('#f-tiles', (cfg.tiles || []).flatMap((g) => g.items.map((t) => [g.name, t.icon, t.label, t.href, t.accent ? '강조' : ''].join(' | '))).join('\n')); v('#f-theme', S.defaultTheme || 'auto'); v('#f-samples', String(S.showSamples !== false));
   v('#f-threads', S.threads); v('#f-openchat', S.openchat);
   v('#f-accent', C.accent || '#ff7a1a'); v('#c-accent', C.accent || '#ff7a1a'); v('#f-accent2', C.accent2 || '#f5b942'); v('#c-accent2', C.accent2 || '#f5b942');
   v('#f-kicker', B.kicker); v('#f-title', B.title); v('#f-sub', B.sub); v('#f-primary', B.primaryLabel); v('#f-secondary', B.secondaryLabel);
@@ -468,7 +468,7 @@ $('#addTool').onclick = () => { cfg.tools.push({ icon: '🆕', label: '새 도�
 
 $('#save').onclick = async () => {
   const lines = (id, n) => v(id).split('\n').map((l) => l.split('|').map((x) => x.trim())).filter((p) => p.length >= n && p[0]);
-  cfg.direction = { ...(cfg.direction || {}), title: v('#f-dirTitle'), facts: lines('#f-dirFacts', 2).map(([num, label, src, href]) => ({ num, label, src: src || '', href: href || '' })) };
+  cfg.direction = { ...(cfg.direction || {}), title: v('#f-dirTitle'), facts: lines('#f-dirFacts', 2).map(([num, label, src, link, image]) => ({ num, label: String(label || '').replace(/\s*\/\/\s*/g, '\n'), src: src || '', ...(/^(https?:|\.?\/)/.test(link || '') ? { href: link } : link ? { post: link } : { href: '' }), ...(image ? { image } : {}) })) };
   cfg.ring = lines('#f-ring', 3).map(([label, sub, href, image], i) => ({ key: (cfg.ring || [])[i]?.key || `r${i}`, label, sub, href, image: image || '' }));
   cfg.lead = v('#f-lead'); { const old = (cfg.tiles || []).flatMap((g) => g.items); const groups = []; for (const [g, icon, label, href, badge] of lines('#f-tiles', 4)) { let G = groups.find((x) => x.name === g); if (!G) groups.push(G = { name: g, items: [] }); const key = old.find((o) => o.label === label && o.key)?.key; G.items.push({ icon, label, href, ...(badge ? { accent: true } : {}), ...(key ? { key } : {}) }); } cfg.tiles = groups; }
   cfg.site = { ...cfg.site, name: v('#f-name'), sub: v('#f-brandSub'), slogan: v('#f-slogan'), defaultTheme: v('#f-theme'), showSamples: v('#f-samples') === 'true', threads: v('#f-threads'), openchat: v('#f-openchat') };

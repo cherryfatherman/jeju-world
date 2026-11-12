@@ -132,6 +132,13 @@ app.get('/api/admin/metrics', adminOnly, (req, res) => {
   } });
 });
 app.post('/api/admin/login', limit(10), (req, res) => (ADMIN_PASSWORD && req.body.password === ADMIN_PASSWORD ? res.json({ ok: true, defaultPassword: DEFAULT_PW }) : res.status(401).json({ error: '비밀번호가 틀려요.' })));
+// 홈 '제주의 방향' 칸이 깨져 저장된 경우(예전 관리자 저장 버그: 줄이 나뉘고 연결된 글이 사라짐) 처음 넣어 둔 내용으로 되돌린다
+function healConfig() {
+  try { const c = load('config.json', null); const facts = c && c.direction && c.direction.facts; if (!Array.isArray(facts)) return false;
+    if (!facts.length || facts.every((f) => f.post || (f.href && f.href !== '#'))) return false;
+    const base = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8')); if (!base.direction) return false;
+    c.direction = { ...c.direction, facts: base.direction.facts }; store.put('config.json', JSON.stringify(c, null, 1)); return true; } catch { return false; }
+}
 app.put('/api/config', adminOnly, (req, res) => {
   const c = req.body;
   if (!c || typeof c !== 'object' || !c.site || !c.banner) return res.status(400).json({ error: '설정 형식이 맞지 않아요.' });
@@ -358,7 +365,7 @@ app.put('/api/admin/places', adminOnly, (req, res) => {
     name: clean(p.name, 60), area: clean(p.area, 40), summary: clean(p.summary, 200), tip: clean(p.tip, 300), address: clean(p.address, 120),
     tags: (Array.isArray(p.tags) ? p.tags : String(p.tags || '').split(',')).map((t) => clean(t, 16)).filter(Boolean).slice(0, 8),
     image: isImg(p.image) ? p.image : '', source: { label: clean(p.source?.label, 60), url: isUrl(p.source?.url || '') ? p.source.url : '' },
-    hidden: p.hidden === true, lastChecked: clean(p.lastChecked, 10), votes: Number(p.votes) || 0, externalId: clean(p.externalId, 40), lat: Number(p.lat) || null, lng: Number(p.lng) || null,
+    hidden: p.hidden === true, lastChecked: clean(p.lastChecked, 10), votes: Number(p.votes) || 0, externalId: clean(p.externalId, 40), lat: Number(p.lat) || null, lng: Number(p.lng) || null, ...(p.auto === true ? { auto: true, addedBy: clean(p.addedBy, 40) } : {}), ...(p.tel ? { tel: clean(p.tel, 30) } : {}),
   })).filter((p) => p.name && !seen.has(p.id) && seen.add(p.id));
   applyAdminVotes('place', load('places.json', []), cleaned);
   save('places.json', cleaned); res.json({ ok: true, count: cleaned.length });
@@ -699,7 +706,7 @@ app.put('/api/admin/posts/:kind', adminOnly, (req, res) => {
     const o = {
       id: clean(p.id, 60).toLowerCase().replace(/[^a-z0-9-]/g, '-') || newId(), title: clean(p.title, 100), org: clean(p.org, 60), category: clean(p.category, 16), summary: clean(p.summary, 200),
       body: clean(p.body, 20000), url: isUrl(p.url || '') ? p.url : '', image: isImg(p.image) ? p.image : '', source: { label: clean(p.source?.label, 60), url: isUrl(p.source?.url || '') ? p.source.url : '' },
-      votes: Number(p.votes) || 0, hidden: p.hidden === true, updatedAt: clean(p.updatedAt, 10) || new Date().toISOString().slice(0, 10), auto: p.auto === true, externalId: clean(p.externalId, 60),
+      votes: Number(p.votes) || 0, hidden: p.hidden === true, updatedAt: clean(p.updatedAt, 10) || new Date().toISOString().slice(0, 10), auto: p.auto === true, externalId: clean(p.externalId, 60), ...(p.tag ? { tag: clean(p.tag, 20) } : {}),
     };
     if (kind === 'program') Object.assign(o, { region: clean(p.region, 10), target: clean(p.target, 200), benefit: clean(p.benefit, 300), start: date(p.start), end: date(p.end), always: p.always === true, periodText: clean(p.periodText, 60), status: ['done', 'open'].includes(p.status) ? p.status : '' });
     else Object.assign(o, { date: clean(p.date, 10), points: (Array.isArray(p.points) ? p.points : String(p.points || '').split('\n')).map((x) => clean(x, 60)).filter(Boolean).slice(0, 4) });
@@ -760,7 +767,7 @@ function seedSamples() {
   if (n) save('projects.json', list); st._seeded = [...done, ...todo.map((x) => x.id)]; save('feeds.json', st); return n;
 }
 async function autoTick(force) {
-  try { seedSamples(); } catch {}
+  try { seedSamples(); healConfig(); } catch {}
   if (ticking || (!force && Date.now() - lastTickCheck < 60000)) return []; lastTickCheck = Date.now();
   const ids = due(); if (!ids.length) return [];
   ticking = true; try { for (const id of ids) markFeed(id, true, '돌리는 중'); await Promise.race([Promise.all(ids.map((id) => runFeed(id))), new Promise((r) => setTimeout(r, 50000))]); } finally { ticking = false; }
@@ -770,7 +777,7 @@ if (store.SERVERLESS) {
   // 서버리스(Vercel): 요청이 올 때만 켜지므로 서버를 직접 열지 않고 앱을 내보낸다. 자동 갱신은 관리자 화면의 '지금 갱신' 버튼으로.
   if (!ADMIN_PASSWORD) console.warn('⚠️  ADMIN_PASSWORD가 없어 관리자 로그인이 막혀 있어요. 호스팅 설정에서 환경변수를 넣어 주세요.');
 } else {
-  try { seedSamples(); } catch {}
+  try { seedSamples(); healConfig(); } catch {}
   app.listen(PORT, () => {
     console.log(`섬업 실행 중: http://localhost:${PORT}`);
     if (HOSTED && !ADMIN_PASSWORD) console.warn('⚠️  ADMIN_PASSWORD가 없어 관리자 로그인이 막혀 있어요. 호스팅 설정에서 환경변수를 넣어 주세요.');
