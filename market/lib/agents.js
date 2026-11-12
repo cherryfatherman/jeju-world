@@ -42,7 +42,6 @@ const AGENTS = {
     },
     propose(f, add) {
       for (const c of f.closing) add(`마감 임박: ${c.title}`, `${c.left <= 0 ? '오늘 마감' : c.left + '일 남았어요'}. 홈 상단에 올리고 스레드에 한 번 알려요.`);
-      if (!f.feedOk) add('K-Startup 공고 API 활용신청', '공공데이터포털 15125364를 신청하면 전국 공고가 매일 자동으로 들어와요. AI 토큰은 들지 않아요.');
       if (f.open < 5) add('진행 중 공고 5건 이상 유지', `지금 ${f.open}건이에요.`);
     },
   },
@@ -50,7 +49,7 @@ const AGENTS = {
     sense({ load }) { const list = load('insights.json', []).filter((p) => !p.hidden); return { count: list.length, categories: new Set(list.map((i) => i.category)).size, newestDays: daysSince(list.map((i) => i.updatedAt).filter(Boolean).sort().pop()) }; },
     propose(f, add) {
       if (f.newestDays !== null && f.newestDays > 14) add('이번 주 인사이트 1건 추가', `마지막 추가가 ${f.newestDays}일 전이에요.`);
-      if (f.count < 20) add('제주 창업 관련 논문 5건 찾기', 'KCI·RISS에서 "제주 창업"으로 찾아 숫자 세 개씩 뽑아요.');
+      if (f.count < 20) add('제주 창업 관련 논문 5건 찾기', '학술지 목록에서 제주 창업 논문을 찾아 인사이트에 올려요.'); add('AI 기사 3건 클리핑', '생성형 AI와 AI 창업 소식을 인사이트에 모아요.');
     },
   },
   hackathon: {
@@ -72,7 +71,7 @@ const AGENTS = {
     propose(f, add) {
       if (f.staleGuides > 0) add(`90일 넘은 생활정보 ${f.staleGuides}건 다시 확인`, '오래된 생활 정보는 신뢰를 깎아요.');
       if (f.noCoord > 0) add(`좌표 없는 장소 ${f.noCoord}곳에 위치 넣기`, '위치가 있어야 지도에 보여요.');
-      if (!f.tourOk) add('관광 API 연결', '키를 넣으면 관광지·카페·맛집이 매일 자동으로 채워져요. AI 토큰은 들지 않아요.');
+      add('맛집 5곳 올리기', '공공 자료에서 사진 있는 맛집을 골라 장소로 올려요.');
     },
   },
   partner: {
@@ -278,9 +277,29 @@ async function runTasks(ctx) {
         for (const x of await ctx.travel()) { if (added.length >= n) break; if ((cat && x.cat !== cat) || !x.image || !x.name || !x.addr || ext.has('tour:' + x.id) || names.has(nm(x.name))) continue; const m = /(제주시|서귀포시)\s*([가-힣0-9]+(?:읍|면|동))?/.exec(x.addr) || []; const area = [m[1], m[2]].filter(Boolean).join(' ');
           places.push({ id: 't-' + x.id, type: x.cat, name: cut(x.name, 60), area, summary: cut(`${area || '제주'}에 있는 ${{ food: '맛집', cafe: '카페', spot: '관광지' }[x.cat] || '곳'}이에요.`, 160), tags: [], image: x.image, address: cut(x.addr, 120), tel: cut(x.tel, 30), tip: '', source: x.src === '한국관광공사' ? { label: '한국관광공사 관광정보', url: 'https://korean.visitkorea.or.kr/' } : { label: '제주특별자치도 교통정보센터', url: 'https://www.jejuits.go.kr/' }, lastChecked: today, votes: 0, externalId: 'tour:' + x.id, hidden: false, auto: true, addedBy: `${w.dept || '생활부'} AI ${w.name}`, ...(x.lat && x.lng ? { lat: x.lat, lng: x.lng } : {}) }); names.add(nm(x.name)); added.push(x.name); }
         if (added.length) { save('places.json', places); result = `장소 ${added.length}곳을 올렸어요: ${added.map((a) => cut(a, 14)).join(', ')}`; } }
-      else result = '이 일은 AI 직원이 직접 할 수 없는 일이에요. 사람이 해야 해요. (지금 할 수 있는 일: 논문 찾기, 기사 클리핑, 장소 올리기)';
+      else if (/수상작/.test(text) && ctx.winners) { const ins = load('insights.json', []); const have = new Set(ins.map((x) => x.externalId)); const found = ctx.winners().filter((x) => x.url && x.tagline && !have.has('pick:' + x.id)).slice(0, Math.min(n, 5));
+        for (const x of found) ins.unshift({ id: 'pick-' + x.id, title: cut(`수상작 다시 보기: ${x.name}`, 100), category: '직원 노트', org: `${w.dept || '해커톤부'} AI ${w.name}`, date: today, summary: cut(x.tagline, 200), points: [], url: x.url, source: { label: 'Devpost (원문)', url: x.url }, body: `**어떤 프로젝트인가요**\n${cut(x.tagline, 300)}\n\n${w.dept || '해커톤부'} AI 직원 ${w.name}이(가) 수상작 도감에서 골라 소개해요.`, votes: 0, updatedAt: today, auto: true, externalId: 'pick:' + x.id });
+        if (found.length) { save('insights.json', ins); result = `수상작 ${found.length}건의 소개 글을 인사이트에 올렸어요`; } }
+      else if (/해커톤.*(수집|일정|갱신|업데이트|점검)|(수집|일정|갱신).*해커톤/.test(text) && ctx.runFeed) { await ctx.runFeed('hackathons'); const st = ctx.feedState('hackathons'); result = st.ok === false ? `해커톤 일정을 다시 받으려 했지만 실패했어요: ${cut(st.note, 60)}` : `해커톤 일정을 지금 다시 받아 왔어요 (${(load('hackathons.json', { items: [] }).items || []).length}건)`; }
+      else if (/사진/.test(text) && ctx.fixMissingPhotos) { const fixed = await ctx.fixMissingPhotos(); result = fixed.length ? `사진이 없던 글 ${fixed.length}건에 서비스 페이지의 대표 이미지를 넣었어요` : '서비스 주소에서 가져올 수 있는 대표 이미지가 더 없었어요. 남은 글은 사진을 직접 넣어야 해요.'; }
+      else if (/이야기|답글|댓글|질문/.test(text) && !ctx._skipTasks) { const r = await runShift({ ...ctx, _skipTasks: true }); const fresh = load('hq.json', hq); hq.log = fresh.log || hq.log; hq.score = fresh.score; hq.shiftDaily = fresh.shiftDaily; hq.lastShift = fresh.lastShift; result = `근무를 한 번 돌았어요: 답글 ${r.replies}건, 이야기 ${r.notes}건, 새 글 ${r.wrote}건`; }
+      else { /* 그 밖의 일은 글로 하는 일로 보고 초안을 쓴다: 제안서·메일·계획·정리·점검표. 보내거나 약속하지 않고, 초안만 남긴다 */
+        const pillar = hq.pillars.find((x) => x.id === t.pillar) || {}; const facts = sense(ctx)[t.pillar] || {};
+        const o = await Promise.race([askJSON(`당신은 제주 창업 플랫폼 "섬업"(슬로건: 제주에서 창업을 거래하다. 해커톤 프로젝트가 끝난 뒤 다음 주인을 찾아 주는 곳)의 AI 직원입니다. 아래 할 일을 실제로 쓸 수 있는 문서 초안으로 써 주세요.
+[할 일] ${t.title}
+[이유] ${t.why || '-'}
+[담당 줄기] ${pillar.name || ''} · 목표: ${pillar.goal || ''}
+[지금 숫자 (사이트가 잰 값, 이것만 사실로 쓸 수 있음)] ${JSON.stringify(facts).slice(0, 700)}
+규칙:
+- 할 일의 종류에 맞는 문서를 씁니다: 제안서면 '배경 / 제안 내용 / 섬업이 하는 일 / 상대에게 좋은 점 / 다음 단계', 연결·연락이면 보낼 메일 초안(받는 곳마다 한 줄 소개 포함), 계획·모으기면 순서가 있는 실행 계획과 점검표, 확인·처리면 점검표.
+- 쉬운 존댓말, 제목 한 줄 + 본문. 소제목은 **굵게**, 항목은 - 로. 900자 안팎.
+- [지금 숫자]에 없는 숫자·실적·날짜·약속·사람 이름을 만들지 마세요. 모르는 곳은 [채워 넣을 곳: 무엇]처럼 빈칸으로 두세요. 이용자 수·거래 실적을 지어내지 마세요.
+- 예시 글이 있다는 점을 숨기지 마세요(지금 거래 글은 시연용 예시입니다).
+JSON만: {"title":"","doc":""}`), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 18000))]);
+        const doc = String(o.doc || '').replace(/[\u0000-\u0008\u000b-\u001f]/g, '').trim().slice(0, 2600);
+        if (doc.length >= 120) { t.doc = `${cut(o.title, 80) ? cut(o.title, 80) + '\n\n' : ''}${doc}`; result = '초안을 썼어요. 아래 "초안 보기"를 눌러 읽고 고쳐서 쓰세요. 보내거나 약속한 것은 없어요.'; } }
     } catch (e) { result = ''; }
-    if (!result) continue; ran++; const can = !/직접 할 수 없는/.test(result);
+    if (!result) continue; ran++; const can = true;
     t.result = cut(result, 200); t.worker = w.id; if (can) t.status = 'done';
     msgs.push({ from: w.id, to: t.owner && hq.agents.some((a) => a.id === t.owner) ? t.owner : 'halla', text: `할 일 "${cut(t.title, 30)}": ${result}`, kind: 'report', at, round: (hq.log[0]?.round || 0), ai: false }); }
   if (ran) { hq.log = [...msgs.reverse(), ...hq.log].slice(0, 300); save('hq.json', hq); }
@@ -318,7 +337,7 @@ JSON만: {"lines":[{"i":0,"kind":"질문|칭찬|불만|제안|인사","text":""}
   return out;
 }
 async function runShift(ctx) {
-  try { await runTasks(ctx); } catch {}
+  if (!ctx._skipTasks) { try { await runTasks(ctx); } catch {} }
   const { load, save } = ctx; const hq = load('hq.json', { pillars: [], agents: [], tasks: [], log: [] }); hq.log = hq.log || [];
   const jobs = planShift(ctx, hq); await planWriting(ctx, hq, jobs); const at = new Date().toISOString(); let ai = false, lines = {};
   if (jobs.length) { const late = () => new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 25000));

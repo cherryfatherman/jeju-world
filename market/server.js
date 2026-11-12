@@ -449,7 +449,7 @@ async function fetchPapers(query, rows = 12) {
   got.forEach((g) => { if (g.status === 'fulfilled') out.push(...g.value); });
   return out;
 }
-const agentCtx = () => ({ load, save, feedState, titleOf, fixMissingPhotos, winners: () => WINNERS, news: fetchNews, papers: fetchPapers, travel: async () => (await travelItems()).items, its: () => jejuits.summary(), env: { ai: !!process.env.GEMINI_API_KEY, durable: store.durable || !store.SERVERLESS }, feeds: () => Object.entries(FEEDS).map(([id, f]) => ({ id, ready: !f.needs || !!process.env[f.needs], ok: feedState(id).ok !== false })), find: (kind, id) => FIND[kind]?.(id), catalog: (kind) => (CATALOG[kind] ? CATALOG[kind]() : []) });
+const agentCtx = () => ({ load, save, feedState, titleOf, fixMissingPhotos, winners: () => WINNERS, news: fetchNews, papers: fetchPapers, runFeed: (id) => runFeed(id), travel: async () => (await travelItems()).items, its: () => jejuits.summary(), env: { ai: !!process.env.GEMINI_API_KEY, durable: store.durable || !store.SERVERLESS }, feeds: () => Object.entries(FEEDS).map(([id, f]) => ({ id, ready: !f.needs || !!process.env[f.needs], ok: feedState(id).ok !== false })), find: (kind, id) => FIND[kind]?.(id), catalog: (kind) => (CATALOG[kind] ? CATALOG[kind]() : []) });
 function markFeed(id, ok, note) { const s = load('feeds.json', {}); s[id] = { ...(s[id] || {}), lastRun: new Date().toISOString(), ok, note: note || '' }; save('feeds.json', s); }
 async function runFeed(id) {
   const f = FEEDS[id]; if (!f) return;
@@ -496,7 +496,7 @@ app.put('/api/admin/hq', adminOnly, async (req, res) => {
   const color = (c) => (/^#[0-9a-fA-F]{6}$/.test(c || '') ? c : '#ff6b1a');
   if (Array.isArray(b.pillars)) hq.pillars = b.pillars.map((p) => ({ id: clean(p.id, 30).toLowerCase().replace(/[^a-z0-9-]/g, '-') || newId(), name: clean(p.name, 20), dept: clean(p.dept, 20), color: color(p.color), goal: clean(p.goal, 120), kpi: clean(p.kpi, 80) })).filter((p) => p.name).slice(0, 12);
   if (Array.isArray(b.agents)) hq.agents = b.agents.map((a) => ({ id: clean(a.id, 30).toLowerCase().replace(/[^a-z0-9-]/g, '-') || newId(), name: clean(a.name, 12), rank: ['본부장', '부서장', '팀장', '팀원'].includes(a.rank) ? a.rank : '팀원', dept: clean(a.dept, 20), pillar: clean(a.pillar, 30), persona: clean(a.persona, 120) })).filter((a) => a.name).slice(0, 40);
-  if (Array.isArray(b.tasks)) hq.tasks = b.tasks.map((t) => ({ id: clean(t.id, 30) || newId(), pillar: clean(t.pillar, 30), owner: clean(t.owner, 30), title: clean(t.title, 100), why: clean(t.why, 240), status: ['proposed', 'doing', 'done'].includes(t.status) ? t.status : 'proposed', by: t.by === 'agent' ? 'agent' : 'admin', createdAt: clean(t.createdAt, 30) || new Date().toISOString(), ...(t.result ? { result: clean(t.result, 200), worker: clean(t.worker, 30) } : {}) })).filter((t) => t.title).slice(0, 200);
+  if (Array.isArray(b.tasks)) hq.tasks = b.tasks.map((t) => ({ id: clean(t.id, 30) || newId(), pillar: clean(t.pillar, 30), owner: clean(t.owner, 30), title: clean(t.title, 100), why: clean(t.why, 240), status: ['proposed', 'doing', 'done'].includes(t.status) ? t.status : 'proposed', by: t.by === 'agent' ? 'agent' : 'admin', createdAt: clean(t.createdAt, 30) || new Date().toISOString(), ...(t.result ? { result: clean(t.result, 200), worker: clean(t.worker, 30) } : {}), ...(t.doc ? { doc: clean(t.doc, 3000) } : {}) })).filter((t) => t.title).slice(0, 200);
   if (Array.isArray(b.tasks)) agents.remember(hq, oldTasks, hq.tasks);
   save('hq.json', hq);
   // '진행'으로 바뀐 할 일이 있으면 팀원이 바로 한다
