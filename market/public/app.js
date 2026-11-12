@@ -175,9 +175,20 @@ async function mountComments(el, kind, id) {
   el.innerHTML = `<div class="sec-head"><h2>이야기</h2><span class="more" data-n></span></div>
     <form><input name="name" placeholder="닉네임" maxlength="20" aria-label="닉네임"><input name="text" placeholder="한마디 남기기" required maxlength="300" aria-label="댓글"><button class="btn primary">남기기</button></form>
     <div class="comments"></div>`;
-  const draw = (list) => { el.querySelector('[data-n]').textContent = list.length ? `${list.length}개` : ''; el.querySelector('.comments').innerHTML = list.length ? list.map((c) => `<div class="comment"><b>${esc(c.name || '익명')}</b>${esc(c.text)}<small>${new Date(c.createdAt).toLocaleDateString('ko-KR')}</small></div>`).join('') : '<p class="note">첫 이야기를 남겨 주세요.</p>'; };
-  el.querySelector('form').onsubmit = async (e) => { e.preventDefault(); try { draw(await api(`/api/comments/${kind}/${encodeURIComponent(id)}`, Object.fromEntries(new FormData(e.target)))); e.target.text.value = ''; toast('남겼어요'); } catch (err) { toast(err.message); } };
-  try { draw(await api(`/api/comments/${kind}/${encodeURIComponent(id)}`)); } catch { draw([]); }
+  const url = `/api/comments/${kind}/${encodeURIComponent(id)}`;
+  const one = (c, reply) => `<div class="comment${c.staff ? ' staff' : ''}${reply ? ' reply' : ''}" data-id="${esc(c.id)}"><div class="chead"><b>${esc(c.name || '익명')}</b>${c.staff ? `<i class="cstaff">${esc(c.role || 'AI 직원')}</i>` : ''}<small>${new Date(c.createdAt).toLocaleDateString('ko-KR')}</small>${reply ? '' : '<button type="button" class="creply">답글</button>'}</div><p>${esc(c.text)}</p></div>`;
+  const draw = (list) => {
+    el.querySelector('[data-n]').textContent = list.length ? `${list.length}개` : '';
+    const tops = list.filter((c) => !c.parent), kids = (pid) => list.filter((c) => c.parent === pid).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    const orphans = list.filter((c) => c.parent && !tops.some((t) => t.id === c.parent));
+    el.querySelector('.comments').innerHTML = list.length ? [...tops, ...orphans].map((c) => `<div class="cthread">${one(c, false)}${kids(c.id).map((k) => one(k, true)).join('')}</div>`).join('') : '<p class="note">첫 이야기를 남겨 주세요.</p>';
+    el.querySelectorAll('.creply').forEach((b) => b.onclick = () => { const th = b.closest('.cthread'); if (th.querySelector('.rform')) { th.querySelector('.rform').remove(); return; }
+      const f = document.createElement('form'); f.className = 'rform'; f.innerHTML = '<input name="name" placeholder="닉네임" maxlength="20" aria-label="닉네임"><input name="text" placeholder="답글 남기기" required maxlength="300" aria-label="답글"><button class="btn">남기기</button>';
+      f.onsubmit = async (e) => { e.preventDefault(); try { draw(await api(url, { ...Object.fromEntries(new FormData(f)), parent: b.closest('.comment').dataset.id })); toast('남겼어요'); } catch (err) { toast(err.message); } };
+      th.append(f); f.text.focus(); });
+  };
+  el.querySelector('form').onsubmit = async (e) => { e.preventDefault(); try { draw(await api(url, Object.fromEntries(new FormData(e.target)))); e.target.text.value = ''; toast('남겼어요'); } catch (err) { toast(err.message); } };
+  try { draw(await api(url)); } catch { draw([]); }
 }
 const PROGRAM_STATUS = { open: '진행', done: '완료' };
 const periodOf = (p) => p.periodText || (p.always ? '상시' : [p.start, p.end].filter(Boolean).join(' ~ '));

@@ -103,18 +103,22 @@ function upVote(kind, id, undo) {
   const V = liveVotes(); const k = `${kind}:${id}`; V[k] = undo ? Math.max(0, (V[k] || 0) - 1) : (V[k] || 0) + 1; save('votes.json', V);
   return voteOf(V, kind, id, baseVotes(kind, item));
 }
-const listComments = (kind, id) => load('comments.json', []).filter((c) => !c.hidden && cKey(c) === `${kind}:${id}`).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(({ id: cid, name, text, createdAt }) => ({ id: cid, name, text, createdAt }));
+const listComments = (kind, id) => load('comments.json', []).filter((c) => !c.hidden && cKey(c) === `${kind}:${id}`).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(({ id: cid, name, text, createdAt, parent, staff, role }) => ({ id: cid, name, text, createdAt, ...(parent ? { parent } : {}), ...(staff ? { staff: true, role: role || 'AI 직원' } : {}) }));
 function addComment(kind, id, body) {
   const item = FIND[kind]?.(id); if (!item) return { error: 404 };
   const text = clean(body.text, 300); if (!text) return { error: 400 };
   const all = load('comments.json', []);
-  all.push({ id: newId(), key: `${kind}:${id}`, title: titleOf(item), name: clean(body.name, 20) || '익명', text, createdAt: new Date().toISOString() });
+  // 대댓글: 같은 글의 맨 위 이야기에만 달 수 있다. 방문자가 쓴 글에는 직원 표시를 붙일 수 없다
+  const parentId = clean(body.parent, 40); const parent = parentId ? all.find((c) => c.id === parentId && cKey(c) === `${kind}:${id}` && !c.hidden) : null;
+  all.push({ id: newId(), key: `${kind}:${id}`, title: titleOf(item), name: clean(body.name, 20) || '익명', text, ...(parent ? { parent: parent.parent || parent.id } : {}), createdAt: new Date().toISOString() });
   save('comments.json', all); return { list: listComments(kind, id) };
 }
 
 // ---- 사이트 설정 (관리자 화면에서 수정) ----
 app.get('/api/config', (req, res) => { const c = readConfig(); if (process.env.NAVER_MAP_CLIENT_ID) c.maps = { ...(c.maps || {}), naverClientId: process.env.NAVER_MAP_CLIENT_ID }; res.json(c); });
-app.post('/api/ping', limit(60), (req, res) => { countVisit(clean(req.body.page, 40) || '/'); res.json({ ok: true }); });
+app.post('/api/ping', limit(60), async (req, res) => { countVisit(clean(req.body.page, 40) || '/'); if (store.SERVERLESS) { try { await autoTick(); } catch {} } res.json({ ok: true }); });
+// 하루 한 번 스스로 도는 주소 (Vercel Cron). 주기가 지난 것만 돌린다
+app.get('/api/cron/tick', limit(6), async (req, res) => { try { res.json({ ok: true, ran: await autoTick(true) }); } catch (e) { res.status(500).json({ error: e.message }); } });
 app.get('/api/admin/metrics', adminOnly, (req, res) => {
   const m = load('metrics.json', {}); const days = [];
   for (let i = 13; i >= 0; i--) { const d = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10); days.push({ day: d, views: m[d]?.views || 0, pages: m[d]?.pages || {} }); }
@@ -352,9 +356,29 @@ const FEEDS = {
   waste: { name: '쓰레기 배출 통계 (공공데이터포털)', every: 86400e3, run: () => refreshWasteStats() },
   tour: { name: '관광지·카페·맛집 (관광 API)', every: 86400e3, needs: 'TOUR_API_KEY', run: () => refreshTourPlaces() },
   kstartup: { name: '창업 지원사업 공고 (K-Startup, 공공데이터포털 15125364)', every: 86400e3, needs: 'DATA_GO_KR_KEY', run: () => refreshKStartup() },
-  agents: { name: '본부 주간 회의 (AI 직원)', every: 86400e3, run: () => agents.runCycle({ load, save, feedState }) },
+  agents: { name: '본부 회의 (AI 직원)', every: 86400e3, run: () => agents.runCycle({ load, save, feedState }) },
+  shift: { name: 'AI 직원 근무 (답글·이야기·보고)', every: 6 * 3600e3, run: () => agents.runShift(agentCtx()) },
 };
 const feedState = (id) => (load('feeds.json', {})[id] || {});
+// AI 직원이 일할 때 쓰는 것: 글 찾기와, 줄기별로 맡은 글 목록
+const CATALOG = {
+  project: () => load('projects.json', []).filter((p) => p.status === 'live' && (p.type || 'project') === 'project').sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map((p) => ({ id: p.id, title: p.name, summary: p.tagline || p.description })),
+  program: () => load('programs.json', []).filter((p) => !p.hidden).map((p) => ({ id: p.id, title: p.title, summary: p.summary })),
+  insight: () => load('insights.json', []).filter((p) => !p.hidden).map((p) => ({ id: p.id, title: p.title, summary: p.summary })),
+  hackathon: () => hackItems().map((h) => ({ id: h.id, title: h.title, summary: [h.dates, h.location, (h.themes || []).join(', ')].filter(Boolean).join(' · ') })),
+  winner: () => WINNERS.slice(0, 30).map((w) => ({ id: w.id, title: w.name, summary: w.tagline })),
+  guide: () => load('guides.json', []).filter((g) => !g.hidden).map((g) => ({ id: g.id, title: g.title, summary: g.summary })),
+  place: () => load('places.json', []).filter((p) => !p.hidden).map((p) => ({ id: p.id, title: p.name, summary: p.summary })),
+};
+// 직원이 스스로 고치는 일 ①: 사진이 없는 프로젝트에 서비스 주소의 대표 이미지를 넣는다 (한 번에 3건까지)
+async function fixMissingPhotos() {
+  const list = load('projects.json', []); const fixed = [];
+  for (const p of list) { if (fixed.length >= 3) break; if (p.status !== 'live' || (p.type || 'project') !== 'project' || (p.photos || []).length || !isUrl(p.url || '') || p.photoTried) continue;
+    let img = ''; try { img = await pageImage(p.url); } catch {} p.photoTried = true; if (img && isImg(img)) { p.photos = [img]; fixed.push(p.name); } }
+  if (list.some((p) => p.photoTried)) save('projects.json', list);
+  return fixed;
+}
+const agentCtx = () => ({ load, save, feedState, titleOf, fixMissingPhotos, find: (kind, id) => FIND[kind]?.(id), catalog: (kind) => (CATALOG[kind] ? CATALOG[kind]() : []) });
 function markFeed(id, ok, note) { const s = load('feeds.json', {}); s[id] = { ...(s[id] || {}), lastRun: new Date().toISOString(), ok, note: note || '' }; save('feeds.json', s); }
 async function runFeed(id) {
   const f = FEEDS[id]; if (!f) return;
@@ -413,6 +437,7 @@ app.get('/api/admin/hq/graph', adminOnly, (req, res) => {
     partner: [...(cfg.support || []).map((s) => n(s.org, '기관', s.href)), ...['left', 'right'].filter((k) => cfg.ads?.[k]?.title).map((k) => n(cfg.ads[k].title.replace(/\n/g, ' '), '광고 자리', cfg.ads[k].href))],
   });
 });
+app.post('/api/admin/hq/shift', adminOnly, async (req, res) => { try { const r = await agents.runShift(agentCtx()); markFeed('shift', true); res.json(r); } catch (e) { res.status(500).json({ error: e.message }); } });
 app.post('/api/admin/hq/cycle', adminOnly, async (req, res) => { try { const r = await agents.runCycle({ load, save, feedState }, { force: true }); markFeed('agents', true); res.json(r); } catch (e) { res.status(500).json({ error: e.message }); } });
 
 // ---- 제주 생활 가이드 (글 하나 = 독립 정보 페이지, 관리자에서 편집) ----
@@ -613,7 +638,17 @@ app.get('/api/threads-drafts', async (req, res) => {
 });
 
 // 자동 갱신: 피드마다 마지막 실행이 주기보다 오래됐으면 지금 돌린다
-const tick = () => { for (const [id, f] of Object.entries(FEEDS)) { const last = new Date(feedState(id).lastRun || 0).getTime(); if (Date.now() - last > f.every) runFeed(id); } };
+const due = () => Object.entries(FEEDS).filter(([id, f]) => Date.now() - new Date(feedState(id).lastRun || 0).getTime() > f.every && !(f.needs && !process.env[f.needs])).map(([id]) => id);
+const tick = () => { for (const id of due()) runFeed(id); };
+// 서버리스에서는 타이머가 없어서, 방문이 있을 때(1분에 한 번만 확인)와 하루 한 번 예약 호출 때 돌린다.
+// 시작할 때 '돌렸다'고 먼저 적어서 서버 여러 대가 같은 일을 겹쳐 하지 않게 한다.
+let lastTickCheck = 0, ticking = false;
+async function autoTick(force) {
+  if (ticking || (!force && Date.now() - lastTickCheck < 60000)) return []; lastTickCheck = Date.now();
+  const ids = due(); if (!ids.length) return [];
+  ticking = true; try { for (const id of ids) markFeed(id, true, '돌리는 중'); await Promise.race([Promise.all(ids.map((id) => runFeed(id))), new Promise((r) => setTimeout(r, 50000))]); } finally { ticking = false; }
+  return ids;
+}
 if (store.SERVERLESS) {
   // 서버리스(Vercel): 요청이 올 때만 켜지므로 서버를 직접 열지 않고 앱을 내보낸다. 자동 갱신은 관리자 화면의 '지금 갱신' 버튼으로.
   if (!ADMIN_PASSWORD) console.warn('⚠️  ADMIN_PASSWORD가 없어 관리자 로그인이 막혀 있어요. 호스팅 설정에서 환경변수를 넣어 주세요.');

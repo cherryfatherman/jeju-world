@@ -86,7 +86,7 @@
 <body>
 <div class="login" id="login" hidden><form class="form" id="loginForm"><h3>섬업 본부</h3><p class="note">관리자 비밀번호를 넣어 주세요.</p><input type="password" name="pw" required autocomplete="current-password" placeholder="비밀번호"><button class="btn primary">들어가기</button></form></div>
 <div class="hq">
-  <div class="hqbar"><b><em>섬업</em> 본부</b><span class="state" id="state"></span><button class="btn primary" id="cycleBtn">지금 회의</button><button class="btn" id="addPillar">＋ 줄기</button><a class="btn" href="./admin.html">관리자</a><a class="btn" href="./">사이트</a></div>
+  <div class="hqbar"><b><em>섬업</em> 본부</b><span class="state" id="state"></span><button class="btn primary" id="cycleBtn">지금 회의</button><button class="btn" id="shiftBtn" title="AI 직원이 자기 페이지에서 답글·이야기를 남기고 보고해요">지금 근무</button><button class="btn" id="addPillar">＋ 줄기</button><a class="btn" href="./admin.html">관리자</a><a class="btn" href="./">사이트</a></div>
   <div class="stage" id="stage"><canvas id="c"></canvas>
     <div class="gleft"><input id="gq" placeholder="제목 찾기" aria-label="찾기"><div id="glegend"></div></div>
     <div class="gzoom"><button id="zin" aria-label="확대">＋</button><button id="zout" aria-label="축소">－</button><button id="zfit" aria-label="전체 보기">⟲</button></div>
@@ -129,15 +129,15 @@ let GRAPH = {}, clusters = [], view = { x: 0, y: 0, k: 1 }, target = null, lastT
 const GOLD = 2.39996323;
 function build3D() { // 이름은 예전 그대로 두고 내용만 2D 지식 지도
   const n = HQ.pillars.length || 1;
-  const sized = HQ.pillars.map((p) => { const items = (GRAPH[p.id] || []); const tasks = HQ.tasks.filter((t) => t.pillar === p.id); return { p, items, tasks, r: Math.max(46, Math.min(230, 15 * Math.sqrt(items.length + 4))) }; });
+  const sized = HQ.pillars.map((p) => { const items = (GRAPH[p.id] || []); const tasks = HQ.tasks.filter((t) => t.pillar === p.id); return { p, items, tasks, r: Math.max(58, Math.min(150, 13 * Math.sqrt(items.length + 6))) }; });
   // 큰 묶음일수록 고리에서 넓은 자리를 차지하게 해서 서로 겹치지 않게 한다
-  const span = sized.map((c) => c.r * 2 + 90); const total = span.reduce((a, b) => a + b, 0);
+  const span = sized.map((c) => c.r * 2 + 150); const total = span.reduce((a, b) => a + b, 0);
   const ring = Math.max(320, total / (2 * Math.PI), Math.max(...sized.map((c) => c.r)) + 200);
   let acc = 0;
   clusters = sized.map((c, i) => {
     const a = -Math.PI / 2 + ((acc + span[i] / 2) / total) * Math.PI * 2; acc += span[i]; const cx = Math.cos(a) * ring, cy = Math.sin(a) * ring;
-    const nodes = c.items.map((it, k) => { const rr = c.r * Math.sqrt((k + 0.6) / (c.items.length + 0.6)); return { ...it, a: k * GOLD, rr, ph: k * 1.7 }; });
-    const tasks = c.tasks.slice(0, 16).map((t, k, arr) => ({ t: t.title, s: '할 일 · ' + STATUS[t.status], task: t, a: (k / arr.length) * Math.PI * 2, rr: c.r + 22 }));
+    const nodes = c.items.map((it, k) => { const sy = 1 - (2 * (k + 0.5)) / c.items.length; return { ...it, a: k * GOLD, sy, sr: Math.sqrt(Math.max(0, 1 - sy * sy)), ph: k * 1.7 }; });
+    const tasks = c.tasks.slice(0, 16).map((t, k, arr) => ({ t: t.title, s: '할 일 · ' + STATUS[t.status], task: t, a: (k / arr.length) * Math.PI * 2, rr: c.r + 30 }));
     return { ...c, cx, cy, nodes, tasks, spin: (i % 2 ? 1 : -1) };
   });
   $('#glegend').replaceChildren(...clusters.map((c) => { const b = document.createElement('button'); b.dataset.id = c.p.id; b.innerHTML = `<i style="background:${esc(c.p.color)}"></i><span>${esc(c.p.name)}</span><small>${c.items.length}</small>`; b.onclick = () => { select(c.p.id); flyTo(c); }; return b; }));
@@ -150,7 +150,7 @@ function extent() { let m = 200; for (const c of clusters) m = Math.max(m, Math.
 function fit() { const e = extent(); target = { x: 0, y: 0, k: Math.min(W, H) / (e * 2) }; if (!fit.done) { view = { ...target }; fit.done = true; } }
 function flyTo(c) { const k = Math.min(2.2, Math.min(W, H) / (c.r * 3.2)); target = { x: -c.cx * k, y: -c.cy * k, k }; lastTouch = Date.now(); }
 const toWorld = (px, py) => ({ x: (px - W / 2 - view.x) / view.k, y: (py - H / 2 - view.y) / view.k });
-function nodePos(c, nd, t) { const a = nd.a + t * 0.00004 * c.spin; const w = Math.sin(t * 0.0012 + nd.ph) * 2.2; return { x: c.cx + Math.cos(a) * (nd.rr + w), y: c.cy + Math.sin(a) * (nd.rr + w) }; }
+function nodePos(c, nd, t) { const a = nd.a + t * 0.00016 * c.spin; const R = c.r * 0.92; return { x: c.cx + Math.cos(a) * nd.sr * R, y: c.cy + nd.sy * R * 0.94 + Math.sin(a) * nd.sr * R * 0.16, z: Math.sin(a) * nd.sr }; }
 function hexA(hex, al) { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${al})`; }
 let T0 = 0;
 function frame(t) {
@@ -159,46 +159,69 @@ function frame(t) {
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.setTransform(DPR * view.k, 0, 0, DPR * view.k, DPR * (W / 2 + view.x), DPR * (H / 2 + view.y));
   const k = view.k, q = query;
-  // 가운데와 줄기를 잇는 선
-  for (const c of clusters) { ctx.strokeStyle = hexA(c.p.color, 0.28); ctx.lineWidth = 1.2 / k; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(c.cx, c.cy); ctx.stroke(); }
+  const rr = (x, y, w, h, r) => { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); };
+  // 바닥: 가운데에서 퍼지는 옅은 궤도
+  const E = extent(); ctx.lineWidth = 1 / k;
+  for (let n = 1; n <= 3; n++) { ctx.strokeStyle = `rgba(255,255,255,${0.05 - n * 0.01})`; ctx.beginPath(); ctx.ellipse(0, 0, (E * n) / 3.2, (E * n) / 3.2, 0, 0, 6.2832); ctx.stroke(); }
+  // 줄기: 가운데에서 휘어 나가는 빛, 그 위를 흐르는 점
+  for (const [idx, c] of clusters.entries()) {
+    const d = Math.hypot(c.cx, c.cy), nx = -c.cy / d, ny = c.cx / d, bend = 46 * (idx % 2 ? 1 : -1), mx = c.cx / 2 + nx * bend, my = c.cy / 2 + ny * bend;
+    const g = ctx.createLinearGradient(0, 0, c.cx, c.cy); g.addColorStop(0, 'rgba(255,107,26,.55)'); g.addColorStop(1, hexA(c.p.color, c.p.id === sel ? 0.9 : 0.5));
+    ctx.strokeStyle = g; ctx.lineWidth = (c.p.id === sel ? 2.4 : 1.4) / Math.max(0.6, k); ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(mx, my, c.cx, c.cy); ctx.stroke();
+    const u = ((t * 0.00022 + idx * 0.19) % 1), v = 1 - u, px = v * v * 0 + 2 * v * u * mx + u * u * c.cx, py = 2 * v * u * my + u * u * c.cy;
+    ctx.fillStyle = hexA(c.p.color, 0.95); ctx.shadowColor = c.p.color; ctx.shadowBlur = 12; ctx.beginPath(); ctx.arc(px, py, 3.2 / Math.max(0.7, k), 0, 6.2832); ctx.fill(); ctx.shadowBlur = 0;
+  }
   for (const c of clusters) {
-    const on = c.p.id === sel; const col = c.p.color;
-    // 글 점과 가는 선
-    const showLines = k > 0.75 || on;
-    ctx.lineWidth = 0.5 / k;
-    for (const nd of c.nodes) {
-      const pos = nodePos(c, nd, t); nd.x = pos.x; nd.y = pos.y;
-      const match = q && nd.t.toLowerCase().includes(q); const al = q ? (match ? 1 : 0.12) : nd.dim ? 0.35 : 0.9;
-      if (showLines && !nd.small) { ctx.strokeStyle = hexA(col, 0.1 * al + 0.03); ctx.beginPath(); ctx.moveTo(c.cx, c.cy); ctx.lineTo(nd.x, nd.y); ctx.stroke(); }
-      const r = (nd.small ? 2 : 3.4) * (match ? 1.8 : 1) * (hover === nd ? 1.8 : 1);
-      ctx.fillStyle = hexA(col, al); ctx.beginPath(); ctx.arc(nd.x, nd.y, r, 0, 6.2832); ctx.fill();
+    const on = c.p.id === sel; const col = c.p.color; const R = c.r * 0.92;
+    // 구의 몸: 옅은 유리 원과 테두리
+    const body = ctx.createRadialGradient(c.cx - R * 0.35, c.cy - R * 0.4, R * 0.1, c.cx, c.cy, R * 1.12); body.addColorStop(0, hexA(col, on ? 0.3 : 0.2)); body.addColorStop(0.7, hexA(col, 0.06)); body.addColorStop(1, hexA(col, 0));
+    ctx.fillStyle = body; ctx.beginPath(); ctx.arc(c.cx, c.cy, R * 1.12, 0, 6.2832); ctx.fill();
+    ctx.strokeStyle = hexA(col, on ? 0.55 : 0.22); ctx.lineWidth = 1 / k; ctx.beginPath(); ctx.arc(c.cx, c.cy, R, 0, 6.2832); ctx.stroke();
+    // 할 일 고리 (기울어진 타원): 뒤쪽 반
+    const ringRx = c.r + 30, ringRy = ringRx * 0.3;
+    ctx.strokeStyle = hexA(col, 0.28); ctx.lineWidth = 1 / k; ctx.beginPath(); ctx.ellipse(c.cx, c.cy, ringRx, ringRy, -0.22, Math.PI, 6.2832); ctx.stroke();
+    // 글 점: 뒤에 있는 것부터 그려 깊이가 보이게
+    for (const nd of c.nodes) { const pos = nodePos(c, nd, t); nd.x = pos.x; nd.y = pos.y; nd.z = pos.z; }
+    for (const pass of [0, 1]) for (const nd of c.nodes) {
+      if ((nd.z >= 0 ? 1 : 0) !== pass) continue;
+      const match = q && nd.t.toLowerCase().includes(q); const depth = (nd.z + 1) / 2; const al = q ? (match ? 1 : 0.08) : (nd.dim ? 0.3 : 0.28 + depth * 0.72);
+      const r = (nd.small ? 1.5 : 2.6) * (0.55 + depth * 0.75) * (match ? 2 : 1) * (hover === nd ? 2.2 : 1);
+      ctx.fillStyle = pass && !nd.small && !q ? hexA('#ffffff', 0.25 + depth * 0.6) : hexA(col, al);
+      ctx.beginPath(); ctx.arc(nd.x, nd.y, r, 0, 6.2832); ctx.fill();
+      if (pass && !nd.small && !q) { ctx.fillStyle = hexA(col, al); ctx.beginPath(); ctx.arc(nd.x, nd.y, r * 0.62, 0, 6.2832); ctx.fill(); }
+      if (pass === 0 && !q) { /* 뒤쪽 점은 가운데 빛에 가려진다 */ }
     }
-    // 할 일: 바깥 고리의 네모
+    // 줄기 중심: 빛나는 구슬
+    const core = on ? 17 : 13; const glow = ctx.createRadialGradient(c.cx, c.cy, 0, c.cx, c.cy, core * 3.4); glow.addColorStop(0, hexA(col, 0.75)); glow.addColorStop(1, hexA(col, 0)); ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(c.cx, c.cy, core * 3.4, 0, 6.2832); ctx.fill();
+    const ball = ctx.createRadialGradient(c.cx - core * 0.4, c.cy - core * 0.45, core * 0.1, c.cx, c.cy, core); ball.addColorStop(0, '#ffffff'); ball.addColorStop(0.35, col); ball.addColorStop(1, hexA(col, 0.85));
+    ctx.fillStyle = ball; ctx.beginPath(); ctx.arc(c.cx, c.cy, core, 0, 6.2832); ctx.fill();
+    // 할 일 고리: 앞쪽 반과 할 일 네모
+    ctx.strokeStyle = hexA(col, 0.5); ctx.lineWidth = 1.2 / k; ctx.beginPath(); ctx.ellipse(c.cx, c.cy, ringRx, ringRy, -0.22, 0, Math.PI); ctx.stroke();
     for (const nd of c.tasks) {
-      const a = nd.a + t * 0.00012; nd.x = c.cx + Math.cos(a) * nd.rr; nd.y = c.cy + Math.sin(a) * nd.rr;
-      const st = nd.task.status; const z = hover === nd ? 9 : 6;
-      ctx.fillStyle = st === 'doing' ? '#ff6b1a' : st === 'done' ? '#6b635a' : '#ffffff'; ctx.globalAlpha = q ? (nd.t.toLowerCase().includes(q) ? 1 : 0.15) : 1;
-      ctx.fillRect(nd.x - z / 2, nd.y - z / 2, z, z); ctx.globalAlpha = 1;
+      const a = nd.a + t * 0.00018, ex = Math.cos(a) * ringRx, ey = Math.sin(a) * ringRy; nd.x = c.cx + ex * Math.cos(-0.22) - ey * Math.sin(-0.22); nd.y = c.cy + ex * Math.sin(-0.22) + ey * Math.cos(-0.22);
+      const st = nd.task.status; const z = (hover === nd ? 11 : 7.5) * (0.8 + (Math.sin(a) + 1) * 0.2);
+      ctx.globalAlpha = q ? (nd.t.toLowerCase().includes(q) ? 1 : 0.15) : 0.55 + (Math.sin(a) + 1) * 0.225;
+      ctx.fillStyle = st === 'doing' ? '#ff6b1a' : st === 'done' ? '#6b635a' : '#ffffff'; rr(nd.x - z / 2, nd.y - z / 2, z, z, z * 0.28); ctx.fill(); ctx.globalAlpha = 1;
     }
-    // 줄기 중심
-    const g = ctx.createRadialGradient(c.cx, c.cy, 0, c.cx, c.cy, on ? 46 : 34); g.addColorStop(0, hexA(col, 0.9)); g.addColorStop(1, hexA(col, 0));
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(c.cx, c.cy, on ? 46 : 34, 0, 6.2832); ctx.fill();
-    ctx.fillStyle = col; ctx.strokeStyle = '#14110d'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(c.cx, c.cy, on ? 15 : 12, 0, 6.2832); ctx.fill(); ctx.stroke();
-    // 이름표 (확대와 상관없이 읽히는 크기)
-    const fs = Math.min(30, 15 / k); ctx.font = `800 ${fs}px "Pretendard Variable", sans-serif`; ctx.textAlign = 'center';
-    const ty = c.cy - c.r - 30 - fs * 0.9; const open = c.tasks.filter((x) => x.task.status !== 'done').length;
-    ctx.lineWidth = fs * 0.28; ctx.lineJoin = 'round'; ctx.strokeStyle = 'rgba(20,17,13,.85)'; ctx.strokeText(c.p.name, c.cx, ty); ctx.fillStyle = on ? '#ff8a4a' : '#fff'; ctx.fillText(c.p.name, c.cx, ty);
-    ctx.font = `600 ${fs * 0.68}px "Pretendard Variable", sans-serif`; ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.fillText(`글 ${c.items.length}${open ? ` · 할 일 ${open}` : ''}`, c.cx, ty + fs * 0.95);
+    // 이름표: 둥근 알약 모양 (확대와 상관없이 읽히는 크기)
+    const fs = Math.min(28, 15 / k); const open = c.tasks.filter((x) => x.task.status !== 'done').length; const sub = `글 ${c.items.length}${open ? ` · 할 일 ${open}` : ''}`;
+    ctx.font = `800 ${fs}px "Pretendard Variable", sans-serif`; const w1 = ctx.measureText(c.p.name).width; ctx.font = `600 ${fs * 0.7}px "Pretendard Variable", sans-serif`; const w2 = ctx.measureText(sub).width;
+    const pw = w1 + w2 + fs * 2.3, ph = fs * 1.9, pxl = c.cx - pw / 2, pyl = c.cy - R - ph - fs * 1.1;
+    rr(pxl, pyl, pw, ph, ph / 2); ctx.fillStyle = on ? hexA(col, 0.28) : 'rgba(20,18,24,.72)'; ctx.fill(); ctx.strokeStyle = on ? hexA(col, 0.9) : 'rgba(255,255,255,.14)'; ctx.lineWidth = 1 / k; ctx.stroke();
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillStyle = col; ctx.beginPath(); ctx.arc(pxl + fs * 0.75, pyl + ph / 2, fs * 0.24, 0, 6.2832); ctx.fill();
+    ctx.font = `800 ${fs}px "Pretendard Variable", sans-serif`; ctx.fillStyle = '#fff'; ctx.fillText(c.p.name, pxl + fs * 1.25, pyl + ph / 2 + fs * 0.04);
+    ctx.font = `600 ${fs * 0.7}px "Pretendard Variable", sans-serif`; ctx.fillStyle = 'rgba(255,255,255,.62)'; ctx.fillText(sub, pxl + fs * 1.25 + w1 + fs * 0.45, pyl + ph / 2 + fs * 0.06); ctx.textBaseline = 'alphabetic';
   }
   // 가운데: 섬업
-  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 70); g.addColorStop(0, 'rgba(255,107,26,.9)'); g.addColorStop(1, 'rgba(255,107,26,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, 70 + Math.sin(t * 0.002) * 4, 0, 6.2832); ctx.fill();
-  ctx.fillStyle = '#ff6b1a'; ctx.beginPath(); ctx.arc(0, 0, 22, 0, 6.2832); ctx.fill(); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, 7, 0, 6.2832); ctx.fill();
-  const fs = Math.min(34, 17 / k); ctx.font = `800 ${fs}px "Pretendard Variable", sans-serif`; ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.fillText('섬업', 0, 44 + fs * 0.6);
+  const pulse = (t * 0.0005) % 1; ctx.strokeStyle = `rgba(255,140,70,${0.5 * (1 - pulse)})`; ctx.lineWidth = 1.5 / k; ctx.beginPath(); ctx.arc(0, 0, 26 + pulse * 70, 0, 6.2832); ctx.stroke();
+  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 86); g.addColorStop(0, 'rgba(255,107,26,.85)'); g.addColorStop(1, 'rgba(255,107,26,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, 86, 0, 6.2832); ctx.fill();
+  const cb = ctx.createRadialGradient(-9, -10, 2, 0, 0, 26); cb.addColorStop(0, '#fff3e6'); cb.addColorStop(0.4, '#ff8a3a'); cb.addColorStop(1, '#f25c0a'); ctx.fillStyle = cb; ctx.beginPath(); ctx.arc(0, 0, 26, 0, 6.2832); ctx.fill();
+  const fs = Math.min(34, 18 / k); ctx.font = `900 ${fs}px "Pretendard Variable", sans-serif`; ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.fillText('섬업', 0, 52 + fs * 0.7);
 }
 function pick(px, py) {
   const w = toWorld(px, py); const tol = 9 / view.k; let best = null, bd = tol;
   for (const c of clusters) { if (Math.hypot(w.x - c.cx, w.y - c.cy) < 18 / Math.min(1, view.k)) return { hub: c };
-    if (Math.hypot(w.x - c.cx, w.y - c.cy) > c.r + 40) continue;
+    if (Math.hypot(w.x - c.cx, w.y - c.cy) > c.r + 60) continue;
     for (const nd of [...c.tasks, ...c.nodes]) { const d = Math.hypot(w.x - nd.x, w.y - nd.y); if (d < bd) { bd = d; best = { node: nd, c }; } } }
   return best;
 }
@@ -281,6 +304,7 @@ async function load() {
   [HQ, GRAPH] = await Promise.all([api('/api/admin/hq'), api('/api/admin/hq/graph')]); if (!sel || !pillarOf(sel)) sel = HQ.pillars[0]?.id || null;
   build3D(); renderPillar(); renderOrg(); renderLog(); setState();
 }
+$('#shiftBtn').onclick = async (e) => { const b = e.currentTarget; b.disabled = true; b.textContent = '근무 중…'; try { const r = await api('/api/admin/hq/shift', {}); toast(`근무 끝 · 답글 ${r.replies}건 · 이야기 ${r.notes}건${r.ai ? '' : ' (AI 연결이 안 돼 정해진 문장으로 남겼어요)'}`); await load(); document.querySelector('.tabs3 [data-t=log]')?.click(); } catch (err) { toast(err.message); } b.disabled = false; b.textContent = '지금 근무'; };
 $('#cycleBtn').onclick = async (e) => { const b = e.currentTarget; b.disabled = true; b.textContent = '회의 중…'; try { const r = await api('/api/admin/hq/cycle', {}); toast(`회의 끝 · 새 제안 ${r.added}건${r.ai ? '' : ' (AI 없이 진행)'}`); await load(); showTab('log'); } catch (err) { toast(err.message); } b.disabled = false; b.textContent = '지금 회의'; };
 $('#addPillar').onclick = () => { const name = prompt('새 줄기 이름'); if (!name) return; const id = 'p' + Date.now().toString(36); HQ.pillars.push({ id, name: name.slice(0, 20), dept: name.slice(0, 16) + '부', color: '#888888', goal: '', kpi: '' }); touch(); build3D(); select(id); renderOrg(); };
 

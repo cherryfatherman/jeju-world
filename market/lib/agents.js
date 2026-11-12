@@ -160,4 +160,67 @@ function remember(hq, oldTasks, newTasks) {
   for (const id of Object.keys(hq.memory)) if (!hq.pillars.some((p) => p.id === id)) delete hq.memory[id];
 }
 
-module.exports = { sense, runCycle, programStatus, remember, AGENTS };
+// ── 근무: 줄기마다 전담 직원이 자기 페이지에서 한 가지 일을 하고 보고한다 ──
+// 하는 일: ① 방문자가 남긴 이야기에 답글 ② 답글 달 것이 없으면 자기 줄기의 글 하나에 이야기 한 줄.
+// 지키는 것: 줄기마다 한 번에 1건, 글 하나에 직원 이야기는 1건까지, AI 호출은 근무 한 번에 1회, 글에 없는 사실·숫자는 쓰지 않는다.
+// 직원이 쓴 글에는 staff 표시가 붙어 화면에 'AI 직원'으로 보인다 (방문자인 척하지 않는다).
+const SHIFT_KINDS = { deal: ['project'], program: ['program'], insight: ['insight'], hackathon: ['hackathon', 'winner'], life: ['guide', 'place'] };
+const cut = (s, n) => String(s || '').replace(/\s+/g, ' ').trim().slice(0, n);
+function planShift(ctx, hq) {
+  const comments = ctx.load('comments.json', []).filter((c) => !c.hidden); const jobs = []; const taken = new Set();
+  const repliedTo = new Set(comments.filter((c) => c.staff && c.parent).map((c) => c.parent));
+  const keyOf = (c) => c.key || (c.projectId ? `project:${c.projectId}` : '');
+  const leadOf = (pid) => hq.agents.find((a) => a.pillar === pid && a.rank === '부서장') || hq.agents.find((a) => a.pillar === pid);
+  const pick = (pillar, kinds) => {
+    const agent = leadOf(pillar.id); if (!agent) return;
+    // ① 답글: 내 줄기 글에 달린, 아직 답이 없는 방문자 이야기 (가장 최근 것)
+    const waiting = comments.filter((c) => !c.staff && !c.parent && !repliedTo.has(c.id) && !taken.has(c.id) && kinds.includes(keyOf(c).split(':')[0])).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+    if (waiting) { const [kind, ...rest] = keyOf(waiting).split(':'); const id = rest.join(':'); const item = ctx.find(kind, id); if (item) { taken.add(waiting.id); jobs.push({ type: 'reply', pillar: pillar.id, agent, kind, id, title: ctx.titleOf(item), about: cut(item.tagline || item.summary || item.description || '', 160), parent: waiting.id, to: cut(waiting.name, 20), said: cut(waiting.text, 200) }); return; } }
+    // ② 이야기: 직원 이야기가 없는 글부터, 한 글에 2건까지
+    const counts = {}; for (const c of comments) if (c.staff) counts[keyOf(c)] = (counts[keyOf(c)] || 0) + 1;
+    const pool = kinds.flatMap((kind) => ctx.catalog(kind).slice(0, 30).map((it) => ({ kind, ...it }))).filter((it) => !(counts[`${it.kind}:${it.id}`] > 0)) // 글 하나에 직원 이야기는 1건까지.sort((a, b) => (counts[`${a.kind}:${a.id}`] || 0) - (counts[`${b.kind}:${b.id}`] || 0));
+    const it = pool[0]; if (it) jobs.push({ type: 'note', pillar: pillar.id, agent, kind: it.kind, id: it.id, title: it.title, about: cut(it.summary, 200) });
+  };
+  for (const p of hq.pillars) if (SHIFT_KINDS[p.id]) pick(p, SHIFT_KINDS[p.id]);
+  // 소통 줄기: 다른 줄기가 못 챙긴 이야기에 답글
+  const comm = hq.pillars.find((p) => p.id === 'community'); if (comm) pick(comm, ['project', 'program', 'insight', 'hackathon', 'winner', 'guide', 'place']);
+  return jobs.filter((j) => j.type === 'reply' || j.pillar !== 'community');
+}
+const scriptedLine = (j) => (j.type === 'reply' ? `${j.to || '방문자'}님, 이야기 남겨 주셔서 고마워요. ${j.agent.dept || '담당'}에서 확인하고 있어요.` : `이 글에서 궁금한 점이 있으면 여기에 남겨 주세요. ${j.agent.dept || '담당'}에서 보고 답할게요.`);
+async function writeShift(jobs) {
+  const prompt = `제주 창업 플랫폼 "섬업"의 AI 직원들이 자기 담당 글에 한 줄씩 남깁니다. 각 작업에 맞는 글을 쓰세요.
+규칙: 1~2문장, 쉬운 존댓말(~해요). [글]에 적힌 내용만 근거로 하고 새로운 사실·숫자·약속·가격은 절대 쓰지 마세요. 광고처럼 쓰지 마세요.
+이미 일어난 일이나 앞으로 일어날 일을 단정하지 마세요(예: "끝났네요", "열려요" 금지). 날짜·기간·금액은 [글]에 있는 표현을 그대로 옮길 때만 쓰세요.
+reply는 방문자 말에 공감하고, 답을 모르면 "글 올린 분께 문의하기로 물어보시면 정확해요"처럼 안내합니다. note는 읽는 사람이 답하기 쉬운 질문 하나를 합니다. 이름·직함은 쓰지 마세요(따로 표시됩니다).
+[작업]
+${jobs.map((j, i) => `${i}. ${j.type} | 직원 성격: ${j.agent.persona || ''} | 글: "${j.title}" - ${j.about || '(설명 없음)'}${j.type === 'reply' ? ` | 방문자(${j.to})의 말: "${j.said}"` : ''}`).join('\n')}
+JSON만: {"lines":[{"i":0,"text":""}]}`;
+  const o = await askJSON(prompt); const out = {};
+  for (const l of Array.isArray(o.lines) ? o.lines : []) { const t = cut(l.text, 200); if (Number.isInteger(l.i) && jobs[l.i] && t.length >= 8 && !/https?:\/\//.test(t)) out[l.i] = t; }
+  return out;
+}
+async function runShift(ctx) {
+  const { load, save } = ctx; const hq = load('hq.json', { pillars: [], agents: [], tasks: [], log: [] }); hq.log = hq.log || [];
+  const jobs = planShift(ctx, hq); const at = new Date().toISOString(); let ai = false, lines = {};
+  if (jobs.length) { try { lines = await Promise.race([writeShift(jobs), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 25000))]); ai = Object.keys(lines).length > 0; } catch {} }
+  const all = load('comments.json', []); const done = [];
+  jobs.forEach((j, i) => { if (!lines[i] && j.type !== 'reply') return; // AI가 못 썼으면 정해진 문장은 답글에만 쓴다 (같은 말이 여러 글에 반복되지 않게)
+    const text = lines[i] || scriptedLine(j);
+    all.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), key: `${j.kind}:${j.id}`, title: j.title, name: j.agent.name, staff: true, agent: j.agent.id, role: `${j.agent.dept || '섬업'} AI`, ...(j.parent ? { parent: j.parent } : {}), text, createdAt: at });
+    done.push({ ...j, text }); });
+  if (done.length) save('comments.json', all);
+  // 보고: 직원마다 무슨 일을 했는지 본부장에게, 본부장이 한 줄로 정리
+  const round = (hq.log[0]?.round || 0) + 1; const msgs = done.map((d) => ({ from: d.agent.id, to: 'halla', text: `${d.type === 'reply' ? `"${cut(d.title, 28)}"에 달린 ${d.to || '방문자'}님 이야기에 답글을 남겼어요` : `"${cut(d.title, 28)}"에 이야기를 한 줄 남겼어요`}: ${d.text}`, kind: 'report', link: { kind: d.kind, id: d.id } }));
+  // 스스로 고친 것도 보고한다
+  let fixed = []; try { fixed = ctx.fixMissingPhotos ? await ctx.fixMissingPhotos() : []; } catch {}
+  const dealLead = hq.agents.find((a) => a.pillar === 'deal' && a.rank === '부서장') || hq.agents.find((a) => a.pillar === 'deal');
+  if (fixed.length && dealLead) msgs.push({ from: dealLead.id, to: 'halla', text: `사진이 없던 글 ${fixed.length}건에 서비스 페이지의 대표 이미지를 넣었어요: ${fixed.map((t) => cut(t, 16)).join(', ')}`, kind: 'report' });
+  const replies = done.filter((d) => d.type === 'reply').length, notes = done.length - replies;
+  if (hq.agents.some((a) => a.id === 'halla')) msgs.push({ from: 'halla', to: 'all', text: done.length ? `근무 보고를 받았어요. 답글 ${replies}건, 이야기 ${notes}건${fixed.length ? `, 스스로 고친 것 ${fixed.length}건` : ''}이에요.` : '이번 근무에는 새로 남길 글이 없었어요.', kind: 'report' });
+  hq.log = [...msgs.map((m) => ({ ...m, at, round, ai })).reverse(), ...hq.log].slice(0, 300);
+  hq.lastShift = { at, replies, notes, fixed: fixed.length, ai };
+  save('hq.json', hq);
+  return { replies, notes, fixed: fixed.length, ai, at };
+}
+
+module.exports = { sense, runCycle, runShift, programStatus, remember, AGENTS };
