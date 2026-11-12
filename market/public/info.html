@@ -30,9 +30,10 @@
 </main>
 <script>
 /* 제주 교통정보센터 자료를 보여 주는 페이지: ?kind=road(도로 통제) | ev(전기차 충전소) | tour(관광지) */
-const Q = new URLSearchParams(location.search), kind = ['road', 'ev', 'tour'].includes(Q.get('kind')) ? Q.get('kind') : 'road';
+const Q = new URLSearchParams(location.search), kind = ['road', 'ev', 'tour', 'traffic'].includes(Q.get('kind')) ? Q.get('kind') : 'road';
 const META = { road: { h1: '도로 통제', sub: '지금 제주에서 통제 중인 도로예요.', icon: 'cloud', topic: 'logistics', empty: '지금 통제 중인 도로가 없어요.', sub2: 'jeju' },
   ev: { h1: '전기차 충전소', sub: '제주의 전기차 충전소 위치예요.', icon: 'sun', topic: 'environment', empty: '충전소 정보를 불러오지 못했어요.', sub2: 'jeju' },
+  traffic: { h1: '실시간 교통', sub: '제주 주요 도로의 지금 속도예요.', icon: 'cloud', topic: 'logistics', empty: '교통 정보를 불러오지 못했어요.', sub2: 'jeju' },
   tour: { h1: '제주 관광지', sub: '제주특별자치도 교통정보센터가 제공하는 관광지 정보예요.', icon: 'sun', topic: 'travel 관광', empty: '관광지 정보를 불러오지 못했어요.', sub2: 'travel' } }[kind];
 document.title = `${META.h1} · 섬업`; $('#h1').textContent = META.h1; $('#sub').textContent = META.sub;
 let all = [], area = '전체', shown = 30, map, layer, cat = kind === 'tour' && ['spot', 'cafe', 'food'].includes(Q.get('type')) ? Q.get('type') : (kind === 'tour' ? 'spot' : '');
@@ -43,7 +44,7 @@ const navUrl = (x) => `https://map.naver.com/p/search/${encodeURIComponent(x.add
 function render() {
   const q = $('#q').value.trim().toLowerCase();
   const list = all.filter((x) => (!cat || x.cat === cat) && (area === '전체' || cityOf(x) === area) && (!q || `${x.name} ${x.addr} ${x.desc}`.toLowerCase().includes(q)));
-  $('#count').textContent = `${list.length.toLocaleString('ko-KR')}${kind === 'road' ? '건' : '곳'}`;
+  $('#count').textContent = `${list.length.toLocaleString('ko-KR')}${kind === 'road' ? '건' : kind === 'traffic' ? '구간' : '곳'}`;
   $('#list').replaceChildren(...list.slice(0, shown).map((x) => {
     const period = [x.start, x.end].filter(Boolean).join(' ~ ');
     const r = rankRow({ href: navUrl(x), external: true, image: x.image, iconName: cat ? CATS[cat][2] : META.icon, topic: cat ? CATS[cat][1] : META.topic, title: x.name || x.addr, sub: x.name ? x.addr : x.desc, meta: [x.name ? x.desc : '', period, x.tel && !/^-+$/.test(x.tel) ? x.tel : ''].filter(Boolean).join(' · '), ...(kind === 'tour' ? { kind: 'tour', id: x.id, votes: x.votes || 0 } : {}) });
@@ -57,7 +58,7 @@ function render() {
 $('#q').oninput = () => { shown = 30; render(); }; $('#more').onclick = () => { shown += 30; render(); };
 mountShell({ active: 'jeju', sub: META.sub2 }).then(async () => {
   let d = { items: [] }; try { d = await api('/api/jeju/its/' + kind + '?all=1'); } catch {}
-  all = (d.items || []).filter((x) => x.name || x.addr);
+  all = (d.items || []).filter((x) => x.name || x.addr).map((x) => (kind === 'traffic' && x.speed !== null && x.speed !== undefined ? { ...x, desc: [`시속 ${x.speed}km`, x.desc].filter(Boolean).join(' · ') } : x));
   const cities = [...new Set(all.map(cityOf).filter(Boolean))];
   $('#areas').replaceChildren(...(cities.length > 1 ? ['전체', ...cities] : []).map((c) => { const b = document.createElement('button'); b.className = 'chip' + (c === area ? ' on' : ''); b.textContent = c; b.onclick = () => { area = c; shown = 30; $$('#areas .chip').forEach((y) => y.classList.toggle('on', y === b)); render(); }; return b; }));
   if (all.some((x) => x.lat && x.lng)) { $('#imap').hidden = false; map = L.map('imap', { scrollWheelZoom: false }).setView([33.38, 126.55], 10); L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '&copy; OpenStreetMap' }).addTo(map); layer = L.layerGroup().addTo(map); }

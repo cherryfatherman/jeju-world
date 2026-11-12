@@ -335,7 +335,7 @@ const publicPlace = (p) => ({ ...p, hidden: undefined });
 app.get('/api/places', (req, res) => {
   const type = PLACE_TYPES.includes(req.query.type) ? req.query.type : null;
   const V = liveVotes(), C = commentCounts();
-  const items = load('places.json', []).filter((p) => p.hidden !== true && (!type || p.type === type)).map((p) => ({ ...publicPlace(p), votes: voteOf(V, 'place', p.id, p.votes), comments: C[`place:${p.id}`] || 0 })).sort((a, b) => b.votes - a.votes);
+  const items = buzz.attach(load('places.json', []).filter((p) => p.hidden !== true && (!type || p.type === type)), load('buzz.json', {})).map((p) => ({ ...publicPlace(p), votes: voteOf(V, 'place', p.id, p.votes), comments: C[`place:${p.id}`] || 0 })).sort((a, b) => b.votes - a.votes);
   res.json({ items, updatedAt: feedState('tour').lastRun || null });
 });
 app.get('/api/places/:id', (req, res) => {
@@ -389,6 +389,7 @@ const FEEDS = {
   waste: { name: '쓰레기 배출 통계 (공공데이터포털)', every: 86400e3, run: () => refreshWasteStats() },
   tour: { name: '관광지·카페·맛집 (관광 API)', every: 86400e3, needs: 'TOUR_API_KEY', run: () => refreshTourPlaces() },
   kstartup: { name: '창업 지원사업 공고 (K-Startup, 공공데이터포털 15125364)', every: 86400e3, needs: 'DATA_GO_KR_KEY', run: () => refreshKStartup() },
+  buzz: { name: '섬업 점수 재기 (네이버 블로그 글 수)', every: 3600e3, needs: 'NAVER_SEARCH_ID', run: () => refreshBuzz() },
   agents: { name: '본부 회의 (AI 직원)', every: 86400e3, run: () => agents.runCycle(agentCtx()) },
   shift: { name: 'AI 직원 근무 (답글·이야기·보고)', every: 6 * 3600e3, run: () => agents.runShift(agentCtx()) },
 };
@@ -468,6 +469,12 @@ async function refreshKStartup() {
   console.log(`K-Startup 공고 ${auto.length}건 반영`);
 }
 // 관광 API: 키가 들어오면 여기서 받아와 places.json의 externalId로 맞춰 넣는다 (지금은 연결 자리만)
+// 섬업 점수: 장소 이름마다 네이버 블로그 글 수를 조금씩(한 번에 40곳) 재서 buzz.json에 모아 둔다
+async function refreshBuzz() {
+  const names = [...load('places.json', []).map((p) => p.name), ...(await travelItems()).items.map((x) => x.name)].filter(Boolean);
+  const book = load('buzz.json', {}); const r = await buzz.measure(names, book, 40); if (r.done) save('buzz.json', book);
+  if (!r.done && r.note) throw new Error(r.note); return `${r.done}곳을 쟀어요 · 남은 곳 ${r.left}`;
+}
 async function refreshTourPlaces() { throw new Error('관광 API 연결 전이에요. 키를 받으면 이 함수에 호출 주소를 넣습니다.'); }
 app.get('/api/admin/feeds', adminOnly, (req, res) => res.json(Object.entries(FEEDS).map(([id, f]) => ({ id, name: f.name, everyHours: f.every / 3600e3, needs: f.needs || null, ready: !f.needs || !!process.env[f.needs], ...feedState(id) }))));
 app.post('/api/admin/feeds/:id/run', adminOnly, async (req, res) => { await runFeed(req.params.id); res.json(feedState(req.params.id)); });
@@ -528,19 +535,22 @@ app.put('/api/admin/guides', adminOnly, (req, res) => {
 // 제주 교통정보센터: 요청이 오면 받아오고 10분 동안 기억한다. 승인키는 응답에 넣지 않는다.
 // 여행 목록 한 벌: 교통정보센터 관광지 + 한국관광공사 맛집·카페. 이름이 같은 곳은 한 번만
 const tourapi = require('./lib/tourapi');
+const buzz = require('./lib/buzz');
 async function travelItems() {
   const [a, b] = await Promise.all([jejuits.load('tour').catch(() => ({ items: [] })), tourapi.load().catch(() => ({ items: [] }))]);
   const seen = new Set(); const norm = (n) => String(n || '').replace(/\s+/g, '');
   const items = [...(a.items || []).map((x) => ({ ...x, src: '제주특별자치도 교통정보센터' })), ...(b.items || [])].filter((x) => { const k = norm(x.name) || x.id; if (seen.has(k)) return false; seen.add(k); return true; });
   return { items, its: a, kto: b };
 }
+app.get('/api/jeju/live', limit(60), async (req, res) => res.json(await jejuits.summary()));
 app.get('/api/jeju/its/:kind', limit(60), async (req, res) => {
   if (!jejuits.KINDS[req.params.kind]) return res.status(404).json({ error: '없는 종류예요.' });
   const lim = req.query.all === '1' ? 3000 : req.params.kind === 'traffic' ? 30 : 80;
   if (req.params.kind !== 'tour') return res.json(jejuits.publicView(await jejuits.load(req.params.kind), lim));
   // 관광지·카페·맛집: 추천 수를 붙이고, 추천 많은 곳이 위로 오게
   const t = await travelItems(); const V = liveVotes();
-  const items = t.items.map((x, i) => ({ ...x, votes: V[`tour:${x.id}`] || 0, _i: i })).sort((x, y) => y.votes - x.votes || x._i - y._i).map(({ _i, ...x }) => x);
+  const rank = (x) => x.score + x.votes * 25; // 섬업 점수 + 추천 1개당 25점
+  const items = buzz.attach(t.items, load('buzz.json', {})).map((x, i) => ({ ...x, votes: V[`tour:${x.id}`] || 0, _i: i })).sort((x, y) => rank(y) - rank(x) || x._i - y._i).map(({ _i, ...x }) => x);
   res.json({ ok: items.length > 0, title: '관광지', updatedAt: t.its.updatedAt || t.kto.updatedAt || new Date().toISOString(), source: [t.its.ok ? '제주특별자치도 교통정보센터' : '', t.kto.ok ? '한국관광공사' : ''].filter(Boolean).join(' · '), count: items.length, items: items.slice(0, lim) });
 });
 // 관리자 점검: 실제로 받은 필드 이름과 첫 줄을 본다 (형식이 바뀌었을 때 맞추기 위해)

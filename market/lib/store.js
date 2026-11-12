@@ -41,7 +41,7 @@ const [KV_URL_NAME, KV_URL_RAW] = envBy('KV_REST_API_URL', 'UPSTASH_REDIS_REST_U
 const [KV_TOKEN_NAME, KV_TOKEN] = envBy('KV_REST_API_TOKEN', 'UPSTASH_REDIS_REST_TOKEN');
 const KV_URL = KV_URL_RAW.replace(/\/$/, '');
 const durable = !!(KV_URL && KV_TOKEN);
-const NAMES = ['config.json', 'projects.json', 'programs.json', 'insights.json', 'guides.json', 'places.json', 'hq.json', 'hackathons.json', 'winners.json', 'votes.json', 'comments.json', 'inquiries.json', 'waitlist.json', 'metrics.json', 'feedback.json', 'feeds.json'];
+const NAMES = ['config.json', 'projects.json', 'programs.json', 'insights.json', 'guides.json', 'places.json', 'hq.json', 'hackathons.json', 'winners.json', 'votes.json', 'comments.json', 'inquiries.json', 'waitlist.json', 'metrics.json', 'feedback.json', 'feeds.json', 'buzz.json'];
 const key = (name) => `seomup:f:${name}`;
 async function kv(cmds) {
   const r = await fetch(`${KV_URL}/pipeline`, { method: 'POST', headers: { authorization: `Bearer ${KV_TOKEN}`, 'content-type': 'application/json' }, body: JSON.stringify(cmds), signal: AbortSignal.timeout(5000) });

@@ -1042,3 +1042,10 @@ body.home footer { position: relative; z-index: 1; }
 .creply { margin-left: auto; font-size: 13px; font-weight: 700; color: var(--ink-3); padding: 2px 6px; border-radius: 8px; } .creply:hover { color: var(--accent); background: #fff; }
 .rform { display: flex; gap: 8px; flex-wrap: wrap; margin-left: 28px; } .rform input[name=name] { flex: 0 0 110px; } .rform input[name=text] { flex: 1; min-width: 160px; } .rform input { min-height: 40px; } .rform .btn { height: 40px; }
 @media (max-width: 560px) { .comment.reply, .rform { margin-left: 16px; } }
+
+/* 생활: 지금 제주 교통 카드 */
+.livecards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.livecards a { display: grid; gap: 2px; padding: 16px; border-radius: 16px; border: 1px solid var(--line); background: #fff; transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+.livecards a:hover { transform: translateY(-2px); border-color: var(--accent); box-shadow: 0 10px 24px rgba(0,0,0,.06); }
+.livecards small { font-size: 12.5px; font-weight: 700; color: var(--ink-3); } .livecards b { font-size: 24px; font-weight: 800; letter-spacing: -0.03em; color: var(--accent); } .livecards span { font-size: 12.5px; color: var(--ink-3); }
+@media (max-width: 560px) { .livecards { grid-template-columns: 1fr; } .livecards a { grid-template-columns: 1fr auto; align-items: center; } .livecards span { grid-column: 1 / -1; } }
