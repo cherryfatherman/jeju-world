@@ -67,19 +67,24 @@ async function load(kind, { fresh = false } = {}) {
     const text = await r.text();
     let raw = []; try { raw = findList(JSON.parse(text)); } catch { raw = parseXml(text); }
     const items = raw.map(normalize).filter((x) => x.name || x.addr || x.desc).map((x) => ({ id: crypto.createHash('md5').update(`${x.name}|${x.addr}`).digest('hex').slice(0, 12), ...x })); /* id: 추천을 붙이기 위한 고정 번호 */
-    let chargers = 0;
+    let chargers = 0, flow = null;
+    if (kind === 'traffic') { /* 실시간 교통은 구간 번호와 속도만 온다(도로 이름 없음). 그래서 목록 대신 전체 흐름을 요약한다. 일반도로 기준: 시속 15km 미만 정체, 25km 미만 서행, 그 이상 원활 */
+      const sp = raw.map((o) => Number(pick(o, [/^(sped|spd|speed)$/i, /(sped|spd|speed)$/i]))).filter((n) => Number.isFinite(n) && n > 0 && n < 200);
+      const t = String(pick(raw[0] || {}, [/^prcn_dt$/i, /(dt|time)$/i]) || ''); const m = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})/.exec(t);
+      if (sp.length) flow = { links: sp.length, avg: Math.round(sp.reduce((a, b) => a + b, 0) / sp.length), jam: sp.filter((n) => n < 15).length, slow: sp.filter((n) => n >= 15 && n < 25).length, free: sp.filter((n) => n >= 25).length, at: m ? `${Number(m[2])}월 ${Number(m[3])}일 ${m[4]}:${m[5]}` : '' };
+      items.length = 0; }
     if (kind === 'ev') { /* 충전기 한 대가 한 줄로 오므로, 같은 충전소(이름+주소)는 한 줄로 묶고 충전기 수를 센다 */
       chargers = items.length; const by = new Map(); for (const x of items) { const k = `${x.name}|${x.addr}`; const g = by.get(k); if (g) g.n++; else by.set(k, { ...x, n: 1 }); }
       items.length = 0; for (const g of by.values()) items.push({ ...g, desc: [`충전기 ${g.n}대`, g.desc].filter(Boolean).join(' · ') }); }
     const emptyOk = kind === 'road' && r.ok && raw.length === 0 && text.length < 2000 && !/error|fail|invalid|인증|오류/i.test(text); /* 통제가 없는 날 */
-    value = { chargers, ok: (r.ok && raw.length > 0) || emptyOk, status: r.status, title: K.title, updatedAt: new Date().toISOString(), source: '제주특별자치도 교통정보센터', count: items.length, items,
+    value = { chargers, flow, ok: (r.ok && raw.length > 0) || emptyOk, status: r.status, title: K.title, updatedAt: new Date().toISOString(), source: '제주특별자치도 교통정보센터', count: flow ? flow.links : items.length, items,
       sample: { fields: raw[0] ? Object.keys(raw[0]) : [], first: raw[0] || null, head: raw.length ? '' : text.slice(0, 400) } };
     if (!value.ok) value.error = raw.length ? '' : '받은 내용에서 목록을 찾지 못했어요.'; if (emptyOk) value.sample.head = text.slice(0, 400);
   } catch (e) { value = { ok: false, title: K.title, error: /abort|timeout/i.test(e.message) ? '응답이 늦어요.' : '연결하지 못했어요.', items: [], sample: { fields: [], first: null, head: String(e.message).slice(0, 200) } }; }
   cache[kind] = { at: Date.now(), value }; return value;
 }
 // 방문자에게 보내는 모양 (원본 표본과 키는 빼고, 개수를 줄여서)
-const summary = async () => { const out = {}; for (const k of ['road', 'ev', 'tour', 'traffic']) { try { const v = await load(k); out[k] = v.ok ? v.count : null; } catch { out[k] = null; } } return out; };
+const summary = async () => { const out = { flow: null }; for (const k of ['road', 'ev', 'tour', 'traffic']) { try { const v = await load(k); out[k] = v.ok ? v.count : null; if (k === 'traffic' && v.ok && v.flow) out.flow = v.flow; } catch { out[k] = null; } } return out; };
 const publicView = (v, limit = 60) => ({ chargers: v.chargers || 0, ok: v.ok, title: v.title, updatedAt: v.updatedAt, source: v.source, count: v.count || 0, items: (v.items || []).slice(0, limit) });
 
 const peek = (kind) => (cache[kind] ? cache[kind].value.items || [] : []); // 이미 받아 둔 목록 (기다리지 않고)
