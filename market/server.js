@@ -74,10 +74,15 @@ const liveVotes = () => load('votes.json', {});
 const voteOf = (V, kind, id, base) => Math.max(0, (Number(base) || 0) + (V[`${kind}:${id}`] || 0));
 // 관리자가 추천 수를 고치면 그 숫자가 그대로 보이게: 바뀐 글은 방문자가 누른 증가분을 0으로 되돌린다
 function applyAdminVotes(kind, before, after) {
+  // 관리자 화면의 '추천 수'는 사이트에 보이는 숫자(기본값 + 방문자가 누른 수)다.
+  // 그 숫자를 바꿔 저장하면 적은 숫자가 그대로 보이게 하고, 안 바꿨으면 그대로 둔다.
   const old = Object.fromEntries((before || []).map((x) => [x.id, Number(x.votes) || 0])); const V = liveVotes(); let changed = false;
-  for (const x of after) { x.votes = Math.max(0, Math.round(Number(x.votes) || 0)); if (x.id in old && old[x.id] !== x.votes && V[`${kind}:${x.id}`]) { delete V[`${kind}:${x.id}`]; changed = true; } }
+  for (const x of after) { const k = `${kind}:${x.id}`, want = Math.max(0, Math.round(Number(x.votes) || 0));
+    if (x.id in old && want === voteOf(V, kind, x.id, old[x.id])) { x.votes = old[x.id]; continue; }
+    x.votes = want; if (k in V) { delete V[k]; changed = true; } }
   if (changed) save('votes.json', V);
 }
+const shownVotes = (kind, list) => { const V = liveVotes(); return list.map((x) => ({ ...x, votes: voteOf(V, kind, x.id, x.votes) })); };
 const cKey = (c) => c.key || (c.projectId ? `project:${c.projectId}` : '');
 function commentCounts() { const m = {}; for (const c of load('comments.json', [])) { if (c.hidden) continue; const k = cKey(c); m[k] = (m[k] || 0) + 1; } return m; }
 const hackItems = () => (load('hackathons.json', { items: [] }).items || []).map((h) => ({ ...h, id: hid(h.url) }));
@@ -308,7 +313,7 @@ app.post('/api/places/:id/feedback', limit(10), (req, res) => {
   const all = load('feedback.json', []); all.push({ id: newId(), placeId: p.id, placeName: p.name, text, createdAt: new Date().toISOString() }); save('feedback.json', all);
   res.json({ ok: true });
 });
-app.get('/api/admin/places', adminOnly, (req, res) => res.json(load('places.json', [])));
+app.get('/api/admin/places', adminOnly, (req, res) => res.json(shownVotes('place', load('places.json', []))));
 app.put('/api/admin/places', adminOnly, (req, res) => {
   const list = Array.isArray(req.body) ? req.body : []; const seen = new Set();
   const cleaned = list.map((p) => ({
@@ -417,7 +422,7 @@ app.get('/api/guides/:id', (req, res) => {
   const g = load('guides.json', []).find((x) => x.id === req.params.id && x.hidden !== true);
   g ? res.json({ ...g, votes: voteOf(liveVotes(), 'guide', g.id, g.votes), comments: commentCounts()[`guide:${g.id}`] || 0 }) : res.status(404).json({ error: '가이드가 없어요.' });
 });
-app.get('/api/admin/guides', adminOnly, (req, res) => res.json(load('guides.json', [])));
+app.get('/api/admin/guides', adminOnly, (req, res) => res.json(shownVotes('guide', load('guides.json', []))));
 app.put('/api/admin/guides', adminOnly, (req, res) => {
   const list = Array.isArray(req.body) ? req.body : [];
   const seen = new Set();
@@ -552,7 +557,7 @@ app.get('/api/posts/:kind/:id', (req, res) => {
   const file = POSTS[req.params.kind]; const p = file && load(file, []).find((x) => x.id === req.params.id && x.hidden !== true);
   p ? res.json(publicPost(req.params.kind, p, liveVotes(), commentCounts())) : res.status(404).json({ error: '글을 찾을 수 없어요.' });
 });
-app.get('/api/admin/posts/:kind', adminOnly, (req, res) => (POSTS[req.params.kind] ? res.json(load(POSTS[req.params.kind], [])) : res.status(404).json({ error: 'not found' })));
+app.get('/api/admin/posts/:kind', adminOnly, (req, res) => (POSTS[req.params.kind] ? res.json(shownVotes(req.params.kind, load(POSTS[req.params.kind], []))) : res.status(404).json({ error: 'not found' })));
 app.put('/api/admin/posts/:kind', adminOnly, (req, res) => {
   const kind = req.params.kind; const file = POSTS[kind]; if (!file) return res.status(404).json({ error: 'not found' });
   const seen = new Set(); const date = (x) => (/^\d{4}-\d{2}-\d{2}$/.test(String(x || '')) ? x : '');

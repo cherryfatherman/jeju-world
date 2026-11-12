@@ -406,6 +406,8 @@ function renderTools() {
 $('#addNav').onclick = () => { cfg.nav.push({ label: '새 메뉴', href: './', key: '' }); renderNav(); };
 $('#addTool').onclick = () => { cfg.tools.push({ icon: '🆕', label: '새 도구', sub: '', href: '' }); renderTools(); };
 
+// 아래쪽 큰 '저장하고 반영' 버튼: 지금 열린 탭이 목록(장소·가이드·창업정보·인사이트)이면 그 목록의 저장 버튼을 대신 누른다
+$('#save').addEventListener('click', (e) => { const on = ($('.pane.on') || {}).id || ''; const b = on === 'pane-places' ? $('#plSave') : on === 'pane-guides' ? $('#gSave') : on === 'pane-program' ? $('[data-save="program"]') : on === 'pane-insight' ? $('[data-save="insight"]') : null; if (b) { e.stopImmediatePropagation(); e.preventDefault(); b.click(); } }, true);
 $('#save').onclick = async () => {
   const lines = (id, n) => v(id).split('\n').map((l) => l.split('|').map((x) => x.trim())).filter((p) => p.length >= n && p[0]);
   cfg.direction = { ...(cfg.direction || {}), title: v('#f-dirTitle'), facts: lines('#f-dirFacts', 2).map(([num, label, src, href]) => ({ num, label, src: src || '', href: href || '' })) };
