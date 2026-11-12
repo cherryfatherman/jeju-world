@@ -1037,6 +1037,7 @@ body.home footer { position: relative; z-index: 1; }
 .comment p { line-height: 1.55; }
 .comment.reply { margin-left: 28px; background: #fff; border: 1px solid var(--line); }
 .comment.staff { background: var(--accent-soft); border: 1px solid rgba(255, 107, 26, .22); }
+.cstaff.cowner { background: var(--ink); }
 .cstaff { font-style: normal; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: var(--accent); color: #fff; }
 .creply { margin-left: auto; font-size: 13px; font-weight: 700; color: var(--ink-3); padding: 2px 6px; border-radius: 8px; } .creply:hover { color: var(--accent); background: #fff; }
 .rform { display: flex; gap: 8px; flex-wrap: wrap; margin-left: 28px; } .rform input[name=name] { flex: 0 0 110px; } .rform input[name=text] { flex: 1; min-width: 160px; } .rform input { min-height: 40px; } .rform .btn { height: 40px; }

@@ -103,14 +103,15 @@ function upVote(kind, id, undo) {
   const V = liveVotes(); const k = `${kind}:${id}`; V[k] = undo ? Math.max(0, (V[k] || 0) - 1) : (V[k] || 0) + 1; save('votes.json', V);
   return voteOf(V, kind, id, baseVotes(kind, item));
 }
-const listComments = (kind, id) => load('comments.json', []).filter((c) => !c.hidden && cKey(c) === `${kind}:${id}`).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(({ id: cid, name, text, createdAt, parent, staff, role }) => ({ id: cid, name, text, createdAt, ...(parent ? { parent } : {}), ...(staff ? { staff: true, role: role || 'AI 직원' } : {}) }));
-function addComment(kind, id, body) {
+const listComments = (kind, id) => load('comments.json', []).filter((c) => !c.hidden && cKey(c) === `${kind}:${id}`).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(({ id: cid, name, text, createdAt, parent, staff, role, owner }) => ({ id: cid, name, text, createdAt, ...(parent ? { parent } : {}), ...(staff ? { staff: true, role: role || 'AI 직원' } : {}), ...(owner ? { owner: true } : {}) }));
+const isAdminReq = (req) => !!ADMIN_PASSWORD && req.get('x-admin-password') === ADMIN_PASSWORD; // 운영자가 로그인한 채로 남긴 글
+function addComment(kind, id, body, owner = false) {
   const item = FIND[kind]?.(id); if (!item) return { error: 404 };
   const text = clean(body.text, 300); if (!text) return { error: 400 };
   const all = load('comments.json', []);
   // 대댓글: 같은 글의 맨 위 이야기에만 달 수 있다. 방문자가 쓴 글에는 직원 표시를 붙일 수 없다
   const parentId = clean(body.parent, 40); const parent = parentId ? all.find((c) => c.id === parentId && cKey(c) === `${kind}:${id}` && !c.hidden) : null;
-  all.push({ id: newId(), key: `${kind}:${id}`, title: titleOf(item), name: clean(body.name, 20) || '익명', text, ...(parent ? { parent: parent.parent || parent.id } : {}), createdAt: new Date().toISOString() });
+  all.push({ id: newId(), key: `${kind}:${id}`, title: titleOf(item), name: clean(body.name, 20) || (owner ? '운영자' : '익명'), text, ...(owner ? { owner: true } : {}), ...(parent ? { parent: parent.parent || parent.id } : {}), createdAt: new Date().toISOString() });
   save('comments.json', all); return { list: listComments(kind, id) };
 }
 
@@ -200,6 +201,37 @@ app.post('/api/generate', limit(10), async (req, res) => {
 
 // AI 상태 점검 (관리자): 키가 있는지, 지금 어떤 모델이 몇 초에 답하는지. ?test=1 이면 실제로 한 번 불러 본다
 app.get('/api/admin/storage', adminOnly, (req, res) => res.json(store.status()));
+// 자료 보관함 (관리자): 저장된 자료를 표(시트)로 보고 CSV로 내려받는다. 한 파일 = 한 시트
+const VAULT = [
+  ['projects.json', '장터 글', '방문자가 올린 글과 시연용 글'], ['comments.json', '이야기(댓글)', '모든 글에 달린 이야기와 답글'], ['votes.json', '추천(업)', '글마다 받은 추천 수'],
+  ['inquiries.json', '문의', '글에 들어온 문의 (연락처 포함)'], ['waitlist.json', '알림 신청', '소식 받기를 신청한 사람'], ['feedback.json', '의견', '사이트에 남긴 의견'],
+  ['programs.json', '창업마당', '지원사업·공고'], ['insights.json', '인사이트', '자료와 섬업 리포트'], ['hackathons.json', '해커톤', '자동으로 받아온 해커톤'], ['winners.json', '수상작', '해커톤 수상작'],
+  ['guides.json', '생활 가이드', '제주살이 안내 글'], ['places.json', '여행 장소', '직접 넣은 장소'], ['metrics.json', '방문 기록', '날짜별 조회 수'], ['hq.json', '본부 기록', 'AI 직원의 회의록과 보고'],
+];
+const cell = (v) => (v === null || v === undefined ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v));
+function vaultRows(name) {
+  let d = load(name, null); if (d === null) return [];
+  if (name === 'hq.json') d = (d.log || []).map((x) => ({ ...x }));
+  if (name === 'metrics.json') return Object.entries(d).map(([date, v]) => ({ 날짜: date, 조회수: (v && v.views) || 0, ...((v && v.pages) || {}) }));
+  if (name === 'votes.json') return Object.entries(d).map(([k, v]) => ({ 글: k, 추천: cell(v) }));
+  if (Array.isArray(d)) return d.map((x) => (x && typeof x === 'object' ? x : { 값: x }));
+  if (Array.isArray(d.items)) return d.items.map((x) => (x && typeof x === 'object' ? x : { 값: x }));
+  return Object.entries(d).map(([k, v]) => (v && typeof v === 'object' && !Array.isArray(v) ? { 키: k, ...v } : { 키: k, 값: v }));
+}
+const vaultCols = (rows) => { const c = []; for (const r of rows) for (const k of Object.keys(r)) if (!c.includes(k)) c.push(k); return c; };
+app.get('/api/admin/vault', adminOnly, (req, res) => res.json({ storage: store.status(),
+  where: store.durable ? 'Upstash Redis (클라우드 저장소)' : store.SERVERLESS ? '임시 저장 (저장소 연결 필요)' : '이 컴퓨터의 market/data 폴더',
+  sheets: VAULT.map(([name, label, desc]) => ({ name, label, desc, count: vaultRows(name).length })) }));
+app.get('/api/admin/vault/:name', adminOnly, (req, res) => {
+  const v = VAULT.find((x) => x[0] === req.params.name); if (!v) return res.status(404).json({ error: '없는 자료예요.' });
+  const rows = vaultRows(v[0]).slice().reverse(), cols = vaultCols(rows);
+  if (req.query.format === 'csv') {
+    const q = (t) => { let x = cell(t); if (/^[=+\-@\t\r]/.test(x)) x = "'" + x; return `"${x.replace(/"/g, '""')}"`; }; /* 엑셀 수식으로 읽히지 않게 */
+    res.set('Content-Type', 'text/csv; charset=utf-8').set('Content-Disposition', `attachment; filename="seomup-${v[0].replace('.json', '')}.csv"`);
+    return res.send('﻿' + [cols.map(q).join(','), ...rows.map((r) => cols.map((c) => q(r[c])).join(','))].join('\r\n'));
+  }
+  res.json({ name: v[0], label: v[1], cols, total: rows.length, rows: rows.slice(0, 300).map((r) => Object.fromEntries(cols.map((c) => [c, cell(r[c]).slice(0, 300)]))) });
+});
 // 누구나 열 수 있는 상태 확인. 키의 '값'은 절대 넣지 않는다 (있는지 없는지와 이름만)
 app.get('/api/status', limit(20), async (req, res) => res.json({
   storage: store.status(), storageTest: await store.selfTest(),
@@ -378,14 +410,34 @@ async function fixMissingPhotos() {
   if (list.some((p) => p.photoTried)) save('projects.json', list);
   return fixed;
 }
-// 기사 클리핑용: 구글 뉴스에서 '제주 창업' 기사 제목과 원문 주소만 가져온다 (본문은 가져오지 않는다)
-async function fetchNews() {
-  const r = await fetch('https://news.google.com/rss/search?q=' + encodeURIComponent('제주 창업 OR 제주 스타트업') + '&hl=ko&gl=KR&ceid=KR:ko', { signal: AbortSignal.timeout(8000) }); if (!r.ok) return [];
+// 기사 클리핑용: 구글 뉴스에서 주제별 기사 제목과 원문 주소만 가져온다 (본문은 가져오지 않는다)
+const NEWS_TOPICS = [
+  ['제주 창업', '제주 창업 OR 제주 스타트업'], ['해커톤', '해커톤 모집 OR 해커톤 참가 OR 해커톤 수상'], ['지원사업', '창업 지원사업 모집 OR 예비창업패키지 OR 초기창업패키지'],
+  ['스타트업 투자', '스타트업 투자 유치'], ['AI 창업', 'AI 스타트업 OR 인공지능 창업'], ['제주 관광', '제주 관광 스타트업 OR 제주 워케이션'], ['보고서', '스타트업 보고서 OR 창업 실태조사 OR 벤처 통계'],
+];
+async function fetchNewsOne([topic, q]) {
+  const r = await fetch('https://news.google.com/rss/search?q=' + encodeURIComponent(q + ' when:14d') + '&hl=ko&gl=KR&ceid=KR:ko', { signal: AbortSignal.timeout(7000) }); if (!r.ok) return [];
   const xml = await r.text(); const un = (x) => String(x || '').replace(/<!\[CDATA\[|\]\]>/g, '').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
   return [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].slice(0, 20).map((m) => { const g = (t) => un((new RegExp(`<${t}[^>]*>([\\s\\S]*?)</${t}>`).exec(m[1]) || [])[1]); const source = g('source'); const title = g('title').replace(new RegExp(`\\s*-\\s*${source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`), ''); const link = g('link'); const d = new Date(g('pubDate'));
-    return { id: crypto.createHash('md5').update(link).digest('hex').slice(0, 10), title: clean(title, 100), link: isUrl(link) ? link : '', source: clean(source, 40), date: isNaN(d) ? '' : d.toISOString().slice(0, 10), ts: isNaN(d) ? 0 : d.getTime() }; }).filter((n) => n.link && n.title).sort((a, b) => b.ts - a.ts);
+    return { id: crypto.createHash('md5').update(link).digest('hex').slice(0, 10), topic, title: clean(title, 100), link: isUrl(link) ? link : '', source: clean(source, 40), date: isNaN(d) ? '' : d.toISOString().slice(0, 10), ts: isNaN(d) ? 0 : d.getTime() }; }).filter((n) => n.link && n.title).sort((a, b) => b.ts - a.ts);
 }
-const agentCtx = () => ({ load, save, feedState, titleOf, fixMissingPhotos, winners: () => WINNERS, news: fetchNews, its: () => jejuits.summary(), env: { ai: !!process.env.GEMINI_API_KEY, durable: store.durable || !store.SERVERLESS }, feeds: () => Object.entries(FEEDS).map(([id, f]) => ({ id, ready: !f.needs || !!process.env[f.needs], ok: feedState(id).ok !== false })), find: (kind, id) => FIND[kind]?.(id), catalog: (kind) => (CATALOG[kind] ? CATALOG[kind]() : []) });
+// 주제마다 따로 받아서 { 주제: [기사] } 로 돌려준다. 한 주제가 실패해도 나머지는 쓴다
+async function fetchNews() {
+  const got = await Promise.allSettled(NEWS_TOPICS.map(fetchNewsOne)); const out = [];
+  got.forEach((g) => { if (g.status === 'fulfilled') out.push(...g.value); });
+  return out;
+}
+// 논문 클리핑용: Crossref(학술 논문 공개 목록)에서 제목·학술지·날짜·DOI 주소만 가져온다. 키가 필요 없다
+const PAPER_TOPICS = ['Jeju tourism startup', 'hackathon innovation', 'startup ecosystem Korea', 'island entrepreneurship', 'regional entrepreneurship policy', 'generative AI entrepreneurship', 'digital nomad workation', 'social venture local community'];
+async function fetchPapers() {
+  const base = process.env.CROSSREF_BASE || 'https://api.crossref.org'; const n = Math.floor(Date.now() / (6 * 3600e3)); const picks = [PAPER_TOPICS[n % PAPER_TOPICS.length], PAPER_TOPICS[(n + 3) % PAPER_TOPICS.length]]; const out = [];
+  const got = await Promise.allSettled(picks.map(async (q) => { const r = await fetch(`${base}/works?query.bibliographic=${encodeURIComponent(q)}&rows=12&filter=from-pub-date:2023-01-01,type:journal-article&select=DOI,title,container-title,published,author`, { headers: { 'User-Agent': 'seomup-clipper/1.0' }, signal: AbortSignal.timeout(7000) }); if (!r.ok) return [];
+    const d = await r.json(); return ((d.message || {}).items || []).map((x) => { const doi = String(x.DOI || ''); const dp = ((x.published || {})['date-parts'] || [[]])[0] || []; const au = (x.author || []).map((a) => [a.given, a.family].filter(Boolean).join(' ')).filter(Boolean);
+      return { id: crypto.createHash('md5').update(doi).digest('hex').slice(0, 10), topic: q, title: clean(String((x.title || [])[0] || '').replace(/<[^>]+>/g, ''), 160), journal: clean((x['container-title'] || [])[0] || '', 80), date: dp[0] ? [dp[0], String(dp[1] || 1).padStart(2, '0'), String(dp[2] || 1).padStart(2, '0')].join('-') : '', year: dp[0] || '', authors: clean(au.slice(0, 3).join(', ') + (au.length > 3 ? ' 외' : ''), 80), link: /^10\.\d{4,9}\/\S+$/.test(doi) ? 'https://doi.org/' + doi : '' }; }).filter((x) => x.link && x.title.length > 12); }));
+  got.forEach((g) => { if (g.status === 'fulfilled') out.push(...g.value); });
+  return out;
+}
+const agentCtx = () => ({ load, save, feedState, titleOf, fixMissingPhotos, winners: () => WINNERS, news: fetchNews, papers: fetchPapers, its: () => jejuits.summary(), env: { ai: !!process.env.GEMINI_API_KEY, durable: store.durable || !store.SERVERLESS }, feeds: () => Object.entries(FEEDS).map(([id, f]) => ({ id, ready: !f.needs || !!process.env[f.needs], ok: feedState(id).ok !== false })), find: (kind, id) => FIND[kind]?.(id), catalog: (kind) => (CATALOG[kind] ? CATALOG[kind]() : []) });
 function markFeed(id, ok, note) { const s = load('feeds.json', {}); s[id] = { ...(s[id] || {}), lastRun: new Date().toISOString(), ok, note: note || '' }; save('feeds.json', s); }
 async function runFeed(id) {
   const f = FEEDS[id]; if (!f) return;
@@ -555,14 +607,14 @@ app.post('/api/up/:kind/:id', limit(40), (req, res) => {
 });
 app.get('/api/comments/:kind/:id', (req, res) => res.json(listComments(req.params.kind, req.params.id)));
 app.post('/api/comments/:kind/:id', limit(6), (req, res) => {
-  const r = addComment(req.params.kind, req.params.id, req.body || {});
+  const r = addComment(req.params.kind, req.params.id, req.body || {}, isAdminReq(req));
   if (r.error === 404) return res.status(404).json({ error: '글을 찾을 수 없어요.' });
   if (r.error === 400) return res.status(400).json({ error: '내용이 필요해요.' });
   res.json(r.list);
 });
 // 예전 주소도 그대로 동작
 app.get('/api/projects/:id/comments', (req, res) => res.json(listComments('project', req.params.id)));
-app.post('/api/projects/:id/comments', limit(6), (req, res) => { const r = addComment('project', req.params.id, req.body || {}); r.error ? res.status(r.error).json({ error: r.error === 404 ? 'not found' : '내용이 필요해요.' }) : res.json(r.list); });
+app.post('/api/projects/:id/comments', limit(6), (req, res) => { const r = addComment('project', req.params.id, req.body || {}, isAdminReq(req)); r.error ? res.status(r.error).json({ error: r.error === 404 ? 'not found' : '내용이 필요해요.' }) : res.json(r.list); });
 // 관리자: 댓글 숨기기·보이기·삭제
 app.get('/api/admin/comments', adminOnly, (req, res) => res.json(load('comments.json', []).map((c) => ({ ...c, key: cKey(c) })).sort((a, b) => b.createdAt.localeCompare(a.createdAt))));
 app.post('/api/admin/comments/:id', adminOnly, (req, res) => {

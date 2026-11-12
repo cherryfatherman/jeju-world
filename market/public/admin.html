@@ -10,6 +10,15 @@
 <style>
   .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 16px 0; }
   .tabs button { padding: 8px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); font-weight: 700; }
+  .vwhere { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); font-size: 14px; }
+  .vwhere b { font-weight: 800; } .vwhere .dot { width: 9px; height: 9px; border-radius: 50%; background: #1f9d55; } .vwhere .dot.off { background: #d64545; } .vwhere small { color: var(--muted); }
+  .vsheets { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin: 12px 0; }
+  .vsheets button { text-align: left; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); display: grid; gap: 2px; }
+  .vsheets button.on { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); } .vsheets b { font-size: 14px; } .vsheets strong { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; } .vsheets small { font-size: 11.5px; color: var(--muted); line-height: 1.35; }
+  .vbar { display: flex; align-items: center; gap: 10px; margin: 6px 0 8px; } .vbar b { margin-right: auto; }
+  .vtable { overflow: auto; max-height: 62vh; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+  .vtable table { border-collapse: collapse; font-size: 12.5px; min-width: 100%; } .vtable th, .vtable td { padding: 7px 10px; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); text-align: left; vertical-align: top; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .vtable th { position: sticky; top: 0; background: #f6f4f1; font-weight: 800; z-index: 1; } .vtable td.n { color: var(--muted); text-align: right; } .vtable tr:hover td { background: #fff8f3; white-space: normal; overflow-wrap: anywhere; }
   .tabs button.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
   .pane { display: none; } .pane.on { display: block; }
   .help { font-size: 12px; color: var(--muted); margin-top: -4px; }
@@ -38,7 +47,7 @@
   <div id="panel" hidden>
     <p style="margin:0 0 12px"><a class="btn primary" href="./hq.html">본부 3D 대시보드 열기 ↗</a></p>
     <div class="tabs">
-      <button data-tab="dash" class="on">대시보드</button><button data-tab="site">기본·배너</button><button data-tab="ticker">공지 띠</button><button data-tab="carousel">배너 이미지</button><button data-tab="ads">좌우 광고</button><button data-tab="program">창업정보</button><button data-tab="insight">인사이트</button><button data-tab="talk">이야기 관리</button><button data-tab="guides">생활 가이드</button><button data-tab="places">여행 장소</button><button data-tab="feeds">자동 갱신</button><button data-tab="jeju">제주 생활</button><button data-tab="nav">메뉴·도구 상자</button><button data-tab="projects">프로젝트 관리</button><button data-tab="inbox">받은 편지함</button><button data-tab="threads">스레드 글</button>
+      <button data-tab="dash" class="on">대시보드</button><button data-tab="site">기본·배너</button><button data-tab="ticker">공지 띠</button><button data-tab="carousel">배너 이미지</button><button data-tab="ads">좌우 광고</button><button data-tab="program">창업정보</button><button data-tab="insight">인사이트</button><button data-tab="talk">이야기 관리</button><button data-tab="guides">생활 가이드</button><button data-tab="places">여행 장소</button><button data-tab="feeds">자동 갱신</button><button data-tab="jeju">제주 생활</button><button data-tab="nav">메뉴·도구 상자</button><button data-tab="projects">프로젝트 관리</button><button data-tab="inbox">받은 편지함</button><button data-tab="vault">자료 보관함</button><button data-tab="threads">스레드 글</button>
     </div>
 
     <!-- 대시보드 -->
@@ -178,6 +187,14 @@
     <div class="pane" id="pane-projects"><div class="form"><div id="projList"></div></div></div>
 
     <!-- 받은 편지함 -->
+    <!-- 자료 보관함: 저장된 자료를 표로 본다 -->
+    <div class="pane" id="pane-vault"><div class="form">
+      <p class="help">사이트의 모든 자료가 여기 한곳에 모여요. 글·이야기·추천·문의가 들어오면 바로 아래 표에 한 줄씩 쌓여요. 표를 누르면 내용을 보고, 엑셀 파일(CSV)로 내려받을 수 있어요.</p>
+      <div id="vaultWhere" class="vwhere"></div>
+      <div id="vaultSheets" class="vsheets"></div>
+      <div id="vaultView"></div>
+    </div></div>
+
     <div class="pane" id="pane-inbox"><div class="form"><div id="inbox"></div></div></div>
 
     <!-- 스레드 글 -->
@@ -205,7 +222,19 @@ async function enter() {
   try { await api('/api/admin/inbox'); } catch { sessionStorage.removeItem('adminpw'); return; }
   $('#login').hidden = true; $('#panel').hidden = false; fill(); loadProjects(); loadInbox();
 }
-$$('.tabs button').forEach((b) => b.onclick = () => { $$('.tabs button').forEach((x) => x.classList.toggle('on', x === b)); $$('.pane').forEach((p) => p.classList.toggle('on', p.id === 'pane-' + b.dataset.tab)); });
+/* 자료 보관함 */
+async function loadVault() {
+  const d = await api('/api/admin/vault'); const ok = d.storage.durable || !d.storage.serverless;
+  $('#vaultWhere').innerHTML = `<span class="dot ${ok ? '' : 'off'}"></span><b>보관 장소</b><span>${esc(d.where)}</span><small>${ok ? '서버가 꺼졌다 켜져도 그대로 남아요.' : '지금은 임시 저장이라 사라질 수 있어요.'}${d.storage.lastSync ? ' · 마지막 확인 ' + new Date(d.storage.lastSync).toLocaleTimeString('ko-KR') : ''}</small>`;
+  $('#vaultSheets').replaceChildren(...d.sheets.map((s) => { const b = document.createElement('button'); b.type = 'button'; b.innerHTML = `<b>${esc(s.label)}</b><strong>${s.count.toLocaleString('ko-KR')}</strong><small>${esc(s.desc)}</small>`; b.onclick = () => { $$('#vaultSheets button').forEach((x) => x.classList.toggle('on', x === b)); openVault(s.name).catch((e) => toast(e.message)); }; return b; }));
+}
+async function openVault(name) {
+  const d = await api('/api/admin/vault/' + name);
+  $('#vaultView').innerHTML = `<div class="vbar"><b>${esc(d.label)} · ${d.total.toLocaleString('ko-KR')}줄${d.total > d.rows.length ? ` (최근 ${d.rows.length}줄만 보여요)` : ''}</b><button class="btn" id="vaultCsv" type="button">엑셀로 내려받기 (CSV)</button></div>` +
+    (d.rows.length ? `<div class="vtable"><table><thead><tr><th>#</th>${d.cols.map((c) => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${d.rows.map((r, i) => `<tr><td class="n">${d.total - i}</td>${d.cols.map((c) => `<td>${esc(r[c])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : '<p class="help">아직 쌓인 자료가 없어요.</p>');
+  $('#vaultCsv').onclick = async () => { const r = await fetch('/api/admin/vault/' + name + '?format=csv', { headers: { 'x-admin-password': sessionStorage.getItem('adminpw') || '' } }); if (!r.ok) return toast('내려받지 못했어요.'); const a = document.createElement('a'); a.href = URL.createObjectURL(await r.blob()); a.download = `seomup-${name.replace('.json', '')}.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 3000); };
+}
+$$('.tabs button').forEach((b) => b.onclick = () => { if (b.dataset.tab === 'vault') loadVault().catch((e) => toast(e.message)); $$('.tabs button').forEach((x) => x.classList.toggle('on', x === b)); $$('.pane').forEach((p) => p.classList.toggle('on', p.id === 'pane-' + b.dataset.tab)); });
 
 function fill() {
   const S = cfg.site, B = cfg.banner, T = cfg.ticker || {}, C = cfg.colors || {};

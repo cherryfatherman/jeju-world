@@ -4,10 +4,10 @@ const path = require('path');
 
 const strip = (s) => String(s || '').replace(/<[^>]+>/g, '').trim();
 
-async function fetchDevpost(pages = 3) {
+async function fetchDevpostBy(order, pages) {
   const out = [];
   for (let page = 1; page <= pages; page++) {
-    const r = await fetch(`https://devpost.com/api/hackathons?status[]=upcoming&status[]=open&order_by=prize-amount&page=${page}`, { signal: AbortSignal.timeout(20000) });
+    const r = await fetch(`https://devpost.com/api/hackathons?status[]=upcoming&status[]=open&order_by=${order}&page=${page}`, { signal: AbortSignal.timeout(12000) });
     if (!r.ok) break;
     const d = await r.json();
     for (const h of d.hackathons || []) {
@@ -24,6 +24,14 @@ async function fetchDevpost(pages = 3) {
       });
     }
   }
+  return out;
+}
+
+// 상금 큰 순 + 새로 올라온 순을 함께 받아 겹치는 것을 뺀다 (더 많이 보유하기 위해)
+async function fetchDevpost(pages = 6) {
+  const got = await Promise.allSettled([fetchDevpostBy('prize-amount', pages), fetchDevpostBy('recently-added', pages)]); const seen = new Set(); const out = [];
+  for (const g of got) if (g.status === 'fulfilled') for (const h of g.value) { if (h.url && !seen.has(h.url)) { seen.add(h.url); out.push(h); } }
+  if (!out.length && got.every((g) => g.status === 'rejected')) throw got[0].reason;
   return out;
 }
 

@@ -176,7 +176,7 @@ async function mountComments(el, kind, id) {
     <form><input name="name" placeholder="닉네임" maxlength="20" aria-label="닉네임"><input name="text" placeholder="한마디 남기기" required maxlength="300" aria-label="댓글"><button class="btn primary">남기기</button></form>
     <div class="comments"></div>`;
   const url = `/api/comments/${kind}/${encodeURIComponent(id)}`;
-  const one = (c, reply) => `<div class="comment${c.staff ? ' staff' : ''}${reply ? ' reply' : ''}" data-id="${esc(c.id)}"><div class="chead"><b>${esc(c.name || '익명')}</b>${c.staff ? `<i class="cstaff">${esc(c.role || 'AI 직원')}</i>` : ''}<small>${new Date(c.createdAt).toLocaleDateString('ko-KR')}</small>${reply ? '' : '<button type="button" class="creply">답글</button>'}</div><p>${esc(c.text)}</p></div>`;
+  const one = (c, reply) => `<div class="comment${c.staff ? ' staff' : ''}${reply ? ' reply' : ''}" data-id="${esc(c.id)}"><div class="chead"><b>${esc(c.name || '익명')}</b>${c.staff ? `<i class="cstaff">${esc(c.role || 'AI 직원')}</i>` : c.owner ? '<i class="cstaff cowner">운영자</i>' : ''}<small>${new Date(c.createdAt).toLocaleDateString('ko-KR')}</small>${reply ? '' : '<button type="button" class="creply">답글</button>'}</div><p>${esc(c.text)}</p></div>`;
   const draw = (list) => {
     el.querySelector('[data-n]').textContent = list.length ? `${list.length}개` : '';
     const tops = list.filter((c) => !c.parent), kids = (pid) => list.filter((c) => c.parent === pid).sort((a, b) => a.createdAt.localeCompare(b.createdAt));

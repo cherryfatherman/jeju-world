@@ -40,11 +40,13 @@
   .hint { position: absolute; left: 16px; bottom: 14px; font-size: 12px; color: rgba(255,255,255,.45); }
   .legend { position: absolute; right: 16px; bottom: 14px; display: flex; gap: 12px; font-size: 12px; color: rgba(255,255,255,.6); }
   .legend span::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; background: var(--c); }
-  .side { min-height: 0; display: flex; flex-direction: column; background: var(--bg); color: var(--ink); border-left: 1px solid rgba(255,255,255,.1); }
+  .side { position: relative; top: auto; align-self: stretch; gap: 0; height: 100%; overflow: hidden; min-height: 0; display: flex; flex-direction: column; background: var(--bg); color: var(--ink); border-left: 1px solid rgba(255,255,255,.1); }
   .side .tabs3 { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid var(--line); background: var(--surface); }
   .side .tabs3 button { height: 46px; font-weight: 700; font-size: 14px; color: var(--ink-3); border-bottom: 2px solid transparent; }
   .side .tabs3 button.on { color: var(--ink); border-bottom-color: var(--accent); }
-  .side .scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 16px; display: none; } .side .scroll.on { display: block; }
+  .side .scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; scrollbar-gutter: stable; padding: 16px 16px 40px; display: none; }
+  .side .scroll::-webkit-scrollbar { width: 10px; } .side .scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,.22); border-radius: 10px; border: 2px solid var(--bg); } .side .scroll::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,.4); }
+  .side .tabs3 { flex: none; position: sticky; top: 0; z-index: 2; } .side .scroll.on { display: block; }
   .side h3 { font-size: 13px; font-weight: 800; color: var(--ink-3); margin: 18px 0 8px; letter-spacing: 0; }
   .side input, .side textarea, .side select { min-height: 36px; padding: 6px 10px; font-size: 14px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); width: 100%; }
   .side textarea { min-height: 56px; resize: vertical; }
@@ -83,7 +85,7 @@
   .ring2d button { padding: 14px; border-radius: 12px; color: #fff; font-weight: 800; }
   @media (max-width: 860px) {
     body { overflow: auto; height: auto; } .hq { grid-template-columns: 1fr; grid-template-rows: 56px 46vh auto; height: auto; }
-    .side { border-left: 0; } .side .scroll { overflow: visible; } .hqbar .state { display: none; } .hqbar { gap: 6px; padding: 0 10px; } .hqbar .btn { padding: 0 10px; }
+    .side { border-left: 0; height: auto; overflow: visible; } .side .scroll { overflow: visible; } .hqbar .state { display: none; } .hqbar { gap: 6px; padding: 0 10px; } .hqbar .btn { padding: 0 10px; }
     .legend { display: none; } .hint { display: none; } .gleft { left: 10px; right: 58px; top: 10px; width: auto; } .gleft input { display: none; } #glegend { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; } #glegend button { flex: none; display: flex; gap: 6px; font-size: 12px; padding: 5px 10px; border-radius: 999px; background: rgba(0,0,0,.5); border: 1px solid rgba(255,255,255,.14); }
   }
 </style>
@@ -187,6 +189,16 @@ function frame(t) {
     ctx.strokeStyle = hexA(col, 0.28); ctx.lineWidth = 1 / k; ctx.beginPath(); ctx.ellipse(c.cx, c.cy, ringRx, ringRy, -0.22, Math.PI, 6.2832); ctx.stroke();
     // 글 점: 뒤에 있는 것부터 그려 깊이가 보이게
     for (const nd of c.nodes) { const pos = nodePos(c, nd, t); nd.x = pos.x; nd.y = pos.y; nd.z = pos.z; }
+    /* 작은 줄기: 가운데에서 글마다 가지가 뻗고, 이웃한 글끼리도 가늘게 이어진다 */
+    if (!q) { ctx.lineCap = 'round'; let prev = null;
+      for (const nd of c.nodes) { const depth = (nd.z + 1) / 2; const dx = nd.x - c.cx, dy = nd.y - c.cy; const bend = nd.small ? 0.1 : 0.22;
+        const mx = c.cx + dx * 0.5 - dy * bend, my = c.cy + dy * 0.5 + dx * bend;
+        const a = (nd.small ? 0.05 : 0.12) + depth * (nd.small ? 0.1 : 0.34) + (hover === nd ? 0.5 : 0);
+        const g = ctx.createLinearGradient(c.cx, c.cy, nd.x, nd.y); g.addColorStop(0, hexA(col, Math.min(1, a + 0.25))); g.addColorStop(1, hexA(col, Math.min(1, a * 0.55)));
+        ctx.strokeStyle = g; ctx.lineWidth = (nd.small ? 0.6 : 0.5 + depth * 0.9) * (hover === nd ? 2 : 1) / Math.max(0.7, k);
+        ctx.beginPath(); ctx.moveTo(c.cx, c.cy); ctx.quadraticCurveTo(mx, my, nd.x, nd.y); ctx.stroke();
+        if (prev && !nd.small && !prev.small) { ctx.strokeStyle = hexA(col, 0.05 + Math.min(depth, (prev.z + 1) / 2) * 0.16); ctx.lineWidth = 0.6 / Math.max(0.7, k); ctx.beginPath(); ctx.moveTo(prev.x, prev.y); ctx.lineTo(nd.x, nd.y); ctx.stroke(); }
+        if (!nd.small) prev = nd; } }
     for (const pass of [0, 1]) for (const nd of c.nodes) {
       if ((nd.z >= 0 ? 1 : 0) !== pass) continue;
       const match = q && nd.t.toLowerCase().includes(q); const depth = (nd.z + 1) / 2; const al = q ? (match ? 1 : 0.08) : (nd.dim ? 0.3 : 0.28 + depth * 0.72);
