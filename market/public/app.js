@@ -16,7 +16,7 @@ const PRIMARY = [
   { key: 'program', label: '창업마당', icon: 'coins', href: './board.html?kind=program', subs: [] },
   { key: 'insight', label: '인사이트', icon: 'bulb', href: './board.html?kind=insight', subs: [] },
   { key: 'hackathon', label: '해커톤', icon: 'trophy', href: './hackathon.html', subs: [['./hackathon.html', '열린 해커톤', 'hackathon'], ['./winners.html', '수상작 도감', 'winners']] },
-  { key: 'jeju', label: '제주마당', icon: 'leaf', href: './jeju.html', subs: [['./jeju.html', '생활', 'jeju'], ['./places.html?type=spot', '여행', 'travel'], ['./market.html?type=home', '집', 'home'], ['./market.html?type=item', '물건', 'item']] },
+  { key: 'jeju', label: '제주마당', icon: 'leaf', href: './jeju.html', subs: [['./jeju.html', '생활', 'jeju'], ['./places.html?type=spot', '여행', 'travel'], ['./traffic.html', '교통', 'traffic'], ['./market.html?type=home', '집', 'home'], ['./market.html?type=item', '물건', 'item']] },
 ];
 
 const won = (n) => {

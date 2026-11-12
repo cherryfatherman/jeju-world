@@ -13,14 +13,6 @@
   <div class="page-title"><h1>생활</h1><p>도민 생활정보.</p></div>
   <div class="tgroups" id="tiles" style="margin-top:16px"></div>
 
-  <section id="sec-live">
-    <div class="sec-head"><h2>지금 제주 교통</h2><span class="more">제주특별자치도 교통정보센터</span></div>
-    <div class="livecards" id="livecards">
-      <a href="./info.html?kind=road" data-k="road"><small>도로 통제</small><b>보기</b><span>지금 통제 중인 도로</span></a>
-      <a href="./info.html?kind=traffic" data-k="traffic"><small>실시간 교통</small><b>보기</b><span>주요 도로의 지금 속도</span></a>
-      <a href="./info.html?kind=ev" data-k="ev"><small>전기차 충전소</small><b>보기</b><span>충전소 위치와 지도</span></a>
-    </div>
-  </section>
   <section id="waste">
     <div class="sec-head"><h2>이거 어디 버려요?</h2><span class="more" id="area"></span></div>
     <form class="form" id="wasteForm">
@@ -89,7 +81,7 @@ $('#wasteForm').onsubmit = async (e) => {
   btn.disabled = false; btn.textContent = 'AI에게 묻기';
 };
 $$('[data-q]').forEach((b) => b.onclick = () => { $('#wasteForm [name=q]').value = b.dataset.q; $('#wasteForm').requestSubmit(); });
-mountShell({ active: 'jeju', sub: 'jeju' }).then((c) => { CFG = c; renderWaste(); api('/api/jeju/live').then((v) => { const T = { road: (n) => (n ? `${n}건` : '통제 없음'), traffic: (n) => (n ? `${n.toLocaleString('ko-KR')}구간` : '보기'), ev: (n) => (n ? `${n.toLocaleString('ko-KR')}곳` : '보기') }; $$('#livecards a').forEach((a) => { const n = v[a.dataset.k]; if (n !== null && n !== undefined) a.querySelector('b').textContent = T[a.dataset.k](n); }); }).catch(() => {}); itsSection($('#sec-road'), 'road'); itsSection($('#sec-ev'), 'ev'); api('/api/guides').then((g) => $('#guides').replaceChildren(...g.map((x, i) => guideRow(x, i + 1)))); if (location.hash) setTimeout(() => document.querySelector(location.hash)?.scrollIntoView(), 300); });
+mountShell({ active: 'jeju', sub: 'jeju' }).then((c) => { CFG = c; renderWaste(); api('/api/guides').then((g) => $('#guides').replaceChildren(...g.map((x, i) => guideRow(x, i + 1)))); if (location.hash) setTimeout(() => document.querySelector(location.hash)?.scrollIntoView(), 300); });
 </script>
 </body>
 </html>

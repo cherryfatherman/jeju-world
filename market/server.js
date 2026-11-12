@@ -561,7 +561,7 @@ app.post('/api/admin/letter/run', adminOnly, async (req, res) => { try { res.jso
 app.get('/api/jeju/live', limit(60), async (req, res) => res.json(await jejuits.summary()));
 app.get('/api/jeju/its/:kind', limit(60), async (req, res) => {
   if (!jejuits.KINDS[req.params.kind]) return res.status(404).json({ error: '없는 종류예요.' });
-  const lim = req.query.all === '1' ? 3000 : req.params.kind === 'traffic' ? 30 : 80;
+  const lim = req.query.all === '1' ? 6000 : req.params.kind === 'traffic' ? 30 : 80;
   if (req.params.kind !== 'tour') return res.json(jejuits.publicView(await jejuits.load(req.params.kind), lim));
   // 관광지·카페·맛집: 추천 수를 붙이고, 추천 많은 곳이 위로 오게
   const t = await travelItems(); const V = liveVotes();
