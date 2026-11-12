@@ -10,6 +10,7 @@
 <script src="./app.js"></script>
 </head>
 <body class="home dark-top">
+<div class="floaters" id="floaters" aria-hidden="true"></div>
 <!-- 첫 화면: 빛줄기가 한 점으로 모이고 → 터지며 섬이 되고 → "섬업"이 써지고 → "업"이 올라간다 -->
 <div class="herowrap" id="herowrap">
 <div class="hero2" id="hero2">
@@ -27,8 +28,17 @@
 </div>
 
 <main class="wrap">
-  <section><p class="home-lead" id="lead" data-edit="lead"></p></section>
+  <section class="lead-sec"><p class="home-lead" id="lead" data-edit="lead"></p></section>
+  <section class="stats-sec">
+    <h2 class="big-h" id="statsTitle" data-edit="stats.title"></h2>
+    <div class="bigstats" id="bigstats"></div>
+  </section>
+  <div class="mq bleed" id="mq" aria-hidden="true"></div>
   <section><div class="direction" id="direction"></div></section>
+  <section class="show-sec" id="showSec" hidden>
+    <div class="sec-head"><h2 id="showTitle" data-edit="showcase.title"></h2><a class="more" href="./market.html?type=project">전체 보기</a></div>
+    <div class="showrow bleed"><div class="showtrack" id="showtrack"></div></div>
+  </section>
   <section>
     <div class="sec-head"><h2>어디로 갈까요</h2></div>
     <div class="ring" id="ring"></div>
@@ -94,7 +104,59 @@ function renderHero() {
   const s = (CFG.carousel || [])[0] || {}, B = CFG.banner || {};
   if (s.kicker) $('#hk').textContent = s.kicker; if (s.title) $('#hh').innerHTML = rich(s.title); if (s.sub) $('#hs').innerHTML = rich(s.sub);
   if (B.primaryLabel) $('#hb1').textContent = B.primaryLabel; if (B.secondaryLabel) $('#hb2').textContent = B.secondaryLabel;
-  $('#lead').innerHTML = rich(CFG.lead || '');
+  renderLead();
+}
+/* 문장을 낱말로 나눠 두고, 내리는 만큼 켠다 */
+function renderLead() {
+  const el = $('#lead'); el.innerHTML = rich(CFG.lead || ''); if (FX.reduced()) return;
+  const walk = (node) => [...node.childNodes].forEach((c) => {
+    if (c.nodeType === 3) { const f = document.createDocumentFragment(); c.textContent.split(/(\s+)/).forEach((t) => { if (!t) return; if (/^\s+$/.test(t)) f.append(' '); else { const w = document.createElement('span'); w.className = 'w'; w.textContent = t; f.append(w); } }); c.replaceWith(f); }
+    else if (c.nodeType === 1 && c.tagName !== 'BR') walk(c);
+  });
+  walk(el); el.classList.add('wr');
+}
+/* 큰 숫자: 실제 데이터 개수를 불러와서, 스크롤에 맞춰 올라가게 한다 */
+async function renderStats() {
+  const S = CFG.stats; if (!S) { $('#bigstats').parentElement.hidden = true; return; }
+  $('#statsTitle').textContent = S.title || '';
+  let n = {}; try { n = await api('/api/stats'); } catch {}
+  $('#bigstats').innerHTML = (S.items || []).filter((x) => Number(n[x.key]) > 0).map((x, i) => `<a href="${esc(x.href || '#')}"><b data-to="${Number(n[x.key])}">0<small>${esc(x.unit || '')}</small></b><strong>${esc(x.label)}</strong><span>${esc(x.sub || '')}</span></a>`).join('');
+  homeScroll();
+}
+/* 흐르는 글자 띠 */
+function renderMarquee() {
+  const W = CFG.marquee || []; if (!W.length) { $('#mq').hidden = true; return; }
+  const one = `<div>${W.map((w) => `<b>${esc(w)}</b><i>✦</i>`).join('')}</div>`;
+  $('#mq').innerHTML = `<div class="mqtrack">${one}${one}${one}${one}</div>`;
+}
+/* 흐르는 프로젝트 카드 */
+async function renderShowcase() {
+  let list = []; try { list = (await api('/api/projects')).filter((p) => (p.type || 'project') === 'project' && p.deal !== 'done'); } catch {}
+  if (list.length < 3) return;
+  list.sort((a, b) => (b.interest || 0) - (a.interest || 0)); list = list.slice(0, 10);
+  $('#showTitle').textContent = (CFG.showcase || {}).title || '장터에 올라온 프로젝트';
+  const card = (p, dup) => `<a class="scard" href="./project.html?id=${encodeURIComponent(p.id)}"${dup ? ' aria-hidden="true" tabindex="-1"' : ''}><span class="simg" style="${(p.photos || [])[0] ? `background-image:url('${esc(p.photos[0])}')` : ''}"></span><span class="sbody"><b>${esc(p.name)}</b><p>${esc(p.tagline || '')}</p><em>${icon('like')}${Number(p.interest || 0)}</em></span></a>`;
+  $('#showtrack').innerHTML = list.map((p) => card(p)).join('') + list.map((p) => card(p, true)).join('');
+  $('#showSec').hidden = false;
+}
+/* 떠다니는 키워드와 도형 */
+function renderFloaters() {
+  const box = $('#floaters'), W = CFG.floaters || []; if (!box || FX.reduced() && !W.length) return;
+  let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const n = innerWidth < 820 ? 12 : 26, shapes = ['dot', 'ring', 'dia', 'bar', 'spark', 'plus'];
+  box.innerHTML = Array.from({ length: n }, (_, i) => {
+    const st = `left:${(rnd() * 94 + 1).toFixed(1)}%;top:${(rnd() * 330 + 40).toFixed(0)}vh;--sp:${(.35 + rnd() * .55).toFixed(2)};--d:${(9 + rnd() * 12).toFixed(1)}s;--r:${(rnd() * 50 - 25).toFixed(0)}deg;--dr:${(rnd() * 60 - 30).toFixed(0)}deg;--dx:${(rnd() * 60 - 30).toFixed(0)}px;--dy:${(rnd() * 70 - 35).toFixed(0)}px;animation-delay:-${(rnd() * 12).toFixed(1)}s`;
+    if (W.length && i % 2 === 0) return `<span style="${st}">${esc(W[(i / 2) % W.length])}</span>`;
+    const sh = shapes[i % shapes.length]; return `<i class="${sh}" style="${st}">${sh === 'spark' ? '✦' : sh === 'plus' ? '+' : ''}</i>`;
+  }).join('');
+}
+/* 스크롤에 맞춰: 낱말 켜기, 숫자 올리기, 키워드 흘리기 */
+function homeScroll() {
+  const cl = (x) => Math.max(0, Math.min(1, x)), vh = innerHeight, fl = $('#floaters'); if (fl) fl.style.setProperty('--sy', scrollY + 'px');
+  const lead = $('#lead'), ws = lead.querySelectorAll('.w');
+  if (ws.length) { const r = lead.getBoundingClientRect(), k = Math.round(cl((vh * .9 - r.top) / (vh * .45)) * ws.length); if (lead.__k !== k) { lead.__k = k; ws.forEach((w, i) => w.classList.toggle('on', i < k)); } }
+  const box = $('#bigstats'); if (box && box.firstChild) { const r = box.getBoundingClientRect(), x = FX.reduced() ? 1 : cl((vh * 1.02 - r.top) / (vh * .62)), e = 1 - (1 - x) * (1 - x);
+    box.querySelectorAll('b[data-to]').forEach((b) => { const v = Math.round(Number(b.dataset.to) * e); if (b.__v !== v) { b.__v = v; b.firstChild.textContent = v.toLocaleString('ko-KR'); } }); }
 }
 function renderRing() {
   $('#ring').replaceChildren(...(CFG.ring || []).map((r, i) => { const a = document.createElement('a'); a.href = r.href; a.innerHTML = `<span class="rimg">${r.image ? `<img src="${esc(r.image)}" alt="" loading="lazy">` : ''}</span><b data-edit="ring.${i}.label">${esc(r.label)}</b><small data-edit="ring.${i}.sub">${esc(r.sub || '')}</small>`; return a; }));
@@ -121,8 +183,10 @@ const heroScroll = () => {
   const tc = $('#themeColor'); if (tc) tc.content = e < .6 ? '#08070b' : '#ffffff';
 };
 addEventListener('scroll', heroScroll, { passive: true }); addEventListener('resize', heroScroll); heroScroll(); setTimeout(heroScroll, 400);
+let hsTick = false; const hs = () => { if (hsTick) return; hsTick = true; requestAnimationFrame(() => { hsTick = false; homeScroll(); }); };
+addEventListener('scroll', hs, { passive: true }); addEventListener('resize', hs);
 $('.hscroll').onclick = (e) => { e.preventDefault(); $('#lead').scrollIntoView({ behavior: 'smooth', block: 'center' }); };
-mountShell({ active: 'home' }).then((c) => { CFG = c; renderHero(); renderRing(); renderDirection(); renderTiles(); });
+mountShell({ active: 'home' }).then((c) => { CFG = c; renderHero(); renderRing(); renderDirection(); renderTiles(); renderMarquee(); renderFloaters(); renderStats(); renderShowcase(); homeScroll(); });
 </script>
 </body>
 </html>

@@ -7,7 +7,7 @@
 - 모든 글에는 추천('업')과 이야기(댓글)가 붙고, 운영자는 관리자(/admin.html)에서 수정·숨김·삭제한다.
 - 사실 정보는 출처 링크가 있어야 한다. 화면에 '확인 필요' 같은 표시는 쓰지 않는다. 확인 못 한 숫자는 아예 쓰지 않는다.
 - 실행: `cd market && npm install && node server.js` → http://localhost:4000 (관리자 /admin.html, 본부 3D /hq.html)
-- 운영 문서: `docs/ops/apis.md`(필요한 API), `docs/ops/agents.md`(큰 줄기와 AI 직원)
+- 운영 문서: `docs/ops/apis.md`(필요한 API), `docs/ops/agents.md`(큰 줄기와 AI 직원), `docs/ops/deploy.md`(배포)
 - **작업을 시작할 때는 `docs/brain/README.md`에서 해당 줄기의 길잡이 파일 하나만 읽는다.** 반복 작업은 `.claude/skills/`(add-public-api, add-content, site-check)를 쓴다.
 - 에이전트 구조: 직무가 아니라 줄기마다 전담 에이전트 하나 (`docs/ops/agent-design.md`). AI 토큰은 사람이 버튼을 누를 때와 숫자가 바뀐 회의에만 쓴다.
 

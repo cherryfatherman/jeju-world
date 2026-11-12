@@ -375,5 +375,62 @@
     }
    ]
   }
- ]
+ ],
+ "stats": {
+  "title": "지금 섬업에는",
+  "items": [
+   {
+    "key": "winners",
+    "unit": "개",
+    "label": "해커톤 수상작",
+    "sub": "도감에 모았어요",
+    "href": "./winners.html"
+   },
+   {
+    "key": "hackathons",
+    "unit": "개",
+    "label": "열린 해커톤",
+    "sub": "지금 참가할 수 있어요",
+    "href": "./hackathon.html"
+   },
+   {
+    "key": "programs",
+    "unit": "건",
+    "label": "진행 중인 지원사업",
+    "sub": "제주·전국",
+    "href": "./board.html?kind=program"
+   },
+   {
+    "key": "insights",
+    "unit": "편",
+    "label": "인사이트",
+    "sub": "논문·통계·정책",
+    "href": "./board.html?kind=insight"
+   }
+  ]
+ },
+ "marquee": [
+  "AI 서비스",
+  "해커톤 프로젝트",
+  "다음 주인",
+  "창업도시 제주",
+  "지원사업",
+  "인사이트",
+  "제주에서 거래"
+ ],
+ "floaters": [
+  "장터",
+  "창업",
+  "해커톤",
+  "AI",
+  "제주",
+  "프로젝트",
+  "지원사업",
+  "인사이트",
+  "다음 주인",
+  "섬업"
+ ],
+ "showcase": {
+  "title": "장터에 올라온 프로젝트"
+ }
 }

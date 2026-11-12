@@ -8,6 +8,7 @@ const { fetchHackathons } = require('./lib/hackathons');
 const crypto = require('crypto');
 const agents = require('./lib/agents');
 const { REGIONS, findRegion, jitter } = require('./lib/regions');
+const store = require('./lib/store'); // 저장 위치(파일 / 서버리스 임시 폴더 / 오래 남기는 저장소)
 
 // .env 파일이 있으면 읽는다 (예: GEMINI_API_KEY=..., ADMIN_PASSWORD=...). 이 파일은 GitHub에 올라가지 않는다.
 try {
@@ -16,10 +17,10 @@ try {
   }
 } catch {}
 const PORT = process.env.PORT || 4000;
-const DATA = path.join(__dirname, 'data');
+const DATA = store.dir;
 const file = (n) => path.join(DATA, n);
 const load = (n, fallback) => { try { return JSON.parse(fs.readFileSync(file(n), 'utf8')); } catch { return fallback; } };
-const save = (n, v) => fs.writeFileSync(file(n), JSON.stringify(v, null, 1));
+const save = (n, v) => store.put(n, JSON.stringify(v, null, 1));
 const clean = (s, max) => String(s ?? '').replace(/[\u0000-\u0008\u000b-\u001f]/g, '').trim().slice(0, max); // 줄바꿈(\n)·탭은 남긴다
 const isUrl = (s) => /^https?:\/\/[^\s]+$/i.test(s);
 const isDataImg = (s) => typeof s === 'string' && s.length < 2_500_000 && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(s);
@@ -28,15 +29,15 @@ const isImg = (s) => isDataImg(s) || (typeof s === 'string' && (/^\/uploads\/[A-
 function saveUpload(dataUrl) {
   const m = /^data:image\/(jpeg|png|webp);base64,(.+)$/.exec(dataUrl); if (!m) return null;
   const name = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}.${m[1] === 'jpeg' ? 'jpg' : m[1]}`;
-  fs.writeFileSync(path.join(UPLOADS, name), Buffer.from(m[2], 'base64')); return `/uploads/${name}`;
+  store.putUpload(name, Buffer.from(m[2], 'base64')); return `/uploads/${name}`;
 }
 const TYPES = ['project', 'home', 'item'];
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
-const CONFIG_FILE = path.join(__dirname, 'config.json');
+const CONFIG_FILE = store.configFile;
 const readConfig = () => JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
 // 인터넷에 올린 서버(HOSTED)에서는 기본 비밀번호를 쓰지 않는다. ADMIN_PASSWORD가 없으면 관리자 로그인이 아예 막힌다.
-const HOSTED = !!process.env.RENDER || process.env.NODE_ENV === 'production';
+const HOSTED = !!process.env.RENDER || !!process.env.VERCEL || process.env.NODE_ENV === 'production';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || (HOSTED ? '' : 'baton1234');
 const DEFAULT_PW = !process.env.ADMIN_PASSWORD && !HOSTED;
 // 아주 단순한 속도 제한: IP별 1분에 N회
@@ -58,8 +59,12 @@ const adminOnly = (req, res, next) => (ADMIN_PASSWORD && req.get('x-admin-passwo
 const app = express();
 app.use(express.json({ limit: '25mb' })); // 사진 업로드(base64) 때문에 넉넉히
 app.use(express.static(path.join(__dirname, 'public')));
-const UPLOADS = path.join(DATA, 'uploads'); fs.mkdirSync(UPLOADS, { recursive: true });
-app.use('/uploads', express.static(UPLOADS));
+app.use(store.middleware);
+app.get('/uploads/:name', async (req, res) => {
+  if (!/^[A-Za-z0-9._-]+\.(jpg|jpeg|png|webp)$/.test(req.params.name)) return res.status(404).end();
+  const f = await store.getUpload(req.params.name); if (!f) return res.status(404).end();
+  res.set('cache-control', 'public, max-age=31536000, immutable').sendFile(f);
+});
 
 // ---- 추천(업)·댓글: 모든 글 공통 ----
 // 추천 수 = 글에 적힌 기본값 + votes.json의 실시간 증가분. 댓글은 comments.json 한 파일에 key('종류:id')로 모은다.
@@ -112,7 +117,7 @@ app.post('/api/admin/login', limit(10), (req, res) => (ADMIN_PASSWORD && req.bod
 app.put('/api/config', adminOnly, (req, res) => {
   const c = req.body;
   if (!c || typeof c !== 'object' || !c.site || !c.banner) return res.status(400).json({ error: '설정 형식이 맞지 않아요.' });
-  fs.writeFileSync(CONFIG_FILE, JSON.stringify(c, null, 1));
+  store.put('config.json', JSON.stringify(c, null, 1));
   res.json({ ok: true });
 });
 // 관리자용: 전체 프로젝트(예시 포함) 보기 · 숨기기/보이기 · 삭제
@@ -176,6 +181,7 @@ app.post('/api/generate', limit(10), async (req, res) => {
 });
 
 // AI 상태 점검 (관리자): 키가 있는지, 지금 어떤 모델이 몇 초에 답하는지. ?test=1 이면 실제로 한 번 불러 본다
+app.get('/api/admin/storage', adminOnly, (req, res) => res.json(store.status())); // 저장이 오래 남는 상태인지
 app.get('/api/admin/ai-status', adminOnly, async (req, res) => res.json(await aiStatus(req.query.test === '1')));
 
 // ---- 판매 등록 (2단계: 확인 후 게시) ----
@@ -570,11 +576,18 @@ app.get('/api/threads-drafts', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.listen(PORT, () => {
-  console.log(`섬업 실행 중: http://localhost:${PORT}`);
-  if (HOSTED && !ADMIN_PASSWORD) console.warn('⚠️  ADMIN_PASSWORD가 없어 관리자 로그인이 막혀 있어요. 호스팅 설정에서 환경변수를 넣어 주세요.');
-  if (DEFAULT_PW) console.warn('⚠️  관리자 비밀번호가 기본값이에요. 배포 전에 ADMIN_PASSWORD 환경변수를 설정하세요.');
-  // 자동 갱신: 피드마다 마지막 실행이 주기보다 오래됐으면 지금 돌리고, 이후 1시간마다 점검
-  const tick = () => { for (const [id, f] of Object.entries(FEEDS)) { const last = new Date(feedState(id).lastRun || 0).getTime(); if (Date.now() - last > f.every) runFeed(id); } };
-  tick(); setInterval(tick, 3600e3);
-});
+// 자동 갱신: 피드마다 마지막 실행이 주기보다 오래됐으면 지금 돌린다
+const tick = () => { for (const [id, f] of Object.entries(FEEDS)) { const last = new Date(feedState(id).lastRun || 0).getTime(); if (Date.now() - last > f.every) runFeed(id); } };
+if (store.SERVERLESS) {
+  // 서버리스(Vercel): 요청이 올 때만 켜지므로 서버를 직접 열지 않고 앱을 내보낸다. 자동 갱신은 관리자 화면의 '지금 갱신' 버튼으로.
+  if (!ADMIN_PASSWORD) console.warn('⚠️  ADMIN_PASSWORD가 없어 관리자 로그인이 막혀 있어요. 호스팅 설정에서 환경변수를 넣어 주세요.');
+} else {
+  app.listen(PORT, () => {
+    console.log(`섬업 실행 중: http://localhost:${PORT}`);
+    if (HOSTED && !ADMIN_PASSWORD) console.warn('⚠️  ADMIN_PASSWORD가 없어 관리자 로그인이 막혀 있어요. 호스팅 설정에서 환경변수를 넣어 주세요.');
+    if (DEFAULT_PW) console.warn('⚠️  관리자 비밀번호가 기본값이에요. 배포 전에 ADMIN_PASSWORD 환경변수를 설정하세요.');
+    tick(); setInterval(tick, 3600e3); // 이후 1시간마다 점검
+  });
+}
+module.exports = app;
+
