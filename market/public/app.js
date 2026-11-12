@@ -194,7 +194,7 @@ const PROGRAM_STATUS = { open: '진행', done: '완료' };
 const periodOf = (p) => p.periodText || (p.always ? '상시' : [p.start, p.end].filter(Boolean).join(' ~ '));
 const programRow = (p, rank) => rankRow({ rank, href: `./post.html?kind=program&id=${encodeURIComponent(p.id)}`, image: p.image, iconName: 'coins', title: p.title, sub: p.summary, meta: [p.org, periodOf(p), p.comments ? `이야기 ${p.comments}` : ''].filter(Boolean).join(' · '), badge: PROGRAM_STATUS[p.status], badgeTone: p.status, kind: 'program', id: p.id, votes: p.votes });
 const insightRow = (p, rank) => rankRow({ rank, href: `./post.html?kind=insight&id=${encodeURIComponent(p.id)}`, image: p.image, iconName: 'bulb', title: p.title, sub: p.summary, meta: [p.category, p.org, p.comments ? `이야기 ${p.comments}` : ''].filter(Boolean).join(' · '), kind: 'insight', id: p.id, votes: p.votes });
-const projectRow = (p, rank) => rankRow({ rank, href: `./project.html?id=${encodeURIComponent(p.id)}`, image: (p.photos || [])[0], iconName: TYPE_ICON[p.type], title: p.name, sub: p.tagline, big: true, badge: p.type === 'project' && p.deal === 'done' ? '완료' : '', badgeTone: 'done', kind: 'project', id: p.id, votes: p.interest });
+const projectRow = (p, rank) => rankRow({ rank, href: `./project.html?id=${encodeURIComponent(p.id)}`, image: (p.photos || [])[0], iconName: TYPE_ICON[p.type], title: p.name, sub: p.tagline, big: true, badge: p.staffIdea ? 'AI 제안' : p.type === 'project' && p.deal === 'done' ? '완료' : '', badgeTone: p.staffIdea ? 'open' : 'done', topic: [p.category, ...(p.tags || [])].join(' '), kind: 'project', id: p.id, votes: p.interest });
 const guideRow = (g, rank) => rankRow({ rank, href: `./guide.html?id=${encodeURIComponent(g.id)}`, image: g.image, iconName: 'leaf', title: g.title, sub: g.summary, meta: [g.tag, g.comments ? `이야기 ${g.comments}` : ''].filter(Boolean).join(' · '), kind: 'guide', id: g.id, votes: g.votes });
 const hackRow = (h, rank) => rankRow({ rank, href: h.url, external: true, iconName: 'trophy', topic: (h.themes || []).join(' ') + ' hackathon', title: h.title, sub: [h.dates, h.location].filter(Boolean).join(' · '), meta: [h.source === 'local' ? '국내 · 직접 등록' : 'Devpost', h.participants ? `${h.participants.toLocaleString()}명 참가` : '', h.prize ? `상금 ${h.prize}` : ''].filter(Boolean).join(' · '), kind: 'hackathon', id: h.id, votes: h.votes });
 
@@ -476,18 +476,19 @@ function naverPins(el, center, pts) {
   return map;
 }
 /* 제주 교통정보센터 자료(도로 통제·전기차 충전소·관광지)를 한 구역에 그린다. 받은 것이 없으면 구역을 숨긴 채로 둔다 */
-async function itsSection(sec, kind, { first = 6 } = {}) {
-  if (!sec) return; let d; try { d = await api('/api/jeju/its/' + kind); } catch { return; }
-  const items = (d.items || []).filter((x) => x.name || x.addr); if (!d.ok || !items.length) return;
+async function itsSection(sec, kind, { first = 6, cat = '' } = {}) {
+  if (!sec) return; let d; try { d = itsSection.cache[kind] || (itsSection.cache[kind] = await api('/api/jeju/its/' + kind + (cat ? '?all=1' : ''))); } catch { return; }
+  const items = (d.items || []).filter((x) => (x.name || x.addr) && (!cat || x.cat === cat)); if (!d.ok || !items.length) { sec.hidden = true; return; }
   const row = (x) => { const period = [x.start, x.end].filter(Boolean).join(' ~ '), sub = [x.name ? x.addr : '', x.desc, period, x.tel].filter(Boolean).join(' · ');
     return `<div class="row"><div class="body"><b>${esc(x.name || x.addr)}</b>${sub ? `<p>${esc(sub)}</p>` : ''}</div></div>`; };
   const list = sec.querySelector('.list'), more = sec.querySelector('.itsmore'), note = sec.querySelector('.note'), cnt = sec.querySelector('.more');
   list.innerHTML = items.slice(0, first).map(row).join('');
-  if (cnt) cnt.textContent = `${(d.count || items.length).toLocaleString('ko-KR')}곳`.replace('곳', kind === 'road' ? '건' : '곳');
-  if (more) { more.hidden = false; more.textContent = '전체 보기'; more.onclick = () => { location.href = './info.html?kind=' + kind; }; }
+  if (cnt) cnt.textContent = `${(cat ? items.length : d.count || items.length).toLocaleString('ko-KR')}곳`.replace('곳', kind === 'road' ? '건' : '곳');
+  if (more) { more.hidden = false; more.textContent = '전체 보기'; more.onclick = () => { location.href = './info.html?kind=' + kind + (cat ? '&type=' + cat : ''); }; }
   if (note) note.textContent = `출처: ${d.source} OPEN API · ${new Date(d.updatedAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })} 기준`;
   sec.hidden = false; if (!FX.reduced()) sec.classList.add('in');
 }
+itsSection.cache = {};
 /* 페이지 넘김: 떠날 때 내용이 살짝 올라가며 사라지고 위에 빛 한 줄이 지나간다. 새 페이지는 아래에서 떠오른다 */
 function mountTransitions() {
   if (mountTransitions.done) return; mountTransitions.done = true;

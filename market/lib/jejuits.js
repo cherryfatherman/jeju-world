@@ -46,6 +46,11 @@ function normalize(o) {
     tel: strip(pick(o, [/tel|phone|telno/i])).slice(0, 30),
     image: (() => { const v = String(pick(o, [/(img|image|photo|thumb|pic)[a-z_]*(url|path|src)?$/i]) || ''); return /^https:\/\/[^\s"'<>]{8,300}$/.test(v) ? v : ''; })(),
     speed: num(pick(o, [/(spd|speed)$/i])),
+    cat: (() => { // 관광지 / 카페 / 맛집: 자료에 분류 칸이 있으면 그것을, 없으면 이름으로 가른다
+      const t = `${strip(pick(o, [/(cate|category|ctgry|type|gubun|kind|class|theme|tag)[a-z_]*(nm|name)?$/i]))} ${strip(pick(o, [/(tour|poi|spot|place|fclt)_?(nm|name)$/i, /^(nm|name|title)$/i, /(nm|name|title)$/i]))}`;
+      if (/카페|커피|coffee|cafe|베이커리|디저트|찻집|다방|로스터|브런치/i.test(t)) return 'cafe';
+      if (/음식|식당|맛집|국수|횟집|흑돼지|갈비|해장국|밥상|반점|치킨|버거|김밥|고깃집|회센터|회센타|식육|국밥|해물|갈치|고기|분식|뷔페|레스토랑|restaurant|가든$|식탁|한정식|돈가스|파스타|피자|초밥|스시|라멘|짬뽕|보말|몸국|칼국수|막국수|순대|족발|곱창|삼겹|불고기|떡볶이|포차|주점|횟|수산$/i.test(t)) return 'food';
+      return 'spot'; })(),
     lat, lng,
   };
 }

@@ -40,10 +40,12 @@ function render() {
   $('#list').replaceChildren(...list.map((p, i) => rankRow({ rank: i + 1, href: `./place.html?id=${encodeURIComponent(p.id)}`, image: p.image, title: p.name, sub: p.summary, meta: [p.area, ...(p.tags || []).slice(0, 2), p.comments ? `이야기 ${p.comments}` : ''].filter(Boolean).join(' · '), kind: 'place', id: p.id, votes: p.votes })));
   if (!list.length) $('#list').innerHTML = '<div class="empty">아직 등록된 곳이 없어요.</div>';
 }
-$$('#typetabs button').forEach((b) => b.onclick = () => { type = b.dataset.t; history.replaceState(null, '', `?type=${type}`); render(); });
+const TOUR_H = { spot: '제주 관광지 정보', cafe: '제주 카페 정보', food: '제주 맛집 정보' };
+function drawTour() { const sec = $('#sec-tour'); sec.querySelector('h2').textContent = TOUR_H[type]; itsSection(sec, 'tour', { first: 6, cat: type }); }
+$$('#typetabs button').forEach((b) => b.onclick = () => { type = b.dataset.t; history.replaceState(null, '', `?type=${type}`); render(); drawTour(); });
 $$('#sort button').forEach((b) => b.onclick = () => { sort = b.dataset.s; $$('#sort button').forEach((x) => x.classList.toggle('on', x === b)); render(); });
 mountShell({ active: 'jeju', sub: 'travel' }).then(async () => {
-  itsSection($('#sec-tour'), 'tour', { first: 5 });
+  drawTour();
   const d = await api('/api/places'); all = d.items || []; render();
   if (d.updatedAt) $('#updated').textContent = `데이터 갱신: ${new Date(d.updatedAt).toLocaleString('ko-KR')}`;
 });

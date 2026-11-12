@@ -373,12 +373,19 @@ const CATALOG = {
 // 직원이 스스로 고치는 일 ①: 사진이 없는 프로젝트에 서비스 주소의 대표 이미지를 넣는다 (한 번에 3건까지)
 async function fixMissingPhotos() {
   const list = load('projects.json', []); const fixed = [];
-  for (const p of list) { if (fixed.length >= 3) break; if (p.status !== 'live' || (p.type || 'project') !== 'project' || (p.photos || []).length || !isUrl(p.url || '') || p.photoTried) continue;
+  for (const p of list) { if (fixed.length >= 3) break; if (p.staffIdea || p.status !== 'live' || (p.type || 'project') !== 'project' || (p.photos || []).length || !isUrl(p.url || '') || p.photoTried) continue;
     let img = ''; try { img = await pageImage(p.url); } catch {} p.photoTried = true; if (img && isImg(img)) { p.photos = [img]; fixed.push(p.name); } }
   if (list.some((p) => p.photoTried)) save('projects.json', list);
   return fixed;
 }
-const agentCtx = () => ({ load, save, feedState, titleOf, fixMissingPhotos, its: () => jejuits.summary(), env: { ai: !!process.env.GEMINI_API_KEY, durable: store.durable || !store.SERVERLESS }, feeds: () => Object.entries(FEEDS).map(([id, f]) => ({ id, ready: !f.needs || !!process.env[f.needs], ok: feedState(id).ok !== false })), find: (kind, id) => FIND[kind]?.(id), catalog: (kind) => (CATALOG[kind] ? CATALOG[kind]() : []) });
+// 기사 클리핑용: 구글 뉴스에서 '제주 창업' 기사 제목과 원문 주소만 가져온다 (본문은 가져오지 않는다)
+async function fetchNews() {
+  const r = await fetch('https://news.google.com/rss/search?q=' + encodeURIComponent('제주 창업 OR 제주 스타트업') + '&hl=ko&gl=KR&ceid=KR:ko', { signal: AbortSignal.timeout(8000) }); if (!r.ok) return [];
+  const xml = await r.text(); const un = (x) => String(x || '').replace(/<!\[CDATA\[|\]\]>/g, '').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+  return [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].slice(0, 20).map((m) => { const g = (t) => un((new RegExp(`<${t}[^>]*>([\\s\\S]*?)</${t}>`).exec(m[1]) || [])[1]); const source = g('source'); const title = g('title').replace(new RegExp(`\\s*-\\s*${source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`), ''); const link = g('link'); const d = new Date(g('pubDate'));
+    return { id: crypto.createHash('md5').update(link).digest('hex').slice(0, 10), title: clean(title, 100), link: isUrl(link) ? link : '', source: clean(source, 40), date: isNaN(d) ? '' : d.toISOString().slice(0, 10), ts: isNaN(d) ? 0 : d.getTime() }; }).filter((n) => n.link && n.title).sort((a, b) => b.ts - a.ts);
+}
+const agentCtx = () => ({ load, save, feedState, titleOf, fixMissingPhotos, winners: () => WINNERS, news: fetchNews, its: () => jejuits.summary(), env: { ai: !!process.env.GEMINI_API_KEY, durable: store.durable || !store.SERVERLESS }, feeds: () => Object.entries(FEEDS).map(([id, f]) => ({ id, ready: !f.needs || !!process.env[f.needs], ok: feedState(id).ok !== false })), find: (kind, id) => FIND[kind]?.(id), catalog: (kind) => (CATALOG[kind] ? CATALOG[kind]() : []) });
 function markFeed(id, ok, note) { const s = load('feeds.json', {}); s[id] = { ...(s[id] || {}), lastRun: new Date().toISOString(), ok, note: note || '' }; save('feeds.json', s); }
 async function runFeed(id) {
   const f = FEEDS[id]; if (!f) return;

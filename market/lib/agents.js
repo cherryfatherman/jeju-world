@@ -216,31 +216,54 @@ function planShift(ctx, hq) {
   const comm = hq.pillars.find((p) => p.id === 'community'); if (comm) pick(comm, ['project', 'program', 'insight', 'hackathon', 'winner', 'guide', 'place']);
   return jobs.filter((j) => j.type === 'reply' || j.pillar !== 'community');
 }
+// 글쓰기 일감: ① 기사 클리핑(근무마다 1건) ② 수상작 소개 글(하루 1건) ③ 아이디어 제안 글(하루 1건, 최대 12건) — 모두 실제 자료(기사·수상작)를 바탕으로 하고 출처 링크를 단다
+const dayKey = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10); // 한국 날짜
+const leadOfPillar = (hq, pid) => hq.agents.find((a) => a.pillar === pid && a.rank === '부서장') || hq.agents.find((a) => a.pillar === pid);
+async function planWriting(ctx, hq, jobs) {
+  const daily = hq.shiftDaily && hq.shiftDaily.date === dayKey() ? hq.shiftDaily : { date: dayKey() }; hq.shiftDaily = daily;
+  const insights = ctx.load('insights.json', []); const have = new Set(insights.map((x) => x.externalId).filter(Boolean)); const urls = new Set(insights.map((x) => x.url).filter(Boolean));
+  const winners = ctx.winners ? ctx.winners() : []; const dayN = Math.floor(Date.now() / DAY);
+  const insightLead = leadOfPillar(hq, 'insight'), hackLead = leadOfPillar(hq, 'hackathon'), dealLead = leadOfPillar(hq, 'deal');
+  if (insightLead && ctx.news) { try { const news = (await ctx.news()).filter((n) => n.title && n.link && !have.has('clip:' + n.id) && !urls.has(n.link)); if (news[0]) jobs.push({ type: 'clip', pillar: 'insight', agent: insightLead, news: news[0], title: news[0].title, about: `${news[0].source || ''} 보도` }); } catch {} }
+  if (hackLead && winners.length && !daily.pick) { const w = winners.filter((x) => !have.has('pick:' + x.id))[dayN % Math.max(1, Math.min(60, winners.length))] || winners.find((x) => !have.has('pick:' + x.id)); if (w) jobs.push({ type: 'pick', pillar: 'hackathon', agent: hackLead, winner: w, title: w.name, about: cut(w.tagline, 200) }); }
+  if (dealLead && winners.length && !daily.idea) { const ideas = ctx.load('projects.json', []).filter((p) => p.staffIdea && p.status === 'live'); const used = new Set(ideas.map((p) => p.ideaFrom)); const w = winners.slice(0, 80).filter((x) => !used.has(x.id))[(dayN * 7) % 40] || winners.find((x) => !used.has(x.id)); if (w && ideas.length < 12) jobs.push({ type: 'idea', pillar: 'deal', agent: dealLead, winner: w, title: w.name, about: cut(w.tagline, 200) }); }
+}
 const scriptedLine = (j) => (j.type === 'reply' ? `${j.to || '방문자'}님, 이야기 남겨 주셔서 고마워요. ${j.agent.dept || '담당'}에서 확인하고 있어요.` : `이 글에서 궁금한 점이 있으면 여기에 남겨 주세요. ${j.agent.dept || '담당'}에서 보고 답할게요.`);
 async function writeShift(jobs) {
   const prompt = `제주 창업 플랫폼 "섬업"의 AI 직원들이 자기 담당 글에 한 줄씩 남깁니다. 각 작업에 맞는 글을 쓰세요.
 규칙: 1~2문장, 쉬운 존댓말(~해요). [글]에 적힌 내용만 근거로 하고 새로운 사실·숫자·약속·가격은 절대 쓰지 마세요. 광고처럼 쓰지 마세요.
 이미 일어난 일이나 앞으로 일어날 일을 단정하지 마세요(예: "끝났네요", "열려요" 금지). 날짜·기간·금액은 [글]에 있는 표현을 그대로 옮길 때만 쓰세요.
+clip은 기사 제목을 쉬운 말 한 문장으로 바꿔 씁니다(제목에 없는 내용 금지). pick은 해외 해커톤 수상작을 소개하며 "제주에서라면 이렇게 써 볼 수 있겠다"는 직원의 생각을 2문장으로 씁니다(생각이라고 드러나게, 사실처럼 쓰지 않기). idea는 [글]의 수상작이 푸는 문제를 제주(도민·여행자·소상공인·농가 중 하나)에 맞게 바꾼 서비스 아이디어를 제안합니다. 수상작과 같은 종류의 문제를 다뤄야 합니다: name(20자 이내 한국어 이름), tagline(40자 이내), text(2~3문장, 아직 만들어지지 않은 아이디어라는 점이 드러나게, 사용자 수·매출 같은 숫자 금지).
 reply는 방문자 말에 공감하고, 답을 모르면 "글 올린 분께 문의하기로 물어보시면 정확해요"처럼 안내합니다. note는 읽는 사람이 답하기 쉬운 질문 하나를 합니다. 이름·직함은 쓰지 마세요(따로 표시됩니다).
 [작업]
-${jobs.map((j, i) => `${i}. ${j.type} | 직원 성격: ${j.agent.persona || ''} | 글: "${j.title}" - ${j.about || '(설명 없음)'}${j.type === 'reply' ? ` | 방문자(${j.to})의 말: "${j.said}"` : ''}`).join('\n')}
-JSON만: {"lines":[{"i":0,"text":""}]}`;
+${jobs.map((j, i) => `${i}. ${j.type}${['reply', 'note'].includes(j.type) ? ` | 직원 성격: ${j.agent.persona || ''}` : ''} | 글: "${j.title}" - ${j.about || '(설명 없음)'}${j.type === 'reply' ? ` | 방문자(${j.to})의 말: "${j.said}"` : ''}`).join('\n')}
+JSON만: {"lines":[{"i":0,"text":"","name":"","tagline":""}]}  (name과 tagline은 idea에만)`;
   const o = await askJSON(prompt); const out = {};
-  for (const l of Array.isArray(o.lines) ? o.lines : []) { const t = cut(l.text, 200); if (Number.isInteger(l.i) && jobs[l.i] && t.length >= 8 && !/https?:\/\//.test(t)) out[l.i] = t; }
+  for (const l of Array.isArray(o.lines) ? o.lines : []) { const t = cut(l.text, 320); if (Number.isInteger(l.i) && jobs[l.i] && t.length >= 8 && !/https?:\/\//.test(t)) { out[l.i] = jobs[l.i].type === 'idea' || jobs[l.i].type === 'pick' ? t : cut(t, 200); out['m' + l.i] = { name: cut(l.name, 20), tagline: cut(l.tagline, 40) }; } }
   return out;
 }
 async function runShift(ctx) {
   const { load, save } = ctx; const hq = load('hq.json', { pillars: [], agents: [], tasks: [], log: [] }); hq.log = hq.log || [];
-  const jobs = planShift(ctx, hq); const at = new Date().toISOString(); let ai = false, lines = {};
+  const jobs = planShift(ctx, hq); await planWriting(ctx, hq, jobs); const at = new Date().toISOString(); let ai = false, lines = {};
   if (jobs.length) { try { lines = await Promise.race([writeShift(jobs), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 25000))]); ai = Object.keys(lines).length > 0; } catch {} }
   const all = load('comments.json', []); const done = [];
-  jobs.forEach((j, i) => { if (!lines[i] && j.type !== 'reply') return; // AI가 못 썼으면 정해진 문장은 답글에만 쓴다 (같은 말이 여러 글에 반복되지 않게)
+  const wrote = []; const today = at.slice(0, 10); const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  // 글쓰기 일감 처리
+  { const ins = load('insights.json', []); let insChanged = false; const projs = load('projects.json', []); let projChanged = false;
+    jobs.forEach((j, i) => {
+      if (j.type === 'clip') { const n = j.news; ins.unshift({ id: 'clip-' + n.id, title: cut(n.title, 100), category: '클리핑', org: cut(n.source || '뉴스', 60), date: n.date || today, summary: lines[i] || cut(n.title, 200), points: [], url: n.link, source: { label: cut(n.source || '원문', 60), url: n.link }, body: `${j.agent.dept || '인사이트부'} AI 직원 ${j.agent.name}이(가) 골라 온 기사예요. 내용은 원문에서 확인해 주세요.`, votes: 0, updatedAt: today, auto: true, externalId: 'clip:' + n.id }); insChanged = true; wrote.push({ j, what: `기사 "${cut(n.title, 30)}"를 인사이트에 클리핑했어요`, link: { kind: 'insight', id: 'clip-' + n.id } }); }
+      if (j.type === 'pick') { const w = j.winner; /* AI가 답하지 않으면 원문 소개만 올린다 */ ins.unshift({ id: 'pick-' + w.id, title: cut(`수상작 다시 보기: ${w.name}`, 100), category: '직원 노트', org: `${j.agent.dept || '해커톤부'} AI ${j.agent.name}`, date: today, summary: cut(w.tagline, 200), points: [], url: w.url, source: { label: 'Devpost (원문)', url: w.url }, body: `**어떤 프로젝트인가요**\n${cut(w.tagline, 300)}${lines[i] ? `\n\n**직원의 생각** (사실이 아니라 의견이에요)\n${lines[i]}` : ''}\n\n${j.agent.dept || '해커톤부'} AI 직원 ${j.agent.name}이(가) 수상작 도감에서 골라 소개해요.`, votes: 0, updatedAt: today, auto: true, externalId: 'pick:' + w.id }); insChanged = true; hq.shiftDaily.pick = true; wrote.push({ j, what: `수상작 "${cut(w.name, 24)}" 소개 글을 인사이트에 올렸어요`, link: { kind: 'insight', id: 'pick-' + w.id } }); }
+      if (j.type === 'idea' && lines[i] && lines['m' + i]?.name) { const w = j.winner, m = lines['m' + i]; const id = newId(); projs.push({ id, type: 'project', createdAt: at, status: 'live', sample: true, staffIdea: true, ideaFrom: w.id, photos: [], name: m.name, tagline: m.tagline || cut(lines[i], 40), description: `${lines[i]}\n\n이 글은 섬업 ${j.agent.dept || '거래부'} AI 직원 ${j.agent.name}이(가) 올린 아이디어 제안이에요. 아직 만들어진 서비스가 아니에요. 참고한 해커톤 수상작: ${w.name} (Devpost)`, category: '기타', tags: ['아이디어 제안', 'AI 직원'], url: w.url, origin: `AI 직원 제안 · 참고 ${cut(w.name, 30)}`, stage: 'idea', priceMin: 0, priceMax: 0, dealType: 'cofounder', seller: `${j.agent.dept || '거래부'} AI ${j.agent.name}`, contact: '', interest: 0, views: 0, area: '' }); projChanged = true; hq.shiftDaily.idea = true; wrote.push({ j, what: `아이디어 제안 "${m.name}"을 장터에 올렸어요 (함께 만들 사람 찾기)`, link: { kind: 'project', id } }); }
+    });
+    if (insChanged) save('insights.json', ins); if (projChanged) save('projects.json', projs); }
+  jobs.forEach((j, i) => { if (!['reply', 'note'].includes(j.type)) return; if (!lines[i] && j.type !== 'reply') return; // AI가 못 썼으면 정해진 문장은 답글에만 쓴다 (같은 말이 여러 글에 반복되지 않게)
     const text = lines[i] || scriptedLine(j);
     all.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), key: `${j.kind}:${j.id}`, title: j.title, name: j.agent.name, staff: true, agent: j.agent.id, role: `${j.agent.dept || '섬업'} AI`, ...(j.parent ? { parent: j.parent } : {}), text, createdAt: at });
     done.push({ ...j, text }); });
   if (done.length) save('comments.json', all);
   // 보고: 직원마다 무슨 일을 했는지 본부장에게, 본부장이 한 줄로 정리
   const round = (hq.log[0]?.round || 0) + 1; const msgs = done.map((d) => ({ from: d.agent.id, to: 'halla', text: `${d.type === 'reply' ? `"${cut(d.title, 28)}"에 달린 ${d.to || '방문자'}님 이야기에 답글을 남겼어요` : `"${cut(d.title, 28)}"에 이야기를 한 줄 남겼어요`}: ${d.text}`, kind: 'report', link: { kind: d.kind, id: d.id } }));
+  for (const w of wrote) msgs.push({ from: w.j.agent.id, to: 'halla', text: w.what, kind: 'report', link: w.link });
   // 스스로 고친 것도 보고한다
   let fixed = []; try { fixed = ctx.fixMissingPhotos ? await ctx.fixMissingPhotos() : []; } catch {}
   const dealLead = hq.agents.find((a) => a.pillar === 'deal' && a.rank === '부서장') || hq.agents.find((a) => a.pillar === 'deal');
@@ -251,11 +274,17 @@ async function runShift(ctx) {
       if (now.road !== null && now.road !== before.road) parts.push(`도로 통제 ${now.road}건`); if (now.ev !== null && now.ev !== before.ev) parts.push(`전기차 충전소 ${now.ev}곳`); if (now.tour !== null && now.tour !== before.tour) parts.push(`관광지 ${now.tour}곳`);
       if (parts.length) msgs.push({ from: lifeLead.id, to: 'halla', text: `교통정보센터 자료를 새로 받아 화면에 반영했어요: ${parts.join(', ')}.`, kind: 'report' }); hq.itsSeen = now; } } catch {}
   const replies = done.filter((d) => d.type === 'reply').length, notes = done.length - replies;
-  if (hq.agents.some((a) => a.id === 'halla')) msgs.push({ from: 'halla', to: 'all', text: done.length ? `근무 보고를 받았어요. 답글 ${replies}건, 이야기 ${notes}건${fixed.length ? `, 스스로 고친 것 ${fixed.length}건` : ''}이에요.` : '이번 근무에는 새로 남길 글이 없었어요.', kind: 'report' });
+  if (hq.agents.some((a) => a.id === 'halla')) msgs.push({ from: 'halla', to: 'all', text: done.length ? `근무 보고를 받았어요. 답글 ${replies}건, 이야기 ${notes}건${wrote.length ? `, 새 글 ${wrote.length}건` : ''}${fixed.length ? `, 스스로 고친 것 ${fixed.length}건` : ''}이에요.` : (wrote.length ? `근무 보고를 받았어요. 새 글 ${wrote.length}건이에요.` : '이번 근무에는 새로 남길 글이 없었어요.'), kind: 'report' });
   hq.log = [...msgs.map((m) => ({ ...m, at, round, ai })).reverse(), ...hq.log].slice(0, 300);
-  hq.lastShift = { at, replies, notes, fixed: fixed.length, ai };
+  try { const card = scorecard(ctx, sense(ctx)); hq.score = card; const low = card.items.find((x) => x.id === card.lowest); const ins = load('insights.json', []); const id = 'report-' + dayKey();
+    const todays = hq.log.filter((m) => m.kind === 'report' && m.from !== 'halla' && (m.at || '').slice(0, 10) === today).slice(0, 20).reverse(); const nameOf = (aid) => hq.agents.find((a) => a.id === aid)?.name || aid;
+    const post = { id, title: `섬업 일일 보고 · ${dayKey().slice(5).replace('-', '월 ')}일`, category: '섬업 리포트', org: '섬업 본부 AI 한라', date: dayKey(), summary: `사이트 점수 ${card.total}점. 가장 낮은 기준은 ${low.name}(${low.score}점)이에요.`, points: card.items.slice(0, 4).map((x) => `${x.name} ${x.score}점`), url: '', source: { label: '', url: '' },
+      body: `**사이트 점수 ${card.total}점** (100점 만점, 코드가 잰 값)\n\n${card.items.map((x) => `- ${x.name} ${x.score}점: ${x.why}`).join('\n')}\n\n**가장 먼저 올릴 것**\n${low.name}: ${low.next}.\n\n**오늘 AI 직원이 한 일**\n${todays.length ? todays.map((m) => `- ${nameOf(m.from)}: ${cut(m.text, 120)}`).join('\n') : '- 아직 없어요.'}\n\n이 보고서는 섬업 본부의 AI 직원이 자동으로 쓰고, 근무할 때마다 고쳐 써요.`, votes: (ins.find((x) => x.id === id) || {}).votes || 0, updatedAt: today, auto: true, externalId: 'staff:report:' + dayKey() };
+    const k = ins.findIndex((x) => x.id === id); if (k >= 0) ins[k] = post; else ins.unshift(post); save('insights.json', ins); } catch {}
+  if (hq.score && hq.log[0] && hq.log[0].from === 'halla' && hq.log[0].at === at) hq.log[0].text += ` 일일 보고서를 고쳐 썼어요(사이트 점수 ${hq.score.total}점).`;
+  hq.lastShift = { at, replies, notes, wrote: wrote.length, fixed: fixed.length, ai };
   save('hq.json', hq);
-  return { replies, notes, fixed: fixed.length, ai, at };
+  return { replies, notes, wrote: wrote.length, fixed: fixed.length, ai, at };
 }
 
 module.exports = { sense, runCycle, runShift, scorecard, programStatus, remember, AGENTS };
