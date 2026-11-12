@@ -1,5 +1,5 @@
 {
- "updatedAt": "2026-11-11T04:16:51.748Z",
+ "updatedAt": "2026-11-12T05:04:01.993Z",
  "items": [
   {
    "source": "local",
@@ -22,7 +22,7 @@
    "prize": "$67,500",
    "dates": "Oct 01 - Nov 12, 2026",
    "location": "Online",
-   "participants": 33807,
+   "participants": 34852,
    "themes": [
     "Low/No Code",
     "Machine Learning/AI",
@@ -37,7 +37,7 @@
    "prize": "$100,000",
    "dates": "Oct 30 - Dec 04, 2026",
    "location": "Online",
-   "participants": 11684,
+   "participants": 12438,
    "themes": [
     "Beginner Friendly",
     "Machine Learning/AI",
@@ -52,7 +52,7 @@
    "prize": "$1,000,000",
    "dates": "Sep 24 - Nov 18, 2026",
    "location": "Online",
-   "participants": 5751,
+   "participants": 5883,
    "themes": [
     "AR/VR",
     "Machine Learning/AI",
@@ -67,7 +67,7 @@
    "prize": "$120,000",
    "dates": "Oct 27 - Dec 22, 2026",
    "location": "Online",
-   "participants": 2720,
+   "participants": 2871,
    "themes": [
     "Machine Learning/AI",
     "Enterprise",
@@ -82,11 +82,26 @@
    "prize": "$46,000",
    "dates": "Oct 22 - Nov 16, 2026",
    "location": "Online",
-   "participants": 2071,
+   "participants": 2197,
    "themes": [
     "Lifehacks",
     "Machine Learning/AI",
     "Productivity"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "#BuildHybridAI 2026",
+   "url": "https://firebasehybridaihackathon.devpost.com/",
+   "prize": "$30,000",
+   "dates": "Nov 11 - 30, 2026",
+   "location": "Online",
+   "participants": 1513,
+   "themes": [
+    "Machine Learning/AI",
+    "Mobile",
+    "Web"
    ],
    "status": "open"
   },
@@ -97,7 +112,7 @@
    "prize": "$50,000",
    "dates": "Nov 02 - Dec 15, 2026",
    "location": "Online",
-   "participants": 1164,
+   "participants": 1264,
    "themes": [
     "IoT",
     "Machine Learning/AI",
@@ -112,24 +127,10 @@
    "prize": "$7,800",
    "dates": "Oct 20 - Dec 21, 2026",
    "location": "Online",
-   "participants": 1016,
+   "participants": 1054,
    "themes": [
     "Beginner Friendly",
     "Machine Learning/AI",
-    "Open Ended"
-   ],
-   "status": "open"
-  },
-  {
-   "source": "devpost",
-   "title": "LaunchPad Hacks (Judges + Sponsors Needed)",
-   "url": "https://launchpad-hacks.devpost.com/",
-   "prize": "$300",
-   "dates": "Oct 16 - Dec 04, 2026",
-   "location": "Online",
-   "participants": 517,
-   "themes": [
-    "Beginner Friendly",
     "Open Ended"
    ],
    "status": "open"
@@ -141,7 +142,7 @@
    "prize": "$17,150",
    "dates": "Nov 08 - 15, 2026",
    "location": "Online",
-   "participants": 493,
+   "participants": 543,
    "themes": [
     "Beginner Friendly",
     "Low/No Code",
@@ -151,16 +152,29 @@
   },
   {
    "source": "devpost",
-   "title": "Herhack",
-   "url": "https://herhack.devpost.com/",
-   "prize": "₹ 200,000",
-   "dates": "Oct 17 - Nov 10, 2026",
+   "title": "LaunchPad Hacks (Judges + Sponsors Needed)",
+   "url": "https://launchpad-hacks.devpost.com/",
+   "prize": "$300",
+   "dates": "Oct 16 - Dec 04, 2026",
    "location": "Online",
-   "participants": 296,
+   "participants": 526,
    "themes": [
     "Beginner Friendly",
-    "Blockchain",
     "Open Ended"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "Reddit’s Game of the Day Hackathon",
+   "url": "https://redditgameofday2026.devpost.com/",
+   "prize": "$35,000",
+   "dates": "Nov 11 - Dec 08, 2026",
+   "location": "Online",
+   "participants": 385,
+   "themes": [
+    "Beginner Friendly",
+    "Gaming"
    ],
    "status": "open"
   },
@@ -171,11 +185,26 @@
    "prize": "€1,000",
    "dates": "Nov 04 - Dec 18, 2026",
    "location": "Online",
-   "participants": 289,
+   "participants": 315,
    "themes": [
     "Low/No Code",
     "Machine Learning/AI",
     "Productivity"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "Deck the Pixels",
+   "url": "https://deckthepixels.devpost.com/",
+   "prize": "$25,000",
+   "dates": "Nov 10 - Dec 07, 2026",
+   "location": "Online",
+   "participants": 310,
+   "themes": [
+    "Design",
+    "Machine Learning/AI",
+    "Low/No Code"
    ],
    "status": "open"
   },
@@ -186,25 +215,10 @@
    "prize": "$64,000",
    "dates": "Nov 02 - Dec 11, 2026",
    "location": "Online",
-   "participants": 272,
+   "participants": 306,
    "themes": [
     "Machine Learning/AI",
     "Productivity",
-    "Web"
-   ],
-   "status": "open"
-  },
-  {
-   "source": "devpost",
-   "title": "Agentic Hackathon",
-   "url": "https://agentic-hackathon.devpost.com/",
-   "prize": "$480",
-   "dates": "Nov 01 - 11, 2026",
-   "location": "Online",
-   "participants": 267,
-   "themes": [
-    "Machine Learning/AI",
-    "Open Ended",
     "Web"
    ],
    "status": "open"
@@ -216,7 +230,7 @@
    "prize": "$CAD 1,050",
    "dates": "Nov 01 - Dec 26, 2026",
    "location": "Online",
-   "participants": 257,
+   "participants": 288,
    "themes": [
     "Beginner Friendly",
     "IoT",
@@ -231,7 +245,7 @@
    "prize": "$900",
    "dates": "Oct 26 - Nov 20, 2026",
    "location": "Online",
-   "participants": 225,
+   "participants": 234,
    "themes": [
     "Blockchain",
     "Fintech",
@@ -246,41 +260,11 @@
    "prize": "₹ 500,000",
    "dates": "Oct 16 - Nov 25, 2026",
    "location": "Online",
-   "participants": 172,
+   "participants": 178,
    "themes": [
     "Education",
     "Health",
     "Machine Learning/AI"
-   ],
-   "status": "open"
-  },
-  {
-   "source": "devpost",
-   "title": "Deck the Pixels",
-   "url": "https://deckthepixels.devpost.com/",
-   "prize": "$25,000",
-   "dates": "Nov 10 - Dec 07, 2026",
-   "location": "Online",
-   "participants": 164,
-   "themes": [
-    "Design",
-    "Machine Learning/AI",
-    "Low/No Code"
-   ],
-   "status": "open"
-  },
-  {
-   "source": "devpost",
-   "title": "CSC Winter Sparkathon",
-   "url": "https://csc-winter-sparkathon.devpost.com/",
-   "prize": "$300",
-   "dates": "Oct 29 - Nov 30, 2026",
-   "location": "Online",
-   "participants": 146,
-   "themes": [
-    "Beginner Friendly",
-    "Open Ended",
-    "Social Good"
    ],
    "status": "open"
   },
@@ -291,7 +275,7 @@
    "prize": "$4,500",
    "dates": "Nov 07 - Dec 07, 2026",
    "location": "Online",
-   "participants": 134,
+   "participants": 173,
    "themes": [
     "Beginner Friendly",
     "Open Ended",
@@ -301,16 +285,16 @@
   },
   {
    "source": "devpost",
-   "title": "Scope-AI-Thon 2026 - AI for Detection of Acute Patient Deterioration",
-   "url": "https://scope-ai-thon-2026.devpost.com/",
-   "prize": "$CAD 1,400",
-   "dates": "Nov 01 - 14, 2026",
+   "title": "CSC Winter Sparkathon",
+   "url": "https://csc-winter-sparkathon.devpost.com/",
+   "prize": "$300",
+   "dates": "Oct 29 - Nov 30, 2026",
    "location": "Online",
-   "participants": 76,
+   "participants": 160,
    "themes": [
-    "Design",
-    "Health",
-    "Machine Learning/AI"
+    "Beginner Friendly",
+    "Open Ended",
+    "Social Good"
    ],
    "status": "open"
   },
@@ -321,7 +305,7 @@
    "prize": "$750",
    "dates": "Nov 06 - 12, 2026",
    "location": "eGain Corp.",
-   "participants": 66,
+   "participants": 91,
    "themes": [
     "Beginner Friendly",
     "Machine Learning/AI",
@@ -331,15 +315,30 @@
   },
   {
    "source": "devpost",
-   "title": "Health Hackathon 3.0",
-   "url": "https://health-hack-3.devpost.com/",
-   "prize": "$200,000",
-   "dates": "Nov 04 - 11, 2026",
-   "location": "VIT Bhopal University",
-   "participants": 63,
+   "title": "Scope-AI-Thon 2026 - AI for Detection of Acute Patient Deterioration",
+   "url": "https://scope-ai-thon-2026.devpost.com/",
+   "prize": "$CAD 1,400",
+   "dates": "Nov 01 - 14, 2026",
+   "location": "Online",
+   "participants": 84,
    "themes": [
+    "Design",
     "Health",
-    "Lifehacks",
+    "Machine Learning/AI"
+   ],
+   "status": "open"
+  },
+  {
+   "source": "devpost",
+   "title": "Learn AR with SPECS",
+   "url": "https://learn-specs.devpost.com/",
+   "prize": "$2,500",
+   "dates": "Nov 10 - Dec 07, 2026",
+   "location": "Online",
+   "participants": 77,
+   "themes": [
+    "AR/VR",
+    "Design",
     "Machine Learning/AI"
    ],
    "status": "open"
@@ -351,7 +350,7 @@
    "prize": "$500",
    "dates": "Nov 08 - Dec 15, 2026",
    "location": "Online",
-   "participants": 45,
+   "participants": 75,
    "themes": [
     "Open Ended",
     "Beginner Friendly",
@@ -366,7 +365,7 @@
    "prize": "₹ 250,000",
    "dates": "Nov 05 - Dec 24, 2026",
    "location": "Online",
-   "participants": 32,
+   "participants": 39,
    "themes": [
     "Beginner Friendly",
     "Education",
@@ -381,7 +380,7 @@
    "prize": "$CAD 15,000",
    "dates": "Nov 06 - 13, 2026",
    "location": "Velocity, Innovation Arena",
-   "participants": 25,
+   "participants": 38,
    "themes": [
     "Blockchain",
     "Fintech"
@@ -395,7 +394,7 @@
    "prize": "$3,000",
    "dates": "Nov 03, 2026 - Feb 01, 2027",
    "location": "Online",
-   "participants": 24,
+   "participants": 29,
    "themes": [
     "Quantum",
     "Beginner Friendly",
@@ -405,16 +404,16 @@
   },
   {
    "source": "devpost",
-   "title": "Learn AR with SPECS",
-   "url": "https://learn-specs.devpost.com/",
-   "prize": "$2,500",
-   "dates": "Nov 10 - Dec 07, 2026",
+   "title": "Open Agentic Web Challenge",
+   "url": "https://cognizant-agenticweb.devpost.com/",
+   "prize": "$10,000",
+   "dates": "Nov 11, 2026 - Jan 11, 2027",
    "location": "Online",
-   "participants": 19,
+   "participants": 3,
    "themes": [
-    "AR/VR",
-    "Design",
-    "Machine Learning/AI"
+    "Machine Learning/AI",
+    "Web",
+    "Social Good"
    ],
    "status": "open"
   }
