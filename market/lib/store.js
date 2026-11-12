@@ -35,15 +35,19 @@ if (SERVERLESS) {
 fs.mkdirSync(uploads, { recursive: true });
 
 // ── 오래 남기는 저장소 (선택) ──
-const KV_URL = (process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || '').replace(/\/$/, '');
-const KV_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || '';
+// 키 이름은 연결할 때 앞에 다른 말이 붙을 수 있어서(예: STORAGE_KV_REST_API_URL) 끝 이름으로 찾는다
+const envBy = (...ends) => { for (const e of ends) { if (process.env[e]) return [e, process.env[e]]; } for (const e of ends) { const k = Object.keys(process.env).find((n) => n.endsWith('_' + e) && process.env[n]); if (k) return [k, process.env[k]]; } return ['', '']; };
+const [KV_URL_NAME, KV_URL_RAW] = envBy('KV_REST_API_URL', 'UPSTASH_REDIS_REST_URL');
+const [KV_TOKEN_NAME, KV_TOKEN] = envBy('KV_REST_API_TOKEN', 'UPSTASH_REDIS_REST_TOKEN');
+const KV_URL = KV_URL_RAW.replace(/\/$/, '');
 const durable = !!(KV_URL && KV_TOKEN);
 const NAMES = ['config.json', 'projects.json', 'programs.json', 'insights.json', 'guides.json', 'places.json', 'hq.json', 'hackathons.json', 'winners.json', 'votes.json', 'comments.json', 'inquiries.json', 'waitlist.json', 'metrics.json', 'feedback.json', 'feeds.json'];
 const key = (name) => `seomup:f:${name}`;
 async function kv(cmds) {
   const r = await fetch(`${KV_URL}/pipeline`, { method: 'POST', headers: { authorization: `Bearer ${KV_TOKEN}`, 'content-type': 'application/json' }, body: JSON.stringify(cmds), signal: AbortSignal.timeout(5000) });
   if (!r.ok) throw new Error(`저장소 응답 ${r.status}`);
-  return (await r.json()).map((x) => x.result);
+  const out = await r.json(); const bad = out.find((x) => x && x.error); if (bad) throw new Error('저장소 오류: ' + String(bad.error).slice(0, 120));
+  return out.map((x) => x.result);
 }
 const seen = {}; let lastSync = 0, pending = [], lastError = '';
 // 저장소에 있는 최신 내용을 임시 폴더로 가져온다 (다른 서버가 쓴 것도 여기서 맞춰진다)
@@ -78,6 +82,14 @@ function middleware(req, res, next) {
   res.json = (body) => { flush().finally(() => json(body)); return res; };
   sync(req.method !== 'GET').then(() => next(), () => next());
 }
-const status = () => ({ serverless: SERVERLESS, durable, lastSync: lastSync ? new Date(lastSync).toISOString() : null, error: lastError });
+const status = () => ({ serverless: SERVERLESS, durable, urlFrom: KV_URL_NAME, tokenFrom: KV_TOKEN_NAME,
+  otherRedisNames: Object.keys(process.env).filter((n) => /REDIS|UPSTASH|(^|_)KV_/i.test(n)).sort(), // 이름만. 값은 내보내지 않는다
+  lastSync: lastSync ? new Date(lastSync).toISOString() : null, error: lastError });
+// 실제로 쓰고 읽어 본다
+async function selfTest() {
+  if (!durable) return { ok: false, why: '저장소 키를 찾지 못했어요.' };
+  try { const v = String(Date.now()); await kv([['SET', 'seomup:ping', v]]); const [back] = await kv([['GET', 'seomup:ping']]); const [keys] = await kv([['MGET', ...NAMES.map(key)]]);
+    return { ok: back === v, saved: NAMES.filter((n, i) => typeof (keys || [])[i] === 'string') }; } catch (e) { return { ok: false, why: e.message }; }
+}
 
-module.exports = { dir, configFile, uploads, put, putUpload, getUpload, middleware, status, refresh: () => sync(true), SERVERLESS, durable };
+module.exports = { dir, configFile, uploads, put, putUpload, getUpload, middleware, status, selfTest, refresh: () => sync(true), SERVERLESS, durable };

@@ -184,7 +184,13 @@ app.post('/api/generate', limit(10), async (req, res) => {
 });
 
 // AI 상태 점검 (관리자): 키가 있는지, 지금 어떤 모델이 몇 초에 답하는지. ?test=1 이면 실제로 한 번 불러 본다
-app.get('/api/admin/storage', adminOnly, (req, res) => res.json(store.status())); // 저장이 오래 남는 상태인지
+app.get('/api/admin/storage', adminOnly, (req, res) => res.json(store.status()));
+// 누구나 열 수 있는 상태 확인. 키의 '값'은 절대 넣지 않는다 (있는지 없는지와 이름만)
+app.get('/api/status', limit(20), async (req, res) => res.json({
+  storage: store.status(), storageTest: await store.selfTest(),
+  ai: !!process.env.GEMINI_API_KEY, jejuIts: { cits: !!process.env.JEJU_CITS_CODE, its: !!process.env.JEJU_ITS_CODE }, adminPasswordSet: !!process.env.ADMIN_PASSWORD,
+  projects: load('projects.json', []).filter((x) => x.status === 'live').length, time: new Date().toISOString(),
+})); // 저장이 오래 남는 상태인지
 app.get('/api/admin/ai-status', adminOnly, async (req, res) => res.json(await aiStatus(req.query.test === '1')));
 
 // ---- 판매 등록 (2단계: 확인 후 게시) ----
