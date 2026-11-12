@@ -21,6 +21,12 @@
       <div class="flowbars"><div class="flowbar" id="flowBar"></div><div class="flowlegend" id="flowLegend"></div></div></div>
     <p class="note" style="margin-top:10px">구간마다 잰 속도를 모은 값이에요. 시속 15km 미만은 정체, 25km 미만은 서행, 그 이상은 원활로 나눴어요.</p>
   </section>
+  <section id="sec-tmap" hidden>
+    <div class="sec-head"><h2 id="trMap">구간별 흐름 지도</h2><span class="more">네이버 지도 실시간 교통</span></div>
+    <div id="tmap" style="height:440px;border-radius:16px;border:1px solid var(--line);overflow:hidden"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px" id="tmapGo"><button class="btn" data-c="33.4996,126.5312,13" type="button">제주시</button><button class="btn" data-c="33.2541,126.5600,13" type="button">서귀포</button><button class="btn" data-c="33.38,126.55,10" type="button">섬 전체</button></div>
+    <p class="note" style="margin-top:10px">초록은 원활, 주황은 서행, 빨강은 정체예요. 색은 네이버 지도가 제공하는 실시간 교통 정보이고, 위 평균 속도(교통정보센터)와는 자료가 달라요.</p>
+  </section>
   <section id="sec-road" hidden>
     <div class="sec-head"><h2 id="trRoad">지금 도로 통제</h2><span class="more"></span></div>
     <div class="list"></div>
@@ -42,6 +48,11 @@ mountShell({ active: 'jeju', sub: 'traffic' }).then(() => {
     const f = v.flow; if (f && f.links) { const pc = (n) => Math.round((n / f.links) * 100); $('#sec-flow').hidden = false; $('#flowAvg').textContent = `시속 ${f.avg}km`; $('#flowLinks').textContent = `${f.links.toLocaleString('ko-KR')}개 구간`; $('#flowAt').textContent = f.at ? `${f.at} 기준` : '';
       $('#flowBar').innerHTML = [['free', f.free], ['slow', f.slow], ['jam', f.jam]].map(([c, n]) => `<i class="${c}" style="width:${(n / f.links) * 100}%"></i>`).join('');
       $('#flowLegend').innerHTML = [['free', '원활', f.free], ['slow', '서행', f.slow], ['jam', '정체', f.jam]].map(([c, t, n]) => `<span><i class="${c}"></i>${t} ${pc(n)}% <small>${n.toLocaleString('ko-KR')}구간</small></span>`).join(''); } }).catch(() => {});
+  loadNaverMap().then((ok) => { if (!ok || !naver.maps.TrafficLayer) return; try { $('#sec-tmap').hidden = false;
+      const map = new naver.maps.Map('tmap', { center: new naver.maps.LatLng(33.4996, 126.5312), zoom: 13, scaleControl: false, mapDataControl: false, zoomControl: true, zoomControlOptions: { position: naver.maps.Position.TOP_RIGHT } });
+      new naver.maps.TrafficLayer({ interval: 300000 }).setMap(map);
+      $$('#tmapGo button').forEach((b) => b.onclick = () => { const [la, ln, z] = b.dataset.c.split(',').map(Number); map.setCenter(new naver.maps.LatLng(la, ln)); map.setZoom(z); });
+      document.addEventListener('naver-auth-failed', () => { $('#sec-tmap').hidden = true; }, { once: true }); } catch { $('#sec-tmap').hidden = true; } });
   itsSection($('#sec-road'), 'road'); itsSection($('#sec-ev'), 'ev');
 });
 </script>

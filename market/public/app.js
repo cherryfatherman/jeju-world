@@ -457,7 +457,7 @@ function mountPageFx() {
 let naverReady;
 function loadNaverMap() {
   if (naverReady) return naverReady;
-  const id = ((typeof CONFIG === 'object' && CONFIG && CONFIG.maps) || {}).naverClientId;
+  const id = ((typeof CONFIG === 'object' && CONFIG && CONFIG.maps) || {}).naverClientId || 'iabqcxh8eu'; /* 지도용 공개 ID(주소 제한이 걸려 있음). 저장된 설정에 없으면 이것을 쓴다 */
   naverReady = new Promise((res) => {
     if (!id) return res(false);
     let done = false; const fin = (v) => { if (!done) { done = true; res(v); } };
