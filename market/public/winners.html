@@ -28,7 +28,7 @@ function filtered() {
 function render() {
   const list = filtered();
   $('#count').textContent = `${list.length}개 · 추천순`;
-  $('#list').replaceChildren(...list.slice(0, shown).map((w, i) => rankRow({ rank: i + 1, href: w.url, external: true, iconName: 'trophy', title: w.name, sub: w.tagline, meta: [w.category, ...w.themes.slice(0, 2).map((t) => '#' + t), `Devpost 좋아요 ${w.likes}`].join(' · '), kind: 'winner', id: w.id, votes: w.votes })));
+  $('#list').replaceChildren(...list.slice(0, shown).map((w, i) => rankRow({ rank: i + 1, href: w.url, external: true, iconName: 'trophy', topic: [w.category, ...(w.themes || [])].join(' '), title: w.name, sub: w.tagline, meta: [w.category, ...w.themes.slice(0, 2).map((t) => '#' + t), `Devpost 좋아요 ${w.likes}`].join(' · '), kind: 'winner', id: w.id, votes: w.votes })));
   $('#more').style.display = list.length > shown ? '' : 'none';
 }
 async function load() {

@@ -14,7 +14,11 @@
   #map { height: min(70vh, 640px); border-radius: 14px; border: 1px solid var(--line); background: #dfeaf0; z-index: 1; }
   .mlist { max-height: min(70vh, 640px); overflow-y: auto; border-top: 1px solid var(--line); }
   .mlist .rrow { cursor: pointer; padding: 10px 2px; } .mlist .rrow.sel { background: var(--accent-soft); }
-  .mlist .rrow .rthumb { width: 52px; height: 52px; }
+  .mlist { overflow-x: hidden; }
+  .mlist .rrow { margin-inline: 0; padding: 10px 8px; gap: 12px; border-radius: 12px; }
+  .mlist .rrow .rthumb, .mlist .rrow.big .rthumb { width: 56px; height: 56px; border-radius: 12px; box-shadow: none; }
+  .mlist .rrow .rbody { min-width: 0; } .mlist .rrow .rtitle b { font-size: 15px; } .mlist .rrow p { font-size: 13px; } .mlist .rrow small { font-size: 12px; }
+  .mlist .up { width: 46px; height: 50px; margin-top: 0; }
   .pin { width: 26px; height: 26px; border-radius: 50% 50% 50% 4px; transform: rotate(-45deg); border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.3); display: grid; place-items: center; }
   .pin i { transform: rotate(45deg); font-style: normal; font-size: 11px; font-weight: 800; color: #fff; }
   .pin.done { opacity: .5; }

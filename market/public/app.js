@@ -54,6 +54,15 @@ const ICONS = {
   coins: '<circle cx="9" cy="9" r="5"/><path d="M14.5 10.5a5 5 0 1 1-4 8"/>',
   bulb: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/>',
   link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+  chip: '<rect x="7" y="7" width="10" height="10" rx="2"/><path d="M10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4"/>',
+  film: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9.5v5l4.5-2.5z"/>',
+  cart: '<path d="M3 4h2.5l2.2 10.5h9.6L19.5 7H7"/><circle cx="9.5" cy="18.5" r="1.4"/><circle cx="16.5" cy="18.5" r="1.4"/>',
+  cap: '<path d="M2.5 9.5 12 5l9.5 4.5L12 14z"/><path d="M6.5 11.8V16c1.5 1.4 3.4 2 5.5 2s4-.6 5.5-2v-4.2"/>',
+  plane: '<path d="M3 13.5 21 4l-5 16-3.5-6.5z"/><path d="M12.5 13.5 21 4"/>',
+  globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/>',
+  brief: '<rect x="3" y="7" width="18" height="12" rx="2"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M3 12.5h18"/>',
+  paw: '<circle cx="7.5" cy="9" r="1.7"/><circle cx="12" cy="6.8" r="1.7"/><circle cx="16.5" cy="9" r="1.7"/><path d="M8 16.5c0-2.2 1.8-4 4-4s4 1.8 4 4c0 1.4-1.2 2.2-2.4 2.2-.6 0-1-.3-1.6-.3s-1 .3-1.6.3C9.2 18.7 8 17.9 8 16.5z"/>',
+  scale: '<path d="M12 4v16M7 20h10M5 8h14M5 8l-2.5 6a2.8 2.8 0 0 0 5 0zM19 8l-2.5 6a2.8 2.8 0 0 0 5 0z"/>',
 };
 const icon = (name, cls = 'ic') => ICONS[name] ? `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>` : esc(name);
 
@@ -135,10 +144,28 @@ function upBtn(kind, id, votes, big) {
   return b;
 }
 /* ── 섬업 부품 ② 순위 줄: 번호 · 사진 · 제목/한 줄 · 오른쪽에 업 ── */
-function rankRow({ rank, href, external, image, iconName, title, sub, meta, badge, badgeTone, kind, id, votes, big }) {
+/* 사진이 없는 글의 자동 그림: 주제에 맞는 아이콘과 색을 고르고, 글마다 빛줄기 모양이 조금씩 다르다 */
+const COVER_TONES = [['#ff7a2e', '#ffb347'], ['#0f9f96', '#5fe0cf'], ['#5b4fe0', '#a79bff'], ['#2f7fe6', '#63cdf5'], ['#ff5e7a', '#ffa08a'], ['#26221d', '#5a5148']];
+const COVER_TOPICS = [
+  [/machine learning|\bai\b|인공지능|iot|blockchain|ar\/vr|robot|개발도구|데이터/i, 'chip', 2], [/health|fitness|elderly|senior|wellness|헬스|웰빙|medical|mental/i, 'heart', 4],
+  [/school|tutor|education|교육|student|learn|beginner/i, 'cap', 3], [/video|media|social media|creator|미디어|크리에이터|design|music/i, 'film', 4],
+  [/retail|commerce|invoice|커머스|소상공인|shop|market|booking/i, 'cart', 0], [/fintech|tax|finance|bank|money|payment|투자|자금/i, 'coins', 0],
+  [/real estate|landlord|housing|부동산|주거|construction/i, 'home', 3], [/travel|tour|여행|관광|trip/i, 'plane', 3],
+  [/agriculture|food waste|environment|climate|환경|농업|sustain|green/i, 'leaf', 1], [/pet|animal|반려/i, 'paw', 1],
+  [/legal|law|immigrant|nonprofit|volunteer|social good|civic|지역|로컬|community|커뮤니티/i, 'scale', 1], [/translation|language|web|global|open ended/i, 'globe', 3],
+  [/job|productivity|생산성|업무|logistics|low\/no code|work/i, 'brief', 5], [/hackathon|해커톤|prize|challenge/i, 'trophy', 0],
+];
+function coverArt(title, topic, fallbackIcon) {
+  const text = `${topic || ''} ${title || ''}`; let h = 7; for (const ch of String(title || topic || 'x')) h = (h * 31 + ch.codePointAt(0)) >>> 0;
+  const hit = COVER_TOPICS.find(([re]) => re.test(text)); const ic = hit ? hit[1] : (fallbackIcon || 'puzzle'); const [a, b] = COVER_TONES[hit ? (hit[2] + (h % 3) * 2) % COVER_TONES.length : h % COVER_TONES.length]; // 같은 주제라도 색이 세 가지로 갈린다
+  const r = (n, m) => ((h >>> n) % m); const cx = 20 + r(3, 60), cy = 15 + r(7, 40);
+  const strands = Array.from({ length: 7 }, (_, i) => { const ang = (r(i + 2, 360) + i * 51) * Math.PI / 180, x = cx + Math.cos(ang) * 120, y = cy + Math.sin(ang) * 120, mx = (cx + x) / 2 + Math.sin(ang) * (10 + r(i, 26)), my = (cy + y) / 2 - Math.cos(ang) * (10 + r(i + 5, 26)); return `<path d="M${cx} ${cy}Q${mx.toFixed(0)} ${my.toFixed(0)} ${x.toFixed(0)} ${y.toFixed(0)}"/>`; }).join('');
+  return `<span class="cover" style="background:linear-gradient(${120 + r(5, 80)}deg,${a},${b})"><svg class="cvs" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${strands}<circle cx="${cx}" cy="${cy}" r="9"/></svg>${icon(ic, 'cvi')}</span>`;
+}
+function rankRow({ rank, href, external, image, iconName, title, sub, meta, badge, badgeTone, kind, id, votes, big, topic }) {
   const d = document.createElement('div'); d.className = 'rrow' + (big ? ' big' : '');
   const link = (cls, inner) => `<a class="${cls}" href="${esc(href)}"${external ? ' target="_blank" rel="noopener"' : ''}>${inner}</a>`;
-  d.innerHTML = `${rank ? `<span class="rk${rank <= 3 ? ' top' : ''}">${rank}</span>` : ''}${link('rthumb', image ? `<img src="${esc(image)}" alt="" loading="lazy">` : icon(iconName || 'puzzle'))}${link('rbody', `<span class="rtitle">${badge ? `<i class="rbadge ${badgeTone || ''}">${esc(badge)}</i>` : ''}<b>${esc(title)}</b></span>${sub ? `<p>${esc(sub)}</p>` : ''}${meta ? `<small>${esc(meta)}</small>` : ''}`)}`;
+  d.innerHTML = `${rank ? `<span class="rk${rank <= 3 ? ' top' : ''}">${rank}</span>` : ''}${link('rthumb', image ? `<img src="${esc(image)}" alt="" loading="lazy">` : coverArt(title, topic, iconName))}${link('rbody', `<span class="rtitle">${badge ? `<i class="rbadge ${badgeTone || ''}">${esc(badge)}</i>` : ''}<b>${esc(title)}</b></span>${sub ? `<p>${esc(sub)}</p>` : ''}${meta ? `<small>${esc(meta)}</small>` : ''}`)}`;
   d.append(upBtn(kind, id, votes));
   return d;
 }
@@ -158,7 +185,7 @@ const programRow = (p, rank) => rankRow({ rank, href: `./post.html?kind=program&
 const insightRow = (p, rank) => rankRow({ rank, href: `./post.html?kind=insight&id=${encodeURIComponent(p.id)}`, image: p.image, iconName: 'bulb', title: p.title, sub: p.summary, meta: [p.category, p.org, p.comments ? `이야기 ${p.comments}` : ''].filter(Boolean).join(' · '), kind: 'insight', id: p.id, votes: p.votes });
 const projectRow = (p, rank) => rankRow({ rank, href: `./project.html?id=${encodeURIComponent(p.id)}`, image: (p.photos || [])[0], iconName: TYPE_ICON[p.type], title: p.name, sub: p.tagline, big: true, badge: p.type === 'project' && p.deal === 'done' ? '완료' : '', badgeTone: 'done', kind: 'project', id: p.id, votes: p.interest });
 const guideRow = (g, rank) => rankRow({ rank, href: `./guide.html?id=${encodeURIComponent(g.id)}`, image: g.image, iconName: 'leaf', title: g.title, sub: g.summary, meta: [g.tag, g.comments ? `이야기 ${g.comments}` : ''].filter(Boolean).join(' · '), kind: 'guide', id: g.id, votes: g.votes });
-const hackRow = (h, rank) => rankRow({ rank, href: h.url, external: true, iconName: 'trophy', title: h.title, sub: [h.dates, h.location].filter(Boolean).join(' · '), meta: [h.source === 'local' ? '국내 · 직접 등록' : 'Devpost', h.participants ? `${h.participants.toLocaleString()}명 참가` : '', h.prize ? `상금 ${h.prize}` : ''].filter(Boolean).join(' · '), kind: 'hackathon', id: h.id, votes: h.votes });
+const hackRow = (h, rank) => rankRow({ rank, href: h.url, external: true, iconName: 'trophy', topic: (h.themes || []).join(' ') + ' hackathon', title: h.title, sub: [h.dates, h.location].filter(Boolean).join(' · '), meta: [h.source === 'local' ? '국내 · 직접 등록' : 'Devpost', h.participants ? `${h.participants.toLocaleString()}명 참가` : '', h.prize ? `상금 ${h.prize}` : ''].filter(Boolean).join(' · '), kind: 'hackathon', id: h.id, votes: h.votes });
 
 /* ── 바로가기 타일: 아이콘 + 이름 + (HOT/NEW). 설명 없이 누르고 싶게 ── */
 function tileGroups(el, groups, extra = {}) {
@@ -324,8 +351,8 @@ const THEME_FIELDS = [
   ['색', [['accent', '포인트 색', 'color'], ['accent2', '보조 색', 'color'], ['bg', '바탕', 'color'], ['surface', '카드 바탕', 'color'], ['ink', '글자', 'color'], ['line', '선', 'color']]],
   ['모양', [['radius', '카드 모서리 (px)', 'range', 0, 24, 1], ['btnRadius', '버튼 모서리 (px)', 'range', 0, 24, 1], ['wrap', '본문 폭 (px)', 'range', 900, 1320, 20], ['heroH', '홈 큰 배너 높이 (px)', 'range', 240, 560, 10], ['thumb', '목록 사진 크기 (px)', 'range', 48, 112, 4], ['gap', '구역 사이 간격 (px)', 'range', 16, 64, 4]]],
 ];
-const THEME_DEFAULT = { v: 3, bodyFont: 'Pretendard Variable', headFont: 'Pretendard Variable', headWeight: 800, scale: 100, letter: -0.01, accent: '#ff6b1a', accent2: '#19b3a6', bg: '#ffffff', surface: '#ffffff', ink: '#1b1915', line: '#e9e3da', radius: 12, btnRadius: 8, wrap: 1080, heroH: 360, thumb: 72, gap: 32 };
-const normTheme = (t) => { const T = { ...THEME_DEFAULT, ...(t || {}) }; if (!t || t.v !== 3) Object.assign(T, { v: 3, bg: THEME_DEFAULT.bg, surface: THEME_DEFAULT.surface, ink: THEME_DEFAULT.ink, line: THEME_DEFAULT.line, radius: THEME_DEFAULT.radius, btnRadius: THEME_DEFAULT.btnRadius, gap: THEME_DEFAULT.gap }); return T; };
+const THEME_DEFAULT = { v: 4, bodyFont: 'Pretendard Variable', headFont: 'Pretendard Variable', headWeight: 800, scale: 100, letter: -0.01, accent: '#ff6b1a', accent2: '#19b3a6', bg: '#ffffff', surface: '#ffffff', ink: '#1b1915', line: '#e9e3da', radius: 12, btnRadius: 8, wrap: 1080, heroH: 360, thumb: 96, gap: 32 };
+const normTheme = (t) => { const T = { ...THEME_DEFAULT, ...(t || {}) }; if (!t || t.v !== 4) Object.assign(T, { v: 4, thumb: THEME_DEFAULT.thumb, bg: THEME_DEFAULT.bg, surface: THEME_DEFAULT.surface, ink: THEME_DEFAULT.ink, line: THEME_DEFAULT.line, radius: THEME_DEFAULT.radius, btnRadius: THEME_DEFAULT.btnRadius, gap: THEME_DEFAULT.gap }); return T; };
 function loadFont(name) { const f = FONTS.find((x) => x[0] === name); if (!f || !f[2] || document.querySelector(`link[data-font="${name}"]`)) return; const l = document.createElement('link'); l.rel = 'stylesheet'; l.dataset.font = name; l.href = `https://fonts.googleapis.com/css2?family=${f[2]}&display=swap`; document.head.append(l); }
 function applyTheme(t) {
   if (!t) return; const r = document.documentElement.style; const T = normTheme(t);

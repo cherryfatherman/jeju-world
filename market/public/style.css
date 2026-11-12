@@ -1016,3 +1016,14 @@ body.home footer { position: relative; z-index: 1; }
 /* 네이버 지도 말풍선 */
 .npop { background: #fff; color: #1b1915; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; box-shadow: 0 10px 28px rgba(27,25,21,.18); min-width: 160px; font-family: var(--font); }
 .npop b { display: block; font-size: 14px; margin: 2px 0 6px; } .npop small { color: var(--ink-3); font-size: 12px; } .npop a { color: var(--accent); font-weight: 700; font-size: 13px; }
+
+/* v12: 목록 왼쪽 그림을 키우고, 사진이 없는 글에는 자동 그림 */
+.rrow { gap: 18px; padding-block: 16px; }
+.rrow .rthumb, .rrow.big .rthumb { width: var(--thumb, 96px); height: var(--thumb, 96px); border-radius: 16px; box-shadow: 0 1px 0 rgba(27, 25, 21, .04), 0 8px 20px rgba(27, 25, 21, .07); }
+.rrow .rtitle b { font-size: 18px; } .rrow.big .rtitle b { font-size: 21px; } .rrow p { font-size: 15px; } .rrow small { font-size: 13px; }
+.rrow:hover .rthumb img, .rrow:hover .cover { transform: scale(1.05); } .rrow .rthumb img, .cover { transition: transform .35s cubic-bezier(.2, .7, .2, 1); }
+.cover { position: relative; display: grid; place-items: center; width: 100%; height: 100%; color: #fff; overflow: hidden; }
+.cover .cvs { position: absolute; inset: 0; width: 100%; height: 100%; fill: none; stroke: rgba(255, 255, 255, .34); stroke-width: 1.1; }
+.cover .cvs circle { fill: rgba(255, 255, 255, .26); stroke: none; }
+.cover .cvi { position: relative; width: 44%; height: 44%; stroke: #fff; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .22)); }
+@media (max-width: 560px) { .rrow { gap: 12px; padding-block: 13px; } .rrow .rthumb, .rrow.big .rthumb { width: 72px; height: 72px; border-radius: 14px; } .rrow .rtitle b { font-size: 16px; } .rrow.big .rtitle b { font-size: 17px; } .rrow p { font-size: 14px; } }
