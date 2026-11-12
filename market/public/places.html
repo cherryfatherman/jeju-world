@@ -51,7 +51,7 @@ mountShell({ active: 'jeju', sub: 'travel' }).then(async () => {
   const names = new Set(mine.map((p) => nm(p.name))), exts = new Set(mine.map((p) => p.ext).filter(Boolean));
   const pub = (t.items || []).filter((x) => x.name && !names.has(nm(x.name)) && !exts.has('tour:' + x.id)).map((x, i) => ({ kind: 'tour', id: x.id, type: x.cat || 'spot', name: x.name, sub: x.addr, meta: [x.desc, x.tel && !/^-+$/.test(x.tel) ? x.tel : ''].filter(Boolean).join(' · '), image: x.image, votes: x.votes || 0, score: x.score || 0, city: cityOf(x.addr), href: `https://map.naver.com/p/search/${encodeURIComponent(x.addr || x.name)}`, external: true, order: 1000 + i }));
   all = [...mine, ...pub]; render();
-  const src = ['섬업이 직접 확인한 곳', t.source].filter(Boolean).join(' · '); $('#updated').textContent = `자료: ${src}. 섬업 점수(1~1000)는 네이버 블로그에 올라온 글 수와 자료가 갖춰진 정도로 매기고, 추천을 받으면 순서가 올라가요.`;
+  const src = ['섬업이 직접 확인한 곳', t.source].filter(Boolean).join(' · '); $('#updated').textContent = `자료: ${src}. 섬업 점수(1~1000)는 사진·설명·위치·연락처가 얼마나 갖춰졌는지로 매기고, 추천을 받으면 순서가 올라가요.`;
 });
 </script>
 </body>

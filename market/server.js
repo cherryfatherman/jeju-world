@@ -389,7 +389,6 @@ const FEEDS = {
   waste: { name: '쓰레기 배출 통계 (공공데이터포털)', every: 86400e3, run: () => refreshWasteStats() },
   tour: { name: '관광지·카페·맛집 (관광 API)', every: 86400e3, needs: 'TOUR_API_KEY', run: () => refreshTourPlaces() },
   kstartup: { name: '창업 지원사업 공고 (K-Startup, 공공데이터포털 15125364)', every: 86400e3, needs: 'DATA_GO_KR_KEY', run: () => refreshKStartup() },
-  buzz: { name: '섬업 점수 재기 (네이버 블로그 글 수)', every: 3600e3, needs: 'NAVER_SEARCH_ID', run: () => refreshBuzz() },
   letter: { name: '섬업 레터 (매일 아침 뉴스레터)', every: 3600e3, run: () => letter.run({ ...agentCtx(), hackathons: hackItems }) },
   agents: { name: '본부 회의 (AI 직원)', every: 86400e3, run: () => agents.runCycle(agentCtx()) },
   shift: { name: 'AI 직원 근무 (답글·이야기·보고)', every: 6 * 3600e3, run: () => agents.runShift(agentCtx()) },

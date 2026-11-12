@@ -26,7 +26,9 @@ function attach(items, book) {
   let max = 0; for (const k in book) max = Math.max(max, Math.log1p(book[k].n || 0));
   return items.map((x) => { const b = book[norm(x.name)];
     if (b && max > 0) return { ...x, score: Math.max(1, Math.min(1000, Math.round(1 + 999 * Math.log1p(b.n) / max))), buzz: b.n };
-    const info = 60 + (x.image ? 120 : 0) + (x.lat && x.lng ? 40 : 0) + (x.tel && !/^-+$/.test(x.tel) ? 40 : 0) + ((x.desc || x.summary || '').length > 10 ? 40 : 0);
+    /* 재지 않은 곳: 자료가 갖춰진 정도로 100~1000점. 사진 300, 설명 길이 최대 200, 좌표 100, 전화 100, 주소 50, 섬업이 직접 확인한 곳 150 */
+    const d = (x.desc || x.summary || '').length;
+    const info = 100 + (x.image ? 300 : 0) + Math.min(200, Math.round(d * 2.5)) + (x.lat && x.lng ? 100 : 0) + (x.tel && !/^-+$/.test(x.tel) ? 100 : 0) + (x.addr || x.address ? 50 : 0) + (x.source && !x.auto && !x.src ? 150 : 0);
     return { ...x, score: info, buzz: null }; });
 }
 module.exports = { ready, measure, attach, norm };
