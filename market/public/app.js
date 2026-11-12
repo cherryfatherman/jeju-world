@@ -233,6 +233,15 @@ async function mountShell({ active, primary, sub } = {}) {
   let cached = null; try { cached = JSON.parse(localStorage.getItem('cfg') || 'null'); } catch {}
   const S0 = cached?.site || { name: '섬업', sub: '' };
   document.documentElement.dataset.theme = 'day'; if (cached) { applyColors(cached.colors); applyTheme(cached.theme); }
+  // 홈 화면에 추가하면 앱처럼 열리게 (설정 파일 + 아이콘)
+  if (!$('link[rel=manifest]')) {
+    const add = (tag, attrs) => { const el = document.createElement(tag); Object.assign(el, attrs); document.head.append(el); };
+    add('link', { rel: 'manifest', href: './manifest.webmanifest' });
+    add('link', { rel: 'apple-touch-icon', href: './icons/apple-touch-icon.png' });
+    add('meta', { name: 'apple-mobile-web-app-capable', content: 'yes' });
+    add('meta', { name: 'mobile-web-app-capable', content: 'yes' });
+    add('meta', { name: 'apple-mobile-web-app-title', content: '섬업' });
+  }
   if (!$('link[rel=icon]')) { const l = document.createElement('link'); l.rel = 'icon'; l.href = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#fff"/><rect x="22" y="12" width="56" height="76" rx="9" fill="#ff6b1a"/><path d="M60 12h11v28l-5.5-4.5L60 40z" fill="#1b1915" opacity=".28"/><circle cx="46" cy="58" r="15" fill="#fff"/><path d="M46 44c0-4.5 4.5-8.2 10.5-7.5-1 5.5-5.5 8.2-10.5 7.5z" fill="#19b3a6"/></svg>')}`; document.head.append(l); }
   const pkey = primary || ({ winners: 'hackathon', hackathon: 'hackathon', market: 'jeju', jeju: 'jeju', project: 'deal', deal: 'deal', program: 'program', insight: 'insight' }[active] || '');
   const header = document.createElement('header'); header.className = 'top';

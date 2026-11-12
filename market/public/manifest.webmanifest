@@ -1,0 +1,16 @@
+{
+  "name": "섬업 · 제주(섬)에서 창업을 거래하다",
+  "short_name": "섬업",
+  "description": "AI로 만든 서비스와 해커톤 프로젝트가 다음 주인을 만나는 제주 창업 장터",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#08070b",
+  "theme_color": "#ffffff",
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "./icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
