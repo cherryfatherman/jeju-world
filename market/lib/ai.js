@@ -7,7 +7,8 @@
 const GEMINI_KEY = () => process.env.GEMINI_API_KEY || '';
 // 모델은 순서대로 시도한다. 실측(2026-11)에서 3.5·3.6 계열이 1~4초에 답했고, 3.7·3.8·flash-latest는 40초 넘게 멈췄다.
 // 그래서 빠른 모델을 앞에 두고, 한 모델에 12초·전체 30초까지만 기다린다. 멈추거나 실패한 모델은 10분간 건너뛴다.
-const MODELS = () => [process.env.GEMINI_MODEL, 'gemini-3.5-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-flash-lite-latest', 'gemini-3.1-flash-lite', 'gemini-3-flash-preview', 'gemini-3.8-flash', 'gemini-3.7-flash'].filter(Boolean);
+// 순서: 실제로 가장 빨리 답한 모델부터. (2026-11-12 시험: 3.5-flash, 3.6-flash는 응답이 없어 8초씩 기다리게 됨 → lite를 맨 앞으로)
+const MODELS = () => [process.env.GEMINI_MODEL, 'gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-3.6-flash', 'gemini-flash-lite-latest', 'gemini-3.1-flash-lite', 'gemini-3-flash-preview', 'gemini-3.8-flash', 'gemini-3.7-flash'].filter(Boolean);
 const PER_MODEL_MS = 8000, TOTAL_MS = 30000, COOLDOWN_MS = 600000;
 const cooling = new Map(); // 모델 → 다시 써도 되는 시각
 let lastStatus = { ok: null, model: null, ms: null, error: 'AI를 아직 부른 적이 없어요', at: null };

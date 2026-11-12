@@ -410,6 +410,19 @@ function mountPageFx() {
   const main = $('main'); if (!main || $('.hero2') || $('.pagefx')) return;
   const d = document.createElement('div'); d.className = 'pagefx'; d.setAttribute('aria-hidden', 'true'); main.before(d);
 }
+/* 제주 교통정보센터 자료(도로 통제·전기차 충전소·관광지)를 한 구역에 그린다. 받은 것이 없으면 구역을 숨긴 채로 둔다 */
+async function itsSection(sec, kind, { first = 6 } = {}) {
+  if (!sec) return; let d; try { d = await api('/api/jeju/its/' + kind); } catch { return; }
+  const items = (d.items || []).filter((x) => x.name || x.addr); if (!d.ok || !items.length) return;
+  const row = (x) => { const period = [x.start, x.end].filter(Boolean).join(' ~ '), sub = [x.name ? x.addr : '', x.desc, period, x.tel].filter(Boolean).join(' · ');
+    return `<div class="row"><div class="body"><b>${esc(x.name || x.addr)}</b>${sub ? `<p>${esc(sub)}</p>` : ''}</div></div>`; };
+  const list = sec.querySelector('.list'), more = sec.querySelector('.itsmore'), note = sec.querySelector('.note'), cnt = sec.querySelector('.more');
+  list.innerHTML = items.slice(0, first).map(row).join('');
+  if (cnt) cnt.textContent = `${(d.count || items.length).toLocaleString('ko-KR')}곳`.replace('곳', kind === 'road' ? '건' : '곳');
+  if (more) { more.hidden = items.length <= first; more.onclick = () => { list.innerHTML = items.map(row).join(''); more.hidden = true; }; }
+  if (note) note.textContent = `출처: ${d.source} OPEN API · ${new Date(d.updatedAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })} 기준`;
+  sec.hidden = false; if (!FX.reduced()) sec.classList.add('in');
+}
 /* 페이지 넘김: 떠날 때 내용이 살짝 올라가며 사라지고 위에 빛 한 줄이 지나간다. 새 페이지는 아래에서 떠오른다 */
 function mountTransitions() {
   if (mountTransitions.done) return; mountTransitions.done = true;

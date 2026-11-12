@@ -8,6 +8,7 @@ const { fetchHackathons } = require('./lib/hackathons');
 const crypto = require('crypto');
 const agents = require('./lib/agents');
 const { REGIONS, findRegion, jitter } = require('./lib/regions');
+const jejuits = require('./lib/jejuits'); // 제주 교통정보센터 OPEN API (도로 통제·전기차 충전소·관광지·실시간 교통)
 const store = require('./lib/store'); // 저장 위치(파일 / 서버리스 임시 폴더 / 오래 남기는 저장소)
 
 // .env 파일이 있으면 읽는다 (예: GEMINI_API_KEY=..., ADMIN_PASSWORD=...). 이 파일은 GitHub에 올라가지 않는다.
@@ -416,6 +417,17 @@ app.put('/api/admin/guides', adminOnly, (req, res) => {
 });
 
 // ---- 제주 생활: 분리배출 ----
+// 제주 교통정보센터: 요청이 오면 받아오고 10분 동안 기억한다. 승인키는 응답에 넣지 않는다.
+app.get('/api/jeju/its/:kind', limit(60), async (req, res) => {
+  if (!jejuits.KINDS[req.params.kind]) return res.status(404).json({ error: '없는 종류예요.' });
+  res.json(jejuits.publicView(await jejuits.load(req.params.kind), req.params.kind === 'traffic' ? 30 : 80));
+});
+// 관리자 점검: 실제로 받은 필드 이름과 첫 줄을 본다 (형식이 바뀌었을 때 맞추기 위해)
+app.get('/api/admin/its/:kind', adminOnly, async (req, res) => {
+  if (!jejuits.KINDS[req.params.kind]) return res.status(404).json({ error: '없는 종류예요.' });
+  const v = await jejuits.load(req.params.kind, { fresh: true });
+  res.json({ ok: v.ok, status: v.status, needs: v.needs || null, error: v.error || '', count: v.count || 0, fields: v.sample?.fields || [], first: v.sample?.first || null, head: v.sample?.head || '', normalized: (v.items || []).slice(0, 3) });
+});
 app.post('/api/jeju/waste', limit(15), async (req, res) => {
   const question = clean(req.body.question, 200);
   if (!question) return res.status(400).json({ error: '무엇을 버리려는지 적어 주세요.' });

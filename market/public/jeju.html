@@ -30,6 +30,20 @@
     <p class="note" id="wasteSource"></p>
   </section>
 
+  <section id="sec-road" hidden>
+    <div class="sec-head"><h2>지금 도로 통제</h2><span class="more"></span></div>
+    <div class="list"></div>
+    <button type="button" class="btn itsmore" style="margin-top:12px" hidden>전체 보기</button>
+    <p class="note" style="margin-top:10px"></p>
+  </section>
+
+  <section id="sec-ev" hidden>
+    <div class="sec-head"><h2>전기차 충전소</h2><span class="more"></span></div>
+    <div class="list"></div>
+    <button type="button" class="btn itsmore" style="margin-top:12px" hidden>전체 보기</button>
+    <p class="note" style="margin-top:10px"></p>
+  </section>
+
   <section id="sec-guides">
     <div class="sec-head"><h2>생활정보</h2><span class="more">추천순</span></div>
     <div class="rlist" id="guides"></div>
@@ -67,7 +81,7 @@ $('#wasteForm').onsubmit = async (e) => {
   btn.disabled = false; btn.textContent = 'AI에게 묻기';
 };
 $$('[data-q]').forEach((b) => b.onclick = () => { $('#wasteForm [name=q]').value = b.dataset.q; $('#wasteForm').requestSubmit(); });
-mountShell({ active: 'jeju', sub: 'jeju' }).then((c) => { CFG = c; renderWaste(); api('/api/guides').then((g) => $('#guides').replaceChildren(...g.map((x, i) => guideRow(x, i + 1)))); if (location.hash) setTimeout(() => document.querySelector(location.hash)?.scrollIntoView(), 300); });
+mountShell({ active: 'jeju', sub: 'jeju' }).then((c) => { CFG = c; renderWaste(); itsSection($('#sec-road'), 'road'); itsSection($('#sec-ev'), 'ev'); api('/api/guides').then((g) => $('#guides').replaceChildren(...g.map((x, i) => guideRow(x, i + 1)))); if (location.hash) setTimeout(() => document.querySelector(location.hash)?.scrollIntoView(), 300); });
 </script>
 </body>
 </html>

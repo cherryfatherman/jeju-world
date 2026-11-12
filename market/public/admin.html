@@ -146,6 +146,10 @@
     <div class="pane" id="pane-feeds"><div class="form">
       <p class="help">서버가 주기적으로 받아오는 데이터 목록이에요. 키가 필요한 피드는 <code>market/.env</code>에 키를 넣으면 켜져요(예: <code>TOUR_API_KEY=...</code>). '지금 갱신'으로 바로 돌릴 수 있어요.</p>
       <div id="feedList"></div>
+      <h3 style="margin-top:8px">제주 교통정보센터 연결 점검</h3>
+      <p class="help">승인키(<code>JEJU_CITS_CODE</code>, <code>JEJU_ITS_CODE</code>)를 서버에 넣은 뒤 눌러 보세요. 실제로 받은 항목 이름과 첫 줄이 나와요. 화면에 안 나오면 이 결과를 복사해서 알려 주세요.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn" data-its="road">도로 통제</button><button type="button" class="btn" data-its="ev">전기차 충전소</button><button type="button" class="btn" data-its="tour">관광지</button><button type="button" class="btn" data-its="traffic">실시간 교통</button></div>
+      <pre id="itsOut" style="margin:0;padding:14px;border-radius:10px;background:var(--surface-2);font-size:12px;line-height:1.5;white-space:pre-wrap;word-break:break-all;max-height:320px;overflow:auto" hidden></pre>
     </div></div>
     <!-- 공지 띠 -->
     <div class="pane" id="pane-ticker"><div class="form">
@@ -314,6 +318,7 @@ function renderPlaces() {
 }
 $('#plAdd').onclick = () => { PLACES.unshift({ id: `place-${Date.now().toString(36)}`, type: 'spot', name: '', area: '', summary: '', tip: '', address: '', tags: [], image: '', source: { label: '', url: '' }, verified: false, hidden: false, lastChecked: new Date().toISOString().slice(0, 10), votes: 0, externalId: '' }); renderPlaces(); $('#pllist details').open = true; };
 $('#plSave').onclick = async () => { try { const r = await api('/api/admin/places', PLACES, 'PUT'); toast(`장소 ${r.count}곳을 저장했어요`); loadPlaces(); } catch (err) { toast(err.message); } };
+$$('[data-its]').forEach((b) => b.onclick = async () => { const out = $('#itsOut'); out.hidden = false; out.textContent = '받아오는 중…'; try { out.textContent = JSON.stringify(await api('/api/admin/its/' + b.dataset.its), null, 1); } catch (e) { out.textContent = '실패: ' + e.message; } });
 async function loadFeeds() {
   let feeds = []; try { feeds = await api('/api/admin/feeds'); } catch { return; }
   $('#feedList').innerHTML = feeds.map((f) => `<div class="trow" style="display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)"><div class="grow" style="flex:1"><b>${esc(f.name)}</b><div class="muted" style="font-size:13px">${f.everyHours}시간마다 · ${f.lastRun ? `마지막 ${new Date(f.lastRun).toLocaleString('ko-KR')} · ${f.ok ? '성공' : '실패'}` : '아직 실행 안 됨'}${f.note ? ` · ${esc(f.note)}` : ''}${!f.ready ? ` · <span style="color:var(--warn)">${esc(f.needs)} 필요</span>` : ''}</div></div><button class="btn sm" type="button" data-run="${f.id}">지금 갱신</button></div>`).join('');

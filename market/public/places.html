@@ -16,6 +16,12 @@
   <div class="listbar"><span id="count"></span><div class="sort" id="sort"><button data-s="votes" class="on">추천순</button><button data-s="new">최신순</button></div></div>
   <div class="rlist" id="list"></div>
   <p class="note" style="margin-top:16px">틀린 정보는 장소 페이지에서 알려 주세요. <span id="updated"></span></p>
+  <section id="sec-tour" hidden>
+    <div class="sec-head"><h2>제주 관광지 정보</h2><span class="more"></span></div>
+    <div class="list"></div>
+    <button type="button" class="btn itsmore" style="margin-top:12px" hidden>전체 보기</button>
+    <p class="note" style="margin-top:10px"></p>
+  </section>
 </main>
 <script>
 const Q = new URLSearchParams(location.search);
@@ -37,6 +43,7 @@ function render() {
 $$('#typetabs button').forEach((b) => b.onclick = () => { type = b.dataset.t; history.replaceState(null, '', `?type=${type}`); render(); });
 $$('#sort button').forEach((b) => b.onclick = () => { sort = b.dataset.s; $$('#sort button').forEach((x) => x.classList.toggle('on', x === b)); render(); });
 mountShell({ active: 'jeju', sub: 'travel' }).then(async () => {
+  itsSection($('#sec-tour'), 'tour', { first: 10 });
   const d = await api('/api/places'); all = d.items || []; render();
   if (d.updatedAt) $('#updated').textContent = `데이터 갱신: ${new Date(d.updatedAt).toLocaleString('ko-KR')}`;
 });
