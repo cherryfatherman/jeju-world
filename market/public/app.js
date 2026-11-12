@@ -315,8 +315,8 @@ const THEME_FIELDS = [
   ['색', [['accent', '포인트 색', 'color'], ['accent2', '보조 색', 'color'], ['bg', '바탕', 'color'], ['surface', '카드 바탕', 'color'], ['ink', '글자', 'color'], ['line', '선', 'color']]],
   ['모양', [['radius', '카드 모서리 (px)', 'range', 0, 24, 1], ['btnRadius', '버튼 모서리 (px)', 'range', 0, 24, 1], ['wrap', '본문 폭 (px)', 'range', 900, 1320, 20], ['heroH', '홈 큰 배너 높이 (px)', 'range', 240, 560, 10], ['thumb', '목록 사진 크기 (px)', 'range', 48, 112, 4], ['gap', '구역 사이 간격 (px)', 'range', 16, 64, 4]]],
 ];
-const THEME_DEFAULT = { v: 2, bodyFont: 'Pretendard Variable', headFont: 'Pretendard Variable', headWeight: 800, scale: 100, letter: -0.01, accent: '#ff6b1a', accent2: '#19b3a6', bg: '#08070b', surface: '#131117', ink: '#f4f0ea', line: '#24212a', radius: 14, btnRadius: 10, wrap: 1080, heroH: 360, thumb: 72, gap: 40 };
-const normTheme = (t) => { const T = { ...THEME_DEFAULT, ...(t || {}) }; if (!t || t.v !== 2) Object.assign(T, { v: 2, bg: THEME_DEFAULT.bg, surface: THEME_DEFAULT.surface, ink: THEME_DEFAULT.ink, line: THEME_DEFAULT.line, radius: THEME_DEFAULT.radius, btnRadius: THEME_DEFAULT.btnRadius, gap: THEME_DEFAULT.gap }); return T; };
+const THEME_DEFAULT = { v: 3, bodyFont: 'Pretendard Variable', headFont: 'Pretendard Variable', headWeight: 800, scale: 100, letter: -0.01, accent: '#ff6b1a', accent2: '#19b3a6', bg: '#ffffff', surface: '#ffffff', ink: '#1b1915', line: '#e9e3da', radius: 12, btnRadius: 8, wrap: 1080, heroH: 360, thumb: 72, gap: 32 };
+const normTheme = (t) => { const T = { ...THEME_DEFAULT, ...(t || {}) }; if (!t || t.v !== 3) Object.assign(T, { v: 3, bg: THEME_DEFAULT.bg, surface: THEME_DEFAULT.surface, ink: THEME_DEFAULT.ink, line: THEME_DEFAULT.line, radius: THEME_DEFAULT.radius, btnRadius: THEME_DEFAULT.btnRadius, gap: THEME_DEFAULT.gap }); return T; };
 function loadFont(name) { const f = FONTS.find((x) => x[0] === name); if (!f || !f[2] || document.querySelector(`link[data-font="${name}"]`)) return; const l = document.createElement('link'); l.rel = 'stylesheet'; l.dataset.font = name; l.href = `https://fonts.googleapis.com/css2?family=${f[2]}&display=swap`; document.head.append(l); }
 function applyTheme(t) {
   if (!t) return; const r = document.documentElement.style; const T = normTheme(t);
@@ -399,14 +399,7 @@ const FX = {
 /* 페이지 위쪽의 빛 띠 (홈 제외). 제목 뒤에서 빛줄기가 한 점으로 모인다 */
 function mountPageFx() {
   const main = $('main'); if (!main || $('.hero2') || $('.pagefx')) return;
-  const cv = document.createElement('canvas'); cv.className = 'pagefx'; cv.setAttribute('aria-hidden', 'true'); main.before(cv);
-  const c = cv.getContext('2d'), S = FX.makeStrands(innerWidth < 760 ? 46 : 84); let on = true;
-  const draw = (t) => { const { W, H, D } = FX.fit(cv, 1.5); c.setTransform(D, 0, 0, D, 0, 0); c.clearRect(0, 0, W, H); c.globalCompositeOperation = 'lighter';
-    const cx = W < 760 ? W * .82 : W / 2 + Math.min(W, 1160) * .36, cy = W < 760 ? 4 : 6, tt = t / 1000;
-    FX.strands(c, S, cx, cy, Math.max(W * .62, 520), tt, 1, .42 + Math.sin(tt * .7) * .06, .55);
-    const r = 190 + Math.sin(tt * 1.3) * 12, g = c.createRadialGradient(cx, cy, 0, cx, cy, r); g.addColorStop(0, 'rgba(255,170,90,.4)'); g.addColorStop(1, 'rgba(255,107,26,0)'); c.fillStyle = g; c.beginPath(); c.arc(cx, cy, r, 0, 6.3); c.fill(); c.globalCompositeOperation = 'source-over'; };
-  if (FX.reduced()) { draw(0); return; }
-  const loop = (t) => { if (on && !document.hidden && scrollY < 420) draw(t); requestAnimationFrame(loop); }; requestAnimationFrame(loop);
+  const d = document.createElement('div'); d.className = 'pagefx'; d.setAttribute('aria-hidden', 'true'); main.before(d);
 }
 /* 페이지 넘김: 떠날 때 내용이 살짝 올라가며 사라지고 위에 빛 한 줄이 지나간다. 새 페이지는 아래에서 떠오른다 */
 function mountTransitions() {
