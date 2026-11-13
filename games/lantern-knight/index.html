@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>등불기사 키우기</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #07070d; color: #e9e2cf;
+    font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; }
+  #wrap { max-width: 960px; margin: 0 auto; padding: 12px; }
+  h1 { font-size: 18px; margin: 4px 0 10px; letter-spacing: 1px; color: #f2c46b; }
+  h1 small { font-size: 12px; color: #8d8777; font-weight: normal; }
+  #hud { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+  .stat { background: #15151f; border: 1px solid #2c2a3a; border-radius: 6px;
+    padding: 6px 12px; font-size: 14px; }
+  .stat b { color: #f2c46b; margin-left: 6px; }
+  canvas { width: 100%; display: block; border: 1px solid #2c2a3a; border-radius: 6px;
+    image-rendering: pixelated; image-rendering: crisp-edges; background: #000; }
+  #bar { height: 8px; background: #15151f; border: 1px solid #2c2a3a; border-radius: 4px;
+    margin-top: 8px; overflow: hidden; }
+  #barFill { height: 100%; width: 0; background: #f2c46b; }
+  p.note { font-size: 12px; color: #8d8777; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <h1>등불기사 키우기 <small>체험판 1단계 · 이름은 가제</small></h1>
+  <div id="hud">
+    <div class="stat">등불 단계<b id="sLevel">1</b></div>
+    <div class="stat">공격력<b id="sAtk">5</b></div>
+    <div class="stat">골드<b id="sGold">0</b></div>
+    <div class="stat">처치<b id="sKills">0</b></div>
+  </div>
+  <canvas id="game" width="320" height="180"></canvas>
+  <div id="bar"><div id="barFill"></div></div>
+  <p class="note">기사는 알아서 걷고 싸웁니다. 몬스터를 잡을수록 등불이 밝아져 더 멀리 보입니다.</p>
+</div>
+<script>
+'use strict';
+// ---------- 설정 ----------
+const GAME_TITLE = '등불기사 키우기'; // 이름을 바꾸려면 여기와 <title>, <h1>만 고치면 된다
+const W = 320, H = 180, GROUND = 150, KNIGHT_X = 60, SCALE = 2;
+
+// ---------- 도트 그림 (전부 이 파일에서 직접 그린 오리지널) ----------
+const KNIGHT_PAL = { h:'#aab3c2', d:'#2a2d3a', e:'#ffd27a', c:'#7a2430', a:'#6f7889',
+  b:'#3b2a22', l:'#4a4032', y:'#ffd27a' };
+const KNIGHT_TOP = [
+  '....hhhh....',
+  '...hhhhhh...',
+  '...hddddh...',
+  '...hdeedh...',
+  '...hhhhhh...',
+  '..cchhhhc...',
+  '.ccaaaaaac..',
+  '.ccaaaaaa.l.',
+  '.ccaaaaaaal.',
+  '.cc.aaaa.yyy',
+  '.cc.aaaa.yyy',
+  '..c.dddd..l.',
+];
+const KNIGHT_LEGS = [
+  ['....a..a....', '....a..a....', '...bb..bb...', '...bb..bb...'],
+  ['....a..a....', '...a....a...', '..bb....bb..', '............'],
+];
+const MONSTERS = [
+  { name: '진흙덩이', hp: 12, gold: 3, pal: { m:'#5d4a33', M:'#7a6445', e:'#d9f27a' }, rows: [
+    '...mmmm...',
+    '..mmmmmm..',
+    '.mmMmmMmm.',
+    '.mmemmemm.',
+    'mmmmmmmmmm',
+    'mmmmMMmmmm',
+    'mmmmmmmmmm',
+    '.mm.mm.mm.',
+  ]},
+  { name: '떠돌이 해골', hp: 20, gold: 5, pal: { w:'#d8d4c4', k:'#3a3a44', e:'#e0503a' }, rows: [
+    '..wwww..',
+    '.wwwwww.',
+    '.wewwew.',
+    '.wwwwww.',
+    '..wkkw..',
+    '...ww...',
+    '.wwwwww.',
+    'w.wkkw.w',
+    'w.wwww.w',
+    'w.wkkw.w',
+    '..wwww..',
+    '..w..w..',
+    '..w..w..',
+    '.ww..ww.',
+  ]},
+  { name: '그림자 늑대', hp: 30, gold: 8, pal: { s:'#3b3550', e:'#b98cff' }, flip: true, rows: [
+    '..........s.s.',
+    '.........sssss',
+    's........sesss',
+    'ss..ssssssssss',
+    '.sssssssssss..',
+    '.ssssssssss...',
+    '.ssssssssss...',
+    '.ss..s..ss.s..',
+    '.s...s..s..s..',
+  ]},
+];
+
+function drawSprite(c, rows, pal, x, y, flip, whiten) {
+  const w = rows[0].length;
+  for (let r = 0; r < rows.length; r++) {
+    for (let i = 0; i < w; i++) {
+      const ch = rows[r][flip ? w - 1 - i : i];
+      if (ch === '.') continue;
+      c.fillStyle = whiten ? '#ffffff' : pal[ch];
+      c.fillRect(Math.round(x) + i * SCALE, Math.round(y) + r * SCALE, SCALE, SCALE);
+    }
+  }
+}
+
+// ---------- 상태 ----------
+const state = { gold: 0, kills: 0, level: 1, exp: 0, scroll: 0, time: 0,
+  attackTimer: 0, slash: 0, monster: null, floats: [] };
+const atk = () => 5 + (state.level - 1) * 2;
+const expNeed = () => 4 + state.level * 2;
+const lightRadius = () => Math.min(42 + state.level * 7, 220);
+
+function spawnMonster() {
+  // 처음엔 약한 몬스터만, 잡을수록 센 몬스터가 섞여 나온다
+  const maxType = Math.min(MONSTERS.length - 1, Math.floor(state.kills / 5));
+  const type = MONSTERS[Math.floor(Math.random() * (maxType + 1))];
+  const hp = Math.round(type.hp * (1 + state.kills * 0.06));
+  state.monster = { type, hp, maxHp: hp, x: W + 30, flash: 0, dying: 0 };
+}
+
+function addFloat(text, x, y, color) {
+  state.floats.push({ text, x, y, color, life: 0.8 });
+}
+
+// ---------- 진행 ----------
+function update(dt) {
+  state.time += dt;
+  if (!state.monster) spawnMonster();
+  const m = state.monster;
+  const mw = m.type.rows[0].length * SCALE;
+  const engaged = m.x - (KNIGHT_X + 24) < 6;
+
+  if (m.dying > 0) {
+    m.dying -= dt;
+    if (m.dying <= 0) state.monster = null;
+  } else if (!engaged) {
+    const speed = 95;
+    m.x -= speed * dt;
+    state.scroll += speed * dt;
+  } else {
+    state.attackTimer -= dt;
+    if (state.attackTimer <= 0) {
+      state.attackTimer = 0.55;
+      state.slash = 0.12;
+      const dmg = Math.max(1, Math.round(atk() * (0.8 + Math.random() * 0.4)));
+      m.hp -= dmg;
+      m.flash = 0.08;
+      addFloat(String(dmg), m.x + mw / 2, GROUND - m.type.rows.length * SCALE - 6, '#ffffff');
+      if (m.hp <= 0) {
+        m.dying = 0.3;
+        state.kills++;
+        state.gold += m.type.gold;
+        addFloat('+' + m.type.gold, m.x + mw / 2, GROUND - 40, '#f2c46b');
+        state.exp++;
+        if (state.exp >= expNeed()) { state.exp = 0; state.level++; }
+        updateHud();
+      }
+    }
+  }
+  if (m.flash > 0) m.flash -= dt;
+  if (state.slash > 0) state.slash -= dt;
+  for (const f of state.floats) { f.life -= dt; f.y -= 22 * dt; }
+  state.floats = state.floats.filter(f => f.life > 0);
+  state.walking = !engaged && m.dying <= 0;
+}
+
+// ---------- 그리기 ----------
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const dark = document.createElement('canvas');
+dark.width = W; dark.height = H;
+const dctx = dark.getContext('2d');
+
+function drawBackground() {
+  const sky = ctx.createLinearGradient(0, 0, 0, GROUND);
+  sky.addColorStop(0, '#0d1024'); sky.addColorStop(1, '#262447');
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, W, GROUND);
+  // 별
+  ctx.fillStyle = '#c9c6e8';
+  for (let i = 0; i < 30; i++) ctx.fillRect((i * 97) % W, (i * 53) % 90, 1, 1);
+  // 달
+  ctx.fillStyle = '#e8e4d0'; ctx.beginPath(); ctx.arc(260, 34, 12, 0, 7); ctx.fill();
+  ctx.fillStyle = '#0f1228'; ctx.beginPath(); ctx.arc(255, 31, 11, 0, 7); ctx.fill();
+  // 멀리 보이는 무너진 성벽 (천천히 흐른다)
+  ctx.fillStyle = '#191a33';
+  const far = state.scroll * 0.25;
+  for (let i = -1; i < 6; i++) {
+    const x = Math.round(i * 90 - (far % 90));
+    const h = 30 + ((i + Math.floor(far / 90)) * 37 % 4 + 4) % 4 * 9;
+    ctx.fillRect(x, GROUND - h, 26, h);
+    ctx.fillRect(x - 3, GROUND - h - 4, 8, 4);
+    ctx.fillRect(x + 21, GROUND - h - 4, 8, 4);
+  }
+  // 땅
+  ctx.fillStyle = '#2b2a26'; ctx.fillRect(0, GROUND, W, H - GROUND);
+  ctx.fillStyle = '#3a3830'; ctx.fillRect(0, GROUND, W, 2);
+  ctx.fillStyle = '#44423a';
+  for (let i = -1; i < 12; i++) {
+    const x = Math.round(i * 32 - (state.scroll % 32));
+    ctx.fillRect(x, GROUND + 8 + (i & 1) * 7, 6, 2);
+    ctx.fillRect(x + 17, GROUND + 18, 3, 2);
+  }
+}
+
+function render() {
+  drawBackground();
+  const m = state.monster;
+  // 기사
+  const bob = state.walking ? Math.floor(state.time * 8) % 2 : 0;
+  const ky = GROUND - 16 * SCALE - (state.slash > 0 ? 1 : 0);
+  drawSprite(ctx, KNIGHT_TOP, KNIGHT_PAL, KNIGHT_X, ky, false, false);
+  drawSprite(ctx, KNIGHT_LEGS[bob], KNIGHT_PAL, KNIGHT_X, ky + 12 * SCALE, false, false);
+  if (state.slash > 0) {
+    ctx.fillStyle = '#ffffff';
+    for (let i = 0; i < 7; i++) ctx.fillRect(KNIGHT_X + 26 + i * 2, ky + 6 + i * 3, 3, 3);
+  }
+  // 몬스터
+  if (m) {
+    const mh = m.type.rows.length * SCALE, mw = m.type.rows[0].length * SCALE;
+    ctx.globalAlpha = m.dying > 0 ? Math.max(0, m.dying / 0.3) : 1;
+    drawSprite(ctx, m.type.rows, m.type.pal, m.x, GROUND - mh, !!m.type.flip, m.flash > 0);
+    ctx.globalAlpha = 1;
+    if (m.dying <= 0 && m.hp < m.maxHp) {
+      ctx.fillStyle = '#000'; ctx.fillRect(Math.round(m.x) - 1, GROUND - mh - 6, mw + 2, 4);
+      ctx.fillStyle = '#d0463a';
+      ctx.fillRect(Math.round(m.x), GROUND - mh - 5, Math.max(0, mw * m.hp / m.maxHp), 2);
+    }
+  }
+  // 어둠과 등불
+  const lx = KNIGHT_X + 10 * SCALE + 1, ly = ky + 10 * SCALE;
+  const r = lightRadius() * (1 + Math.sin(state.time * 9) * 0.015);
+  dctx.globalCompositeOperation = 'source-over';
+  dctx.clearRect(0, 0, W, H);
+  dctx.fillStyle = 'rgba(4,4,12,0.93)'; dctx.fillRect(0, 0, W, H);
+  dctx.globalCompositeOperation = 'destination-out';
+  const hole = dctx.createRadialGradient(lx, ly, r * 0.25, lx, ly, r);
+  hole.addColorStop(0, 'rgba(0,0,0,1)'); hole.addColorStop(1, 'rgba(0,0,0,0)');
+  dctx.fillStyle = hole; dctx.fillRect(0, 0, W, H);
+  ctx.drawImage(dark, 0, 0);
+  ctx.globalCompositeOperation = 'lighter';
+  const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, r * 0.7);
+  glow.addColorStop(0, 'rgba(255,190,90,0.28)'); glow.addColorStop(1, 'rgba(255,190,90,0)');
+  ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+  ctx.globalCompositeOperation = 'source-over';
+  // 떠오르는 숫자
+  ctx.font = 'bold 9px monospace'; ctx.textAlign = 'center';
+  for (const f of state.floats) {
+    ctx.globalAlpha = Math.min(1, f.life / 0.3);
+    ctx.fillStyle = '#000'; ctx.fillText(f.text, Math.round(f.x) + 1, Math.round(f.y) + 1);
+    ctx.fillStyle = f.color; ctx.fillText(f.text, Math.round(f.x), Math.round(f.y));
+  }
+  ctx.globalAlpha = 1;
+}
+
+function updateHud() {
+  document.getElementById('sLevel').textContent = state.level;
+  document.getElementById('sAtk').textContent = atk();
+  document.getElementById('sGold').textContent = state.gold.toLocaleString();
+  document.getElementById('sKills').textContent = state.kills.toLocaleString();
+  document.getElementById('barFill').style.width = (state.exp / expNeed() * 100) + '%';
+}
+
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.1, (now - last) / 1000);
+  last = now;
+  update(dt);
+  render();
+  requestAnimationFrame(frame);
+}
+updateHud();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
